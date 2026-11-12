@@ -1,0 +1,1725 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>Tejo: Club El Cosmo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<style>
+/* Layout: one full-bleed 3D hall; HUD pinned to the safe edges; menus are painted-wood panels over the live scene. Single dark look (evening tejo hall). */
+:root{
+  --night:#16110c; --wood:#2b2118; --wood-2:#3b2d20; --wood-3:#4c3a29;
+  --paper:#f5eddd; --muted:#cdbb9c; --dim:#8e7d66;
+  --red:#d8392d; --yellow:#f3c22f; --green:#2f915c; --blue:#2565b3;
+  --greda:#8d8476; --ink:#120d08;
+  --display:"Alfa Slab One", "Rockwell", Georgia, serif;
+  --body:"Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --flag-y:#fcd116; --flag-b:#003893; --flag-r:#ce1126;
+  --stripes:linear-gradient(180deg,var(--flag-y) 0 50%,var(--flag-b) 50% 75%,var(--flag-r) 75% 100%);
+  color-scheme:dark;
+}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--night);color:var(--paper);font-family:var(--body);font-size:15px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;overscroll-behavior:none;}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;background:var(--night);}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;}
+button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;inset:0;pointer-events:none;}
+#board{position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);
+  left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));
+  display:flex;gap:6px;align-items:stretch;}
+.chip{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px;padding:7px 9px 8px;
+  background:rgba(22,16,11,.82);border:1px solid rgba(245,237,221,.10);border-radius:4px;position:relative;overflow:hidden;
+  transition:transform .25s ease, border-color .25s ease;}
+.chip::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c);}
+.chip.on{border-color:var(--c);transform:translateY(2px);box-shadow:0 0 0 1px var(--c) inset;}
+.chip .nm{font-weight:600;font-size:12px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);}
+.chip.on .nm{color:var(--paper);}
+.chip .sc{font-family:var(--display);font-size:22px;line-height:1;font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:4px;}
+.chip .sc small{font-family:var(--body);font-size:11px;color:var(--dim);font-weight:600;}
+.chip .bar{height:3px;background:rgba(245,237,221,.1);border-radius:2px;overflow:hidden;}
+.chip .bar i{display:block;height:100%;background:var(--c);transition:width .5s ease;}
+.chip.bump .sc{animation:bump .6s ease;}
+@keyframes bump{30%{transform:scale(1.35);color:var(--yellow);}}
+
+#lupa{position:absolute;right:max(12px,env(safe-area-inset-right,0px));
+  top:calc(env(safe-area-inset-top,0px) + 78px);width:min(40vw,190px);aspect-ratio:1/1;
+  border:3px solid var(--yellow);box-shadow:0 0 0 3px var(--ink),0 8px 24px rgba(0,0,0,.5);}
+#lupa span{position:absolute;left:-3px;top:-3px;transform:translateY(-100%);background:var(--yellow);color:var(--ink);
+  font:800 10px/1 var(--body);letter-spacing:.14em;padding:4px 6px 3px;}
+#turn{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 80px);
+  max-width:calc(100% - min(40vw,190px) - 48px);display:flex;flex-direction:column;gap:2px;}
+#turn .who{font-family:var(--display);font-size:20px;line-height:1.05;text-shadow:0 2px 0 var(--ink);}
+#turn .meta{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-shadow:0 1px 2px var(--ink);}
+#gauge{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 86px);
+  width:16px;height:min(34vh,260px);background:rgba(22,16,11,.8);border:2px solid rgba(245,237,221,.35);border-radius:3px;}
+#gaugeFill{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(0deg,var(--green),var(--yellow) 60%,var(--red));}
+#gaugeLast{position:absolute;left:-7px;right:-7px;height:2px;background:var(--paper);bottom:0;display:none;}
+#gaugeLast::after{content:"último";position:absolute;right:calc(100% + 4px);top:-7px;font-size:10px;color:var(--muted);font-weight:600;}
+#gauge b{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:.12em;color:var(--muted);}
+#hint{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 22px);
+  width:min(86vw,420px);text-align:center;font-size:13px;font-weight:600;color:var(--paper);
+  background:rgba(22,16,11,.78);padding:9px 14px;border-radius:999px;transition:opacity .3s;}
+#hint.off{opacity:0;}
+#feed{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 72px);
+  display:flex;flex-direction:column;gap:4px;max-width:62vw;}
+#feed div{font-size:12px;font-weight:600;background:rgba(22,16,11,.72);padding:4px 8px;border-left:3px solid var(--c);
+  border-radius:2px;animation:feedin .3s ease;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+@keyframes feedin{from{opacity:0;transform:translateX(-8px);}}
+.hudBtns{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;gap:8px;pointer-events:auto;}
+.iconBtn{width:42px;height:42px;display:grid;place-items:center;background:rgba(22,16,11,.82);border:1px solid rgba(245,237,221,.18);border-radius:50%;}
+.iconBtn svg{width:18px;height:18px;fill:none;stroke:var(--paper);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+.iconBtn.muted .wave{display:none;} .iconBtn:not(.muted) .x{display:none;}
+
+/* ---------- announcements ---------- */
+#announce{position:fixed;left:0;right:0;top:38%;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;opacity:0;}
+#announce.show{animation:ann 1.9s cubic-bezier(.2,.9,.2,1) forwards;}
+#announce .t{font-family:var(--display);font-size:clamp(40px,12vw,92px);line-height:.95;letter-spacing:.01em;color:var(--paper);
+  text-shadow:3px 3px 0 var(--red),6px 6px 0 var(--ink);padding:0 16px;text-align:center;}
+#announce.big .t{font-size:clamp(52px,16vw,128px);text-shadow:3px 3px 0 var(--flag-y),6px 6px 0 var(--flag-b),9px 9px 0 var(--flag-r),12px 12px 0 var(--ink);}
+#announce .p{font:800 16px/1 var(--body);letter-spacing:.08em;background:var(--ink);padding:7px 12px;border-top:4px solid var(--yellow);}
+#announce .s{height:12px;width:min(70vw,360px);background:var(--stripes);}
+@keyframes ann{0%{opacity:0;transform:scale(.6) rotate(-4deg);}12%{opacity:1;transform:scale(1.06) rotate(-2deg);}22%{transform:scale(1) rotate(-2deg);}80%{opacity:1;}100%{opacity:0;transform:scale(1) rotate(-2deg) translateY(-14px);}}
+#flash{position:fixed;inset:0;background:#ffd38a;opacity:0;pointer-events:none;mix-blend-mode:screen;}
+#flash.go{animation:flash .45s ease-out;}
+@keyframes flash{0%{opacity:.75;}100%{opacity:0;}}
+#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 132px);transform:translateX(-50%);pointer-events:none;
+  background:var(--ink);border:2px solid var(--yellow);padding:9px 14px;font-weight:800;font-size:14px;text-align:center;
+  max-width:min(84vw,380px);opacity:0;transition:opacity .3s, transform .3s;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(4px);}
+
+/* ---------- screens ---------- */
+.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  padding:calc(env(safe-area-inset-top,0px) + 16px) max(14px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 16px) max(14px,env(safe-area-inset-left,0px));
+  background:linear-gradient(180deg,rgba(22,17,12,.35),rgba(22,17,12,.75));overflow-y:auto;}
+.panel{width:min(100%,440px);max-height:100%;overflow-y:auto;background:var(--wood);border:1px solid var(--wood-3);
+  box-shadow:0 20px 50px rgba(0,0,0,.55);border-radius:4px;position:relative;margin:auto;}
+.panel::before{content:"";display:block;height:12px;background:var(--stripes);}
+.pin{padding:18px 18px 20px;display:flex;flex-direction:column;gap:16px;}
+.brand{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;}
+.brand .eyebrow{font-size:11px;font-weight:800;letter-spacing:.2em;color:var(--yellow);text-transform:uppercase;}
+.brand h1{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(64px,22vw,96px);line-height:.85;
+  color:var(--paper);text-shadow:3px 3px 0 var(--red),6px 6px 0 var(--ink);letter-spacing:.01em;transform:translateX(-3px);}
+.brand p{margin:4px 0 0;color:var(--muted);font-size:14px;line-height:1.45;max-width:36ch;}
+h2{margin:0;font-family:var(--display);font-weight:400;font-size:30px;line-height:1;text-wrap:balance;}
+h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}
+.group{display:flex;flex-direction:column;gap:8px;}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:var(--ink);padding:4px;border-radius:4px;}
+.seg button{padding:10px 6px;border-radius:3px;font-weight:600;font-size:13px;color:var(--muted);line-height:1.15;}
+.seg button small{display:block;font-size:10.5px;font-weight:600;color:var(--dim);margin-top:2px;}
+.seg button[aria-pressed="true"]{background:var(--paper);color:var(--ink);}
+.seg button[aria-pressed="true"] small{color:#5d4f3e;}
+.names{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.names label{display:flex;align-items:center;gap:6px;background:var(--ink);border-radius:3px;padding:0 8px;border-left:4px solid var(--c);min-width:0;}
+.names input{flex:1;min-width:0;background:none;border:0;color:var(--paper);font:600 14px var(--body);padding:10px 0;user-select:text;}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.row .lbl{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.row .lbl b{font-size:14px;font-weight:600;}
+.row .lbl span{font-size:12px;color:var(--dim);}
+.switch{width:50px;height:28px;border-radius:999px;background:var(--ink);position:relative;flex:none;border:1px solid var(--wood-3);}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--dim);transition:transform .2s, background .2s;}
+.switch[aria-checked="true"]{background:var(--green);}
+.switch[aria-checked="true"]::after{transform:translateX(22px);background:var(--paper);}
+.cta{display:flex;gap:8px;flex-wrap:wrap;}
+.btn{flex:1 1 140px;padding:14px 16px;font-family:var(--display);font-size:19px;letter-spacing:.02em;background:var(--yellow);color:var(--ink);
+  border-radius:3px;box-shadow:4px 4px 0 var(--red);transition:transform .08s, box-shadow .08s;}
+.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--red);}
+.btn.ghost{background:transparent;color:var(--paper);box-shadow:none;border:2px solid var(--wood-3);font-family:var(--body);font-weight:800;font-size:15px;}
+.record{font-size:12px;color:var(--muted);}
+.rulesT{width:100%;border-collapse:collapse;font-size:14px;}
+.rulesT td{padding:9px 4px;border-bottom:1px solid var(--wood-2);vertical-align:top;}
+.rulesT td:first-child{font-family:var(--display);font-size:16px;white-space:nowrap;padding-right:10px;}
+.rulesT td:last-child{text-align:right;font-family:var(--display);font-size:20px;color:var(--yellow);font-variant-numeric:tabular-nums;}
+.rulesT span{display:block;font-size:12.5px;color:var(--muted);font-family:var(--body);margin-top:2px;line-height:1.4;}
+.prose{margin:0;font-size:13.5px;line-height:1.55;color:var(--muted);}
+.prose b{color:var(--paper);}
+.stats{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums;}
+.stats th,.stats td{padding:7px 4px;text-align:right;border-bottom:1px solid var(--wood-2);}
+.stats th{font-size:10.5px;letter-spacing:.08em;color:var(--dim);font-weight:800;text-transform:uppercase;}
+.stats td:first-child,.stats th:first-child{text-align:left;}
+.stats td:first-child{font-weight:600;border-left:4px solid var(--c);padding-left:8px;}
+.stats tr.win td{color:var(--yellow);}
+.winner{font-family:var(--display);font-size:clamp(34px,10vw,48px);line-height:1;color:var(--paper);text-shadow:3px 3px 0 var(--red);}
+.loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--night);color:var(--muted);font-weight:600;z-index:5;}
+.joinRow{display:flex;gap:8px;}
+.joinRow input{flex:1;min-width:0;background:var(--ink);border:0;border-left:4px solid var(--flag-y);border-radius:3px;color:var(--paper);font:800 18px var(--body);letter-spacing:.2em;padding:10px 12px;user-select:text;}
+.joinRow input::placeholder{letter-spacing:.02em;font-weight:600;font-size:14px;color:var(--dim);}
+.joinRow .btn{flex:0 0 auto;font-size:15px;padding:12px 16px;}
+.btn:disabled,.joinRow input:disabled{opacity:.45;cursor:not-allowed;}
+.code{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--ink);padding:12px 14px;border-radius:3px;border-left:4px solid var(--flag-y);}
+.code div{display:flex;flex-direction:column;gap:4px;}
+.code small{font-size:10.5px;font-weight:800;letter-spacing:.16em;color:var(--dim);}
+.code b{font-family:var(--display);font-size:46px;letter-spacing:.14em;line-height:1;color:var(--flag-y);font-weight:400;font-variant-numeric:tabular-nums;}
+.code button{font-weight:800;font-size:13px;padding:9px 12px;border:2px solid var(--wood-3);border-radius:3px;}
+.seats{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+.seats li{display:flex;align-items:center;gap:10px;background:var(--ink);padding:11px 12px;border-left:4px solid var(--c);border-radius:3px;min-width:0;}
+.seats li b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.seats li span{margin-left:auto;font-size:10.5px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;font-weight:800;white-space:nowrap;}
+.seats li.off{opacity:.5;}
+@media (prefers-reduced-motion:reduce){#announce.show{animation-duration:1.4s;}.chip.bump .sc{animation:none;}#flash.go{animation:none;}}
+@media (min-width:760px){#turn .who{font-size:26px;}.chip .sc{font-size:26px;}#lupa{width:220px;top:calc(env(safe-area-inset-top,0px) + 86px);}#turn{top:calc(env(safe-area-inset-top,0px) + 90px);}}
+</style>
+
+<canvas id="gl" aria-label="Cancha de tejo en 3D"></canvas>
+<div class="loading" id="loading">Echándole greda a la cancha…</div>
+
+<div id="hud" hidden>
+  <header id="board"></header>
+  <div id="turn"><div class="who" id="turnWho"></div><div class="meta" id="turnMeta"></div></div>
+  <div id="lupa"><span>LUPA</span></div>
+  <div id="gauge" aria-hidden="true"><div id="gaugeFill"></div><div id="gaugeLast"></div><b>FUERZA</b></div>
+  <div id="feed" aria-live="polite"></div>
+  <div class="hudBtns">
+    <button class="iconBtn" id="btnPause" aria-label="Pausa"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+    <button class="iconBtn" id="btnSound" aria-label="Sonido"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M17 9l5 6M22 9l-5 6"/></svg></button>
+  </div>
+  <div id="hint">Arrastra hacia abajo para cargar · suelta para lanzar</div>
+</div>
+<div id="announce" aria-live="assertive"><div class="t" id="annT"></div><div class="s"></div><div class="p" id="annP"></div></div>
+<div id="toast"></div>
+<div id="flash"></div>
+
+<section class="screen" id="menu" hidden>
+  <div class="panel"><div class="pin">
+    <div class="brand">
+      <span class="eyebrow">Club de Tejo El Cosmo · Bucaramanga</span>
+      <h1>TEJO</h1>
+      <p>Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.</p>
+    </div>
+    <div class="group">
+      <h3>Modo</h3>
+      <div class="seg" id="segMode">
+        <button data-v="cpu">Contra<small>Don Chepe</small></button>
+        <button data-v="online">Salas<small>en línea</small></button>
+        <button data-v="local">Turnos<small>mismo cel</small></button>
+        <button data-v="reto">Reto<small>10 tejos</small></button>
+      </div>
+    </div>
+    <div class="group" id="grpNames">
+      <h3 id="lblNames">Jugadores</h3>
+      <div class="seg" id="segCount"><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button></div>
+      <div class="names" id="names"></div>
+    </div>
+    <div class="group" id="grpOnline" hidden>
+      <h3>Unirme a una sala</h3>
+      <div class="joinRow"><input id="codeIn" inputmode="numeric" maxlength="4" placeholder="Código de 4 números" aria-label="Código de la sala" autocomplete="off"><button class="btn ghost" id="btnJoin">Unirme</button></div>
+      <p class="prose" id="onlineMsg"></p>
+    </div>
+    <div class="group" id="grpDiff">
+      <h3>Pulso de Don Chepe</h3>
+      <div class="seg" id="segDiff">
+        <button data-v="0">Fácil</button><button data-v="1">Normal</button><button data-v="2">Difícil</button><button data-v="3">Maestro</button>
+      </div>
+    </div>
+    <div class="group">
+      <h3>Distancia</h3>
+      <div class="seg" id="segDist">
+        <button data-v="10">10 m<small>arrimada</small></button>
+        <button data-v="14">14 m<small>de barrio</small></button>
+        <button data-v="18.5">18,5 m<small>larga</small></button>
+      </div>
+    </div>
+    <div class="group" id="grpGoal">
+      <h3>Partida a</h3>
+      <div class="seg" id="segGoal"><button data-v="15">15</button><button data-v="21">21</button><button data-v="27">27</button></div>
+    </div>
+    <div class="row">
+      <div class="lbl"><b>Mira en la cancha</b><span>Muestra dónde cae el tejo mientras apuntas</span></div>
+      <button class="switch" id="swAim" role="switch" aria-checked="true" aria-label="Mira en la cancha"></button>
+    </div>
+    <div class="cta">
+      <button class="btn" id="btnPlay">A jugar</button>
+      <button class="btn ghost" id="btnRules">Cómo se juega</button>
+    </div>
+    <div class="record" id="recordLine"></div>
+  </div></div>
+</section>
+
+<section class="screen" id="sala" hidden>
+  <div class="panel"><div class="pin">
+    <h2>Sala en línea</h2>
+    <div class="code"><div><small>CÓDIGO</small><b id="salaCode">—</b></div><button id="btnCopy">Copiar</button></div>
+    <p class="prose" id="salaInfo"></p>
+    <ul class="seats" id="salaList"></ul>
+    <p class="prose" id="salaRules"></p>
+    <div class="cta">
+      <button class="btn" id="btnStart" hidden>Empezar partida</button>
+      <button class="btn ghost" id="btnLeave">Salir de la sala</button>
+    </div>
+  </div></div>
+</section>
+
+<section class="screen" id="rules" hidden>
+  <div class="panel"><div class="pin">
+    <h2>Cómo se juega</h2>
+    <table class="rulesT">
+      <tr><td>Mano<span>El tejo que quede más cerca del bocín al final de la ronda, si nadie sumó con mecha, embocinada o moñona.</span></td><td>1</td></tr>
+      <tr><td>Mecha<span>Revientas una de las mechas de pólvora que están sobre el bocín.</span></td><td>3</td></tr>
+      <tr><td>Embocinada<span>El tejo queda dentro del bocín.</span></td><td>6</td></tr>
+      <tr><td>Moñona<span>Embocinada y mecha en el mismo lanzamiento.</span></td><td>9</td></tr>
+    </table>
+    <p class="prose"><b>Lanzar:</b> pon el dedo en cualquier parte y arrástralo hacia abajo para cargar fuerza; muévelo a los lados para apuntar. Suelta para lanzar. Si te quedas mucho rato apuntando, el pulso empieza a temblar.</p>
+    <p class="prose"><b>Nulo:</b> si el tejo pega primero en el marco, el tablero o el piso, no cuenta. Solo vale lo que cae en la greda.</p>
+    <p class="prose"><b>Ronda:</b> cada jugador lanza un tejo por ronda. Las mechas reventadas se reponen después de cada lanzamiento. Gana quien llegue primero a la meta.</p>
+    <p class="prose"><b>Reto:</b> 10 tejos para hacer el mayor puntaje posible. La mano no cuenta.</p>
+    <p class="prose"><b>Salas:</b> uno crea la sala y pasa el código de 4 números; hasta 4 jugadores, cada uno en su celular. Si alguien no está cuando le toca, pierde el turno.</p>
+    <div class="cta"><button class="btn" id="btnRulesBack">Entendido</button></div>
+  </div></div>
+</section>
+
+<section class="screen" id="pause" hidden>
+  <div class="panel"><div class="pin">
+    <h2>Pausa</h2>
+    <p class="prose" id="pauseInfo"></p>
+    <div class="cta">
+      <button class="btn" id="btnResume">Seguir</button>
+      <button class="btn ghost" id="btnRestart">Reiniciar</button>
+      <button class="btn ghost" id="btnMenu">Menú</button>
+    </div>
+  </div></div>
+</section>
+
+<section class="screen" id="over" hidden>
+  <div class="panel"><div class="pin">
+    <h3 id="overEyebrow">Fin de la partida</h3>
+    <div class="winner" id="overWinner"></div>
+    <p class="prose" id="overLine"></p>
+    <div style="overflow-x:auto"><table class="stats" id="overStats"></table></div>
+    <div class="cta">
+      <button class="btn" id="btnAgain">Revancha</button>
+      <button class="btn ghost" id="btnOverMenu">Menú</button>
+    </div>
+  </div></div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+/* ================= Constantes del mundo (metros) ================= */
+const G = 9.81;
+const S2 = Math.SQRT1_2;
+const CY = 0.62;            // altura del centro de la cara de greda
+const HU = 0.45, HV = 0.5;  // medias dimensiones de la greda (ancho / a lo largo de la pendiente)
+const FW = 0.10;            // ancho del marco
+const RB = 0.075;           // radio del bocín (aro)
+const R_EMB = 0.056;        // centro del tejo dentro de este radio = embocinada
+const RT = 0.045, TT = 0.03;// radio y grosor del tejo
+const MECHA_R = 0.079;      // distancia de cada mecha al centro
+const MECHA_HIT = 0.045;    // distancia tejo–mecha para reventarla
+const MECHA_ANG = [45, 135, 225, 315].map(a => a * Math.PI / 180);
+const THETA = 0.6;          // ángulo de salida del lanzamiento (rad)
+const REL = { x: 0, y: 1.0, z: -0.25 }; // punto donde se suelta el tejo
+const COLORS = ['#d8392d', '#2565b3', '#2f915c', '#f3c22f'];
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+const rand = (a, b) => a + Math.random() * (b - a);
+function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+
+/* Geometría de la cancha (se recalcula con la distancia) */
+const W = {
+  D: 18.5,
+  C: V(0, CY, -18.5),
+  n: V(0, S2, S2),   // normal de la greda (mira al lanzador y hacia arriba)
+  s: V(0, S2, -S2),  // dirección "arriba" de la pendiente
+  a: V(1, 0, 0),
+  ZB: -18.5 - 0.8,   // tablero de atrás
+};
+function setDistance(D) {
+  W.D = D; W.C.set(0, CY, -D); W.ZB = -D - 0.8;
+}
+function toUV(p) { const d = p.clone().sub(W.C); return { u: d.dot(W.a), v: d.dot(W.s) }; }
+function fromUV(u, v, lift = 0) { return W.C.clone().addScaledVector(W.a, u).addScaledVector(W.s, v).addScaledVector(W.n, lift); }
+
+/* ================= Texturas pintadas en canvas ================= */
+function cnv(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
+function tex(c, rx = 1, ry = 1, srgb = true) {
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry);
+  if (srgb) t.encoding = THREE.sRGBEncoding;
+  t.anisotropy = 4; return t;
+}
+function noiseFill(g, w, h, base, n, spread, alpha) {
+  g.fillStyle = base; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < n; i++) {
+    const l = rand(-spread, spread);
+    g.fillStyle = l > 0 ? `rgba(255,248,235,${alpha * l / spread})` : `rgba(20,12,4,${-alpha * l / spread})`;
+    const r = rand(.6, 3.2); g.beginPath(); g.arc(rand(0, w), rand(0, h), r, 0, 7); g.fill();
+  }
+}
+function makeClayTex() {
+  const [c, g] = cnv(512, 512);
+  noiseFill(g, 512, 512, '#6a6356', 9000, 1, .16);
+  g.globalAlpha = .18;
+  for (let i = 0; i < 26; i++) { // pasadas de la pala
+    g.strokeStyle = Math.random() < .5 ? '#5d564b' : '#9a9283'; g.lineWidth = rand(8, 30);
+    g.beginPath(); const y = rand(0, 512); g.moveTo(-20, y); g.bezierCurveTo(150, y + rand(-40, 40), 350, y + rand(-40, 40), 540, y + rand(-30, 30)); g.stroke();
+  }
+  g.globalAlpha = .35;
+  for (let i = 0; i < 18; i++) { // huellas de tejos viejos
+    const x = rand(30, 482), y = rand(30, 482), r = rand(14, 22);
+    const gr = g.createRadialGradient(x, y, r * .3, x, y, r); gr.addColorStop(0, '#4b453c'); gr.addColorStop(.8, '#5e574c'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+  }
+  g.globalAlpha = 1; return tex(c);
+}
+function makeFloorTex() {
+  const [c, g] = cnv(512, 512);
+  noiseFill(g, 512, 512, '#5e4a3a', 12000, 1, .22);
+  g.globalAlpha = .12; g.fillStyle = '#2a1d12';
+  for (let i = 0; i < 40; i++) { g.beginPath(); g.ellipse(rand(0, 512), rand(0, 512), rand(20, 70), rand(8, 30), rand(0, 3), 0, 7); g.fill(); }
+  g.globalAlpha = 1; return tex(c, 3, 8);
+}
+function makeWallTex() {
+  const [c, g] = cnv(512, 512);
+  noiseFill(g, 512, 512, '#e7dcc6', 6000, 1, .10);
+  g.globalAlpha = .08; g.fillStyle = '#6d5b44';
+  for (let i = 0; i < 30; i++) { g.beginPath(); g.ellipse(rand(0, 512), rand(0, 512), rand(30, 90), rand(20, 60), 0, 0, 7); g.fill(); }
+  g.globalAlpha = 1; return tex(c, 6, 1);
+}
+function makeWoodTex(base, edge) {
+  const [c, g] = cnv(256, 256);
+  g.fillStyle = base; g.fillRect(0, 0, 256, 256);
+  g.globalAlpha = .16;
+  for (let i = 0; i < 60; i++) { g.strokeStyle = Math.random() < .5 ? '#000' : '#fff'; g.lineWidth = rand(.5, 2); g.beginPath(); const y = rand(0, 256); g.moveTo(0, y); g.bezierCurveTo(80, y + rand(-6, 6), 170, y + rand(-6, 6), 256, y + rand(-4, 4)); g.stroke(); }
+  g.globalAlpha = .3;
+  for (let i = 0; i < 80; i++) { g.fillStyle = '#1b130b'; g.fillRect(rand(0, 256), rand(0, 256), rand(1, 4), rand(1, 2)); } // pintura saltada
+  if (edge) { g.globalAlpha = 1; g.fillStyle = edge; g.fillRect(0, 0, 256, 18); g.fillRect(0, 238, 256, 18); }
+  g.globalAlpha = 1; return tex(c);
+}
+function makeStripeTex() {
+  const [c, g] = cnv(64, 64);
+  g.fillStyle = '#fcd116'; g.fillRect(0, 0, 64, 32);   // bandera de Colombia
+  g.fillStyle = '#003893'; g.fillRect(0, 32, 64, 16);
+  g.fillStyle = '#ce1126'; g.fillRect(0, 48, 64, 16);
+  return tex(c, 1, 1);
+}
+function signTex(lines, bg, fg, shadow, w = 1024, h = 256) {
+  const [c, g] = cnv(w, h);
+  g.fillStyle = bg; g.fillRect(0, 0, w, h);
+  g.globalAlpha = .12; for (let i = 0; i < 2500; i++) { g.fillStyle = Math.random() < .5 ? '#000' : '#fff'; g.fillRect(rand(0, w), rand(0, h), rand(1, 3), rand(1, 2)); }
+  g.globalAlpha = 1;
+  g.strokeStyle = fg; g.lineWidth = 6; g.strokeRect(14, 14, w - 28, h - 28);
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  lines.forEach((ln, i) => {
+    const size = ln.size; g.font = `${size}px "Alfa Slab One", Georgia, serif`;
+    const y = ln.y * h;
+    g.fillStyle = shadow; g.fillText(ln.t, w / 2 + size * .06, y + size * .06);
+    g.fillStyle = ln.c || fg; g.fillText(ln.t, w / 2, y);
+  });
+  return tex(c);
+}
+function softTex() {
+  const [c, g] = cnv(64, 64);
+  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.35, 'rgba(255,255,255,.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return tex(c, 1, 1, false);
+}
+function craterTex() {
+  const [c, g] = cnv(128, 128);
+  const gr = g.createRadialGradient(64, 64, 10, 64, 64, 64);
+  gr.addColorStop(0, 'rgba(30,24,18,.95)'); gr.addColorStop(.55, 'rgba(50,42,34,.7)'); gr.addColorStop(.75, 'rgba(160,150,135,.35)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return tex(c, 1, 1, false);
+}
+function scorchTex() {
+  const [c, g] = cnv(128, 128);
+  for (let i = 0; i < 14; i++) {
+    const a = rand(0, 7), r = rand(20, 60);
+    const gr = g.createRadialGradient(64, 64, 0, 64 + Math.cos(a) * r * .4, 64 + Math.sin(a) * r * .4, r);
+    gr.addColorStop(0, 'rgba(15,10,6,.5)'); gr.addColorStop(1, 'rgba(15,10,6,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  }
+  return tex(c, 1, 1, false);
+}
+
+/* ================= Escena ================= */
+let renderer, scene, cam, lupaCam, hall, cancha, mechaMeshes = [], reticle, reticleCore, clayMat;
+const T = {}; // texturas
+const mats = {};
+
+function buildRenderer() {
+  const canvas = document.getElementById('gl');
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.autoClear = false;
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color('#1a140e');
+  scene.fog = new THREE.Fog('#1a140e', 26, 46);
+  cam = new THREE.PerspectiveCamera(14, 1, 0.05, 90);
+  lupaCam = new THREE.PerspectiveCamera(26, 1, 0.02, 20);
+}
+
+function buildTextures() {
+  T.clay = makeClayTex(); T.floor = makeFloorTex(); T.wall = makeWallTex();
+  T.woodGreen = makeWoodTex('#2b6b47', '#f3c22f');
+  T.woodRed = makeWoodTex('#7d2a21', null);
+  T.woodPlain = makeWoodTex('#5a4029', null);
+  T.stripes = makeStripeTex(); T.soft = softTex(); T.crater = craterTex(); T.scorch = scorchTex();
+  T.sign = signTex([
+    { t: 'CLUB DE TEJO', size: 92, y: .38, c: '#f3c22f' },
+    { t: 'EL COSMO', size: 70, y: .74, c: '#f5eddd' }], '#2565b3', '#f3c22f', '#16110c');
+  T.fia = signTex([
+    { t: 'HOY NO SE FÍA', size: 84, y: .38, c: '#d8392d' },
+    { t: 'MAÑANA SÍ', size: 84, y: .74, c: '#2565b3' }], '#f2ead8', '#d8392d', 'rgba(0,0,0,.25)');
+}
+
+function std(opts) { return new THREE.MeshStandardMaterial(opts); }
+
+function buildHall() {
+  if (hall) scene.remove(hall);
+  hall = new THREE.Group(); scene.add(hall);
+  const D = W.D, len = D + 6, zMid = 3 - len / 2;
+  T.floor.repeat.set(3, len / 3);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(7, len), std({ map: T.floor, roughness: 1 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, zMid); floor.receiveShadow = true; hall.add(floor);
+  // carril de tiro un poco más claro
+  const lane = new THREE.Mesh(new THREE.PlaneGeometry(2.4, D - 1.2), std({ color: '#7a6450', roughness: 1, transparent: true, opacity: .35 }));
+  lane.rotation.x = -Math.PI / 2; lane.position.set(0, .002, -D / 2 + .2); lane.receiveShadow = true; hall.add(lane);
+  // línea de lanzamiento
+  const line = new THREE.Mesh(new THREE.PlaneGeometry(2.6, .06), std({ color: '#f5eddd', roughness: .9 }));
+  line.rotation.x = -Math.PI / 2; line.position.set(0, .004, 0); hall.add(line);
+  T.wall.repeat.set(len / 3, 1);
+  const wallMat = std({ map: T.wall, roughness: 1 });
+  [-3.5, 3.5].forEach(x => {
+    const w = new THREE.Mesh(new THREE.PlaneGeometry(len, 4.2), wallMat);
+    w.position.set(x, 2.1, zMid); w.rotation.y = x < 0 ? Math.PI / 2 : -Math.PI / 2; w.receiveShadow = true; hall.add(w);
+    const band = new THREE.Mesh(new THREE.PlaneGeometry(len, .34), std({ map: T.stripes, roughness: .8 }));
+    band.position.set(x * .998, 1.05, zMid); band.rotation.y = w.rotation.y; hall.add(band);
+    const zocalo = new THREE.Mesh(new THREE.PlaneGeometry(len, .5), std({ color: '#2b6b47', roughness: .9 }));
+    zocalo.position.set(x * .998, .25, zMid); zocalo.rotation.y = w.rotation.y; hall.add(zocalo);
+  });
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(7, 4.2), wallMat.clone()); back.material.map = T.wall.clone(); back.material.map.repeat.set(2, 1); back.material.map.needsUpdate = true;
+  back.position.set(0, 2.1, W.ZB - .9); hall.add(back);
+  const front = new THREE.Mesh(new THREE.PlaneGeometry(7, 4.2), wallMat); front.position.set(0, 2.1, 3); front.rotation.y = Math.PI; hall.add(front);
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(7, len), std({ color: '#21180f', roughness: 1 }));
+  ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 4.2, zMid); hall.add(ceil);
+  const beamMat = std({ map: T.woodPlain, roughness: .9 });
+  for (let z = 1; z > -D - 1; z -= 4.2) { const b = new THREE.Mesh(new THREE.BoxGeometry(7, .22, .2), beamMat); b.position.set(0, 4.05, z); hall.add(b); }
+  // letreros
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.4, .85), std({ map: T.sign, roughness: .8 }));
+  sign.position.set(0, 3.05, W.ZB - .88); hall.add(sign);
+  const fia = new THREE.Mesh(new THREE.PlaneGeometry(1.8, .45), std({ map: T.fia, roughness: .9 }));
+  fia.position.set(-3.48, 2.2, -D * .45); fia.rotation.y = Math.PI / 2; hall.add(fia);
+  // bombillos colgantes
+  const bulbMat = new THREE.MeshBasicMaterial({ color: '#ffd9a0' });
+  [-2, -D * .5, -D + 1.2].forEach((z, i) => {
+    const bx = i % 2 ? -1.35 : 1.35;
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 10), bulbMat); bulb.position.set(bx, 3.55, z); hall.add(bulb);
+    const cord = new THREE.Mesh(new THREE.CylinderGeometry(.006, .006, .6), std({ color: '#111' })); cord.position.set(bx, 3.9, z); hall.add(cord);
+    if (i < 2) { const pl = new THREE.PointLight('#ffc98a', i ? 1.1 : .8, 14, 1.6); pl.position.set(bx, 3.45, z); hall.add(pl); }
+  });
+  // canasta y butaco junto a la línea
+  const crate = new THREE.Mesh(new THREE.BoxGeometry(.45, .3, .32), std({ color: '#b8352a', roughness: .7 }));
+  crate.position.set(-1.9, .15, .4); crate.rotation.y = .3; crate.castShadow = true; hall.add(crate);
+  const crate2 = crate.clone(); crate2.position.set(-1.85, .45, .42); crate2.rotation.y = .1; hall.add(crate2);
+  const stool = new THREE.Group();
+  const seat = new THREE.Mesh(new THREE.CylinderGeometry(.18, .18, .04, 18), std({ map: T.woodPlain })); seat.position.y = .46; stool.add(seat);
+  for (let k = 0; k < 3; k++) { const leg = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, .46), std({ color: '#3a2a1b' })); const a = k * 2.1; leg.position.set(Math.cos(a) * .12, .23, Math.sin(a) * .12); stool.add(leg); }
+  stool.position.set(1.9, 0, .6); hall.add(stool);
+
+  // luces
+  const hemi = new THREE.HemisphereLight('#ffe8c8', '#3a2a1c', .55); hall.add(hemi);
+  const spot = new THREE.SpotLight('#fff1d8', 1.7, 12, .62, .5, 1.2);
+  spot.position.copy(W.C).add(V(.8, 3.2, 2.2)); spot.target.position.copy(W.C);
+  spot.castShadow = true; spot.shadow.mapSize.set(1024, 1024); spot.shadow.bias = -0.0006; spot.shadow.camera.near = .5; spot.shadow.camera.far = 8;
+  hall.add(spot, spot.target);
+  const fill = new THREE.PointLight('#ffb070', .7, 8, 1.5); fill.position.copy(W.C).add(V(-1.2, 1.2, 2.5)); hall.add(fill);
+
+  buildCancha();
+}
+
+function buildCancha() {
+  if (cancha) hall.remove(cancha);
+  cancha = new THREE.Group();
+  const m = new THREE.Matrix4().makeBasis(W.a, W.s, W.n);
+  cancha.quaternion.setFromRotationMatrix(m); cancha.position.copy(W.C);
+  hall.add(cancha);
+  clayMat = std({ map: T.clay, roughness: .96, metalness: 0, color: '#ffffff' });
+  const clay = new THREE.Mesh(new THREE.PlaneGeometry(HU * 2, HV * 2, 1, 1), clayMat); clay.receiveShadow = true; cancha.add(clay);
+  const frameMat = std({ map: T.woodGreen, roughness: .8 });
+  const fw = FW, depth = .2;
+  const parts = [
+    [HU * 2 + fw * 2, fw, 0, HV + fw / 2], [HU * 2 + fw * 2, fw, 0, -HV - fw / 2],
+    [fw, HV * 2, HU + fw / 2, 0], [fw, HV * 2, -HU - fw / 2, 0]];
+  parts.forEach(([w, h, x, y]) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, depth), frameMat); b.position.set(x, y, -depth / 2 + .018); b.castShadow = b.receiveShadow = true; cancha.add(b); });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(HU * 2 + fw * 2, HV * 2 + fw * 2, .35), std({ map: T.woodRed, roughness: .9 }));
+  body.position.z = -.35 / 2 - .17; body.castShadow = true; cancha.add(body);
+  // bocín
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(RB, .0075, 12, 56), std({ color: '#9aa0a4', metalness: .9, roughness: .32 }));
+  ring.position.z = .001; ring.castShadow = true; cancha.add(ring);
+  const inner = new THREE.Mesh(new THREE.CircleGeometry(RB - .006, 40), std({ color: '#5f584d', roughness: 1 }));
+  inner.position.z = -.004; cancha.add(inner);
+  // soporte y tablero
+  const sup = new THREE.Mesh(new THREE.BoxGeometry(HU * 2 + fw * 2, .34, .75), std({ map: T.woodRed, roughness: .9 }));
+  sup.position.set(0, .17, -W.D - .4); sup.castShadow = true; hall.add(sup); cancha.userData.sup = sup;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(3.3, 2.5, .08), std({ map: T.woodPlain, roughness: .85, color: '#d9b08a' }));
+  board.position.set(0, 1.25, W.ZB - .04); board.receiveShadow = true; hall.add(board);
+  const boardBand = new THREE.Mesh(new THREE.PlaneGeometry(3.3, .22), std({ map: T.stripes, roughness: .8 }));
+  boardBand.position.set(0, 2.38, W.ZB + .002); hall.add(boardBand);
+  [-1.65, 1.65].forEach(x => { const sb = new THREE.Mesh(new THREE.BoxGeometry(.06, 1.7, 2.4), std({ map: T.woodPlain, roughness: .85 })); sb.position.set(x, .85, -W.D - .1); sb.castShadow = sb.receiveShadow = true; hall.add(sb); });
+  buildMechas();
+  buildReticle();
+}
+
+function mechaGeo() {
+  const sh = new THREE.Shape(); sh.moveTo(0, .03); sh.lineTo(-.026, -.024); sh.lineTo(.026, -.024); sh.closePath();
+  return new THREE.ExtrudeGeometry(sh, { depth: .006, bevelEnabled: true, bevelThickness: .003, bevelSize: .003, bevelSegments: 1 });
+}
+let MECHA_GEO;
+function buildMechas() {
+  mechaMeshes.forEach(m => m.parent && m.parent.remove(m)); mechaMeshes = [];
+  MECHA_GEO = MECHA_GEO || mechaGeo();
+  const mm = std({ color: '#f6eee8', roughness: .85 });
+  const edge = std({ color: '#e07a8a', roughness: .85 });
+  MECHA_ANG.forEach((a, i) => {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(MECHA_GEO, mm); body.castShadow = true; g.add(body);
+    const stripe = new THREE.Mesh(new THREE.PlaneGeometry(.03, .006), edge); stripe.position.set(0, -.008, .0105); g.add(stripe);
+    g.position.set(Math.cos(a) * MECHA_R, Math.sin(a) * MECHA_R, .002);
+    g.rotation.z = a + Math.PI / 2; // la punta mira al centro
+    g.userData = { i, alive: true, u: Math.cos(a) * MECHA_R, v: Math.sin(a) * MECHA_R };
+    cancha.add(g); mechaMeshes.push(g);
+  });
+}
+function resetMechas(animate) {
+  mechaMeshes.forEach(m => { m.visible = true; m.userData.alive = true; if (animate) { m.scale.set(.01, .01, .01); m.userData.grow = 0; } });
+}
+
+function buildReticle() {
+  if (reticle) scene.remove(reticle);
+  reticle = new THREE.Group();
+  const mat = new THREE.MeshBasicMaterial({ color: '#f3c22f', transparent: true, opacity: .95, depthWrite: false });
+  const ring = new THREE.Mesh(new THREE.RingGeometry(.05, .062, 40), mat); reticle.add(ring);
+  const cross = new THREE.Group();
+  [[.13, .008], [.008, .13]].forEach(([w, h]) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat); cross.add(p); });
+  reticle.add(cross);
+  reticleCore = mat; reticle.renderOrder = 5; reticle.visible = false; scene.add(reticle);
+}
+
+function makeTejo(color) {
+  const geo = new THREE.CylinderGeometry(RT * .92, RT, TT, 30, 1);
+  const steel = std({ color: '#6f7376', metalness: .85, roughness: .42 });
+  const paint = std({ color, metalness: .15, roughness: .55 });
+  const m = new THREE.Mesh(geo, [steel, paint, steel]);
+  m.castShadow = true; return m;
+}
+
+/* ================= Física del lanzamiento ================= */
+const AIM = { P0: 0.6, span: () => 2.4 + W.D * 0.05, L: 0.9 };
+
+// Velocidad de salida para que el tejo pase por (L, CY, -D - dz)
+function solveThrow(L, dz) {
+  const tx = L, tz = -W.D - dz;
+  const dx = tx - REL.x, dzz = tz - REL.z;
+  const Dh = Math.hypot(dx, dzz), h = CY - REL.y;
+  const c = Math.cos(THETA), tn = Math.tan(THETA);
+  const v = Math.sqrt(G * Dh * Dh / (2 * c * c * (Dh * tn - h)));
+  return V(dx / Dh * v * c, v * Math.sin(THETA), dzz / Dh * v * c);
+}
+function aimToVel(aim) { return solveThrow(aim.L, (aim.P - AIM.P0) * AIM.span()); }
+
+function detect(a, b) {
+  const fa = a.clone().sub(W.C).dot(W.n), fb = b.clone().sub(W.C).dot(W.n);
+  if (fa > 0 && fb <= 0) {
+    const x = a.clone().lerp(b, fa / (fa - fb)); const { u, v } = toUV(x);
+    if (Math.abs(u) <= HU + FW && Math.abs(v) <= HV + FW) {
+      const inClay = Math.abs(u) <= HU - RT * .3 && Math.abs(v) <= HV - RT * .3;
+      return { kind: inClay ? 'clay' : 'frame', p: x, n: W.n.clone(), u, v };
+    }
+  }
+  if (fb <= 0 && fb > -.5) { // dentro del cajón por detrás de la cara
+    const { u, v } = toUV(b);
+    if (Math.abs(u) <= HU + FW && Math.abs(v) <= HV + FW) return { kind: 'frame', p: fromUV(u, v, .003), n: W.n.clone(), u, v };
+  }
+  if (a.z > W.ZB && b.z <= W.ZB && b.y < 2.5 && Math.abs(b.x) < 1.65) return { kind: 'board', p: V(b.x, b.y, W.ZB + .002), n: V(0, 0, 1) };
+  if (b.z < -W.D + 1.1 && b.y < 1.7) {
+    if (a.x < 1.6 && b.x >= 1.6) return { kind: 'board', p: V(1.6, b.y, b.z), n: V(-1, 0, 0) };
+    if (a.x > -1.6 && b.x <= -1.6) return { kind: 'board', p: V(-1.6, b.y, b.z), n: V(1, 0, 0) };
+  }
+  if (b.x > 3.44) return { kind: 'wall', p: V(3.44, b.y, b.z), n: V(-1, 0, 0) };
+  if (b.x < -3.44) return { kind: 'wall', p: V(-3.44, b.y, b.z), n: V(1, 0, 0) };
+  if (Math.abs(b.x) < .56 && b.y < .34 && a.z >= -W.D - .025 && b.z < -W.D - .025) return { kind: 'board', p: V(b.x, b.y, -W.D - .023), n: V(0, 0, 1) };
+  if (b.y <= TT / 2) return { kind: 'floor', p: V(b.x, TT / 2, b.z), n: V(0, 1, 0) };
+  return null;
+}
+
+function simulate(p0, v0, stopAtFirst) {
+  const dt = 1 / 300;
+  const p = p0.clone(), v = v0.clone(); let t = 0;
+  const path = [{ t: 0, p: p.clone() }];
+  const out = { path, first: null, firstT: 0, firstP: null, events: [], clay: null };
+  let onFloor = false, bounces = 0;
+  for (let i = 0; i < 3600; i++) {
+    const prev = p.clone();
+    if (onFloor) {
+      const sp = Math.hypot(v.x, v.z), dec = 4.5 * dt;
+      if (sp <= dec) { v.set(0, 0, 0); break; }
+      v.x -= v.x / sp * dec; v.z -= v.z / sp * dec; p.addScaledVector(v, dt); p.y = TT / 2;
+    } else { v.y -= G * dt; p.addScaledVector(v, dt); }
+    t += dt;
+    const hit = detect(prev, p);
+    if (hit && !(onFloor && hit.kind === 'floor')) {
+      p.copy(hit.p);
+      if (!out.first) { out.first = hit.kind; out.firstT = t; out.firstP = hit.p.clone(); out.firstN = hit.n.clone(); }
+      out.events.push({ t, kind: hit.kind, p: hit.p.clone(), speed: v.length() });
+      if (hit.kind === 'clay') { out.clay = hit; out.vEnd = v.clone(); break; }
+      if (stopAtFirst) break;
+      const n = hit.n, vn = v.dot(n);
+      if (vn < 0) {
+        v.addScaledVector(n, -(1 + .3) * vn);
+        const vt = v.clone().addScaledVector(n, -v.dot(n)); v.addScaledVector(vt, -.35);
+      }
+      p.addScaledVector(n, .003); bounces++;
+      if (hit.kind === 'floor' && Math.abs(v.y) < 1.1) { onFloor = true; v.y = 0; p.y = TT / 2; }
+      if (bounces > 12) break;
+    }
+    if (i % 2 === 0) path.push({ t, p: p.clone() });
+  }
+  path.push({ t, p: p.clone() });
+  out.duration = t; out.end = p.clone(); out.onFloor = onFloor;
+  return out;
+}
+
+function predict(aim) {
+  const sim = simulate(V(REL.x, REL.y, REL.z), aimToVel(aim), true);
+  return sim.first ? { kind: sim.first, p: sim.firstP, n: sim.firstN } : null;
+}
+
+function evaluate(sim) {
+  if (sim.first !== 'clay') return { valid: false, kind: 'nulo', why: sim.first, pts: 0 };
+  const { u, v } = sim.clay; const d = Math.hypot(u, v);
+  const mechas = mechaMeshes.filter(m => m.userData.alive && Math.hypot(m.userData.u - u, m.userData.v - v) < MECHA_HIT);
+  const emb = d <= R_EMB;
+  const ring = !emb && Math.abs(d - RB) < RT * .95;
+  let kind = 'greda', pts = 0;
+  if (emb && mechas.length) { kind = 'monona'; pts = 9; }
+  else if (emb) { kind = 'embocinada'; pts = 6; }
+  else if (mechas.length) { kind = 'mecha'; pts = 3; }
+  return { valid: true, kind, pts, d, u, v, mechas, ring, emb };
+}
+
+/* Pose final de un tejo clavado en la greda */
+function embedPose(u, v, vEnd, emb) {
+  const pos = fromUV(u, v, emb ? -.004 : TT * .12);
+  const back = vEnd ? vEnd.clone().normalize().negate() : W.n.clone();
+  const axis = emb ? W.n.clone() : W.n.clone().multiplyScalar(.7).addScaledVector(back, .3).normalize();
+  const q = new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), axis);
+  q.multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), rand(0, 6.28)));
+  return { pos, q };
+}
+
+/* ================= Efectos ================= */
+const fx = [];
+let shake = 0;
+function addFx(o) { fx.push(o); }
+function updateFx(dt) {
+  for (let i = fx.length - 1; i >= 0; i--) { if (!fx[i].update(dt)) { fx[i].dispose && fx[i].dispose(); fx.splice(i, 1); } }
+}
+function burst(pos, normal, { count = 60, colors = ['#ffd27a', '#ff8a3a', '#fff3c4'], speed = [1.5, 4], grav = 3, life = .9, size = .035, spread = 1 }) {
+  if (reduceMotion) count = Math.ceil(count / 3);
+  const geo = new THREE.BufferGeometry();
+  const P = new Float32Array(count * 3), C = new Float32Array(count * 3), vel = [];
+  const col = new THREE.Color();
+  for (let i = 0; i < count; i++) {
+    P.set([pos.x, pos.y, pos.z], i * 3);
+    col.set(colors[i % colors.length]); C.set([col.r, col.g, col.b], i * 3);
+    const d = V(gauss() * spread, gauss() * spread, gauss() * spread).add(normal.clone().multiplyScalar(1.6)).normalize();
+    vel.push(d.multiplyScalar(rand(speed[0], speed[1])));
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(P, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(C, 3));
+  const mat = new THREE.PointsMaterial({ size, map: T.soft, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true });
+  const pts = new THREE.Points(geo, mat); scene.add(pts);
+  let t = 0;
+  addFx({
+    update(dt) {
+      t += dt; const a = geo.attributes.position.array;
+      for (let i = 0; i < count; i++) { vel[i].y -= grav * dt; vel[i].multiplyScalar(1 - 1.2 * dt); a[i * 3] += vel[i].x * dt; a[i * 3 + 1] += vel[i].y * dt; a[i * 3 + 2] += vel[i].z * dt; }
+      geo.attributes.position.needsUpdate = true; mat.opacity = Math.max(0, 1 - t / life); return t < life;
+    }, dispose() { scene.remove(pts); geo.dispose(); mat.dispose(); }
+  });
+}
+function dirt(pos, normal, n = 26) {
+  burst(pos, normal, { count: n, colors: ['#6f675b', '#8d8476', '#544c41'], speed: [.6, 1.8], grav: 7, life: .7, size: .028, spread: .8 });
+}
+function smoke(pos, n = 9) {
+  if (reduceMotion) n = 4;
+  for (let i = 0; i < n; i++) {
+    const m = new THREE.SpriteMaterial({ map: T.soft, color: '#cfc4b4', transparent: true, opacity: .55, depthWrite: false });
+    const s = new THREE.Sprite(m); s.position.copy(pos).add(V(gauss() * .04, gauss() * .04, gauss() * .04)); s.scale.setScalar(.08);
+    const vel = W.n.clone().multiplyScalar(rand(.25, .7)).add(V(gauss() * .12, rand(.15, .45), gauss() * .12));
+    scene.add(s); let t = -i * .03; const life = rand(1.6, 2.6);
+    addFx({ update(dt) { t += dt; if (t < 0) return true; s.position.addScaledVector(vel, dt); vel.multiplyScalar(1 - .8 * dt); s.scale.setScalar(.08 + t * .45); m.opacity = .55 * Math.max(0, 1 - t / life); return t < life; }, dispose() { scene.remove(s); m.dispose(); } });
+  }
+}
+function flashLight(pos, power = 6) {
+  const l = new THREE.PointLight('#ffb35c', power, 6, 2); l.position.copy(pos).addScaledVector(W.n, .2); scene.add(l);
+  let t = 0; addFx({ update(dt) { t += dt; l.intensity = power * Math.max(0, 1 - t / .35); return t < .35; }, dispose() { scene.remove(l); } });
+}
+const decals = [];
+function decal(u, v, texture, size, lift = .0015) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false }));
+  m.position.set(u, v, lift); m.rotation.z = rand(0, 6.28); m.renderOrder = 2; cancha.add(m); decals.push(m); return m;
+}
+function clearDecals() { decals.forEach(d => { d.parent && d.parent.remove(d); d.geometry.dispose(); d.material.dispose(); }); decals.length = 0; }
+function explodeMecha(m) {
+  m.userData.alive = false; m.visible = false;
+  const wp = fromUV(m.userData.u, m.userData.v, .01);
+  burst(wp, W.n, { count: 90, speed: [1.2, 4.2], grav: 2.5, life: 1.0, size: .028 });
+  burst(wp, W.n, { count: 24, colors: ['#ffffff', '#ffe9b0'], speed: [.4, 1.4], grav: .5, life: .45, size: .045 });
+  smoke(wp); flashLight(wp, 9);
+  decal(m.userData.u, m.userData.v, T.scorch, .16, .002);
+  shake = Math.max(shake, reduceMotion ? .006 : .03);
+}
+
+/* ================= Sonido (sintetizado) ================= */
+const A = {
+  ctx: null, out: null, noise: null, muted: false,
+  init() {
+    try {
+      if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      this.ctx = new AC();
+      const comp = this.ctx.createDynamicsCompressor(); comp.connect(this.ctx.destination);
+      this.out = this.ctx.createGain(); this.out.gain.value = this.muted ? 0 : .85; this.out.connect(comp);
+      const len = this.ctx.sampleRate * 2, b = this.ctx.createBuffer(1, len, this.ctx.sampleRate), d = b.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      this.noise = b;
+    } catch (e) { this.ctx = null; }
+  },
+  setMuted(m) { this.muted = m; if (this.out) this.out.gain.setTargetAtTime(m ? 0 : .85, this.ctx.currentTime, .02); },
+  ok() { return this.ctx && !this.muted; },
+  nz(dur, { type = 'lowpass', f0 = 1000, f1 = f0, q = .7, gain = .5, attack = .005, delay = 0 } = {}) {
+    if (!this.ok()) return; const c = this.ctx, t = c.currentTime + delay;
+    const s = c.createBufferSource(); s.buffer = this.noise; s.loop = true;
+    const f = c.createBiquadFilter(); f.type = type; f.Q.value = q; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(this.out); s.start(t, Math.random()); s.stop(t + dur + .05);
+  },
+  tone(f0, dur, { f1 = f0, type = 'sine', gain = .4, attack = .004, delay = 0 } = {}) {
+    if (!this.ok()) return; const c = this.ctx, t = c.currentTime + delay;
+    const o = c.createOscillator(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.out); o.start(t); o.stop(t + dur + .05);
+  },
+  whoosh() { this.nz(.55, { type: 'bandpass', f0: 380, f1: 1900, q: 1.4, gain: .22, attack: .2 }); },
+  thud(k = 1) { this.tone(105, .28, { f1: 42, gain: .9 * k }); this.nz(.2, { f0: 900, f1: 160, gain: .55 * k }); },
+  clank() { [523, 1187, 1964, 2875, 3920].forEach((f, i) => this.tone(f, .5 + .25 * Math.random(), { gain: .1 / (1 + i * .3), f1: f * .995 })); },
+  wood() { this.tone(230, .14, { f1: 150, type: 'triangle', gain: .45 }); this.nz(.09, { type: 'bandpass', f0: 1400, gain: .3 }); },
+  floor() { this.nz(.14, { f0: 700, f1: 200, gain: .4 }); this.tone(150, .12, { f1: 80, gain: .3 }); },
+  boom(big) {
+    this.nz(1.2, { f0: 3200, f1: 110, gain: 1, attack: .002 });
+    this.tone(78, .8, { f1: 30, gain: 1 });
+    for (let i = 0; i < 10; i++) this.nz(.04, { type: 'highpass', f0: 2500, gain: .25, delay: .05 + Math.random() * .45 });
+    if (big) this.nz(.9, { f0: 1800, f1: 90, gain: .8, attack: .002, delay: .12 });
+  },
+  cheer() {
+    for (let i = 0; i < 7; i++) this.nz(1.6 + Math.random(), { type: 'bandpass', f0: rand(700, 1200), f1: rand(900, 1500), q: .9, gain: .12, attack: .35, delay: i * .12 });
+    [0, .18, .36].forEach((d, i) => this.tone(660 + i * 220, .16, { type: 'square', gain: .04, delay: .1 + d }));
+  },
+  aww() { this.nz(1.2, { type: 'bandpass', f0: 900, f1: 420, q: 1.2, gain: .14, attack: .2 }); },
+  tick() { this.tone(880, .05, { type: 'square', gain: .035 }); },
+};
+function buzz(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { } }
+
+/* ================= Estado ================= */
+const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
+const settings = { mode: 'cpu', count: 2, names: ['Javi', 'Pacho', 'Mafe', 'Leo'], diff: 1, dist: 18.5, goal: 27, aimHelp: true, muted: false };
+const RETO_THROWS = 10;
+let game = null;
+let phase = 'boot';          // boot | menu | aim | cpu | flight | result | roundEnd | over
+let paused = false;
+let flight = null;           // lanzamiento en curso
+let drag = null;             // arrastre del jugador
+let cpuAim = null;
+let dvdP = 1;                // metros de pendiente por unidad de fuerza
+let lastP = {};              // última fuerza por jugador
+let manoRing = null;
+const timers = [];
+function later(sec, fn) { timers.push({ t: sec, fn }); }
+function tickTimers(dt) { for (let i = timers.length - 1; i >= 0; i--) { timers[i].t -= dt; if (timers[i].t <= 0) { const f = timers[i].fn; timers.splice(i, 1); f(); } } }
+
+function computeDvdP() {
+  const a = predict({ L: 0, P: AIM.P0 - .03 }), b = predict({ L: 0, P: AIM.P0 + .03 });
+  dvdP = (a && b) ? Math.max(.3, (toUV(b.p).v - toUV(a.p).v) / .06) : 1.4;
+}
+
+function newPlayer(name, i, cpu) { return { name, color: COLORS[i], score: 0, cpu: !!cpu, st: { mechas: 0, emb: 0, mon: 0, manos: 0, nulos: 0, tiros: 0 } }; }
+
+function startGame() {
+  timers.length = 0; flight && flight.mesh && scene.remove(flight.mesh); flight = null; drag = null; cpuAim = null;
+  if (Math.abs(W.D - settings.dist) > .01 || !hall) { setDistance(settings.dist); buildHall(); }
+  computeDvdP();
+  let players;
+  if (settings.mode === 'cpu') players = [newPlayer(settings.names[0] || 'Tú', 0), newPlayer('Don Chepe', 1, true)];
+  else if (settings.mode === 'local') players = settings.names.slice(0, settings.count).map((n, i) => newPlayer(n || `Jugador ${i + 1}`, i));
+  else players = [newPlayer(settings.names[0] || 'Tú', 0)];
+  game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: settings.goal, mode: settings.mode, thrown: 0, over: false };
+  lastP = {};
+  clearFeed();
+  showScreen(null); setHud(true);
+  startRound();
+}
+
+function clearCancha() {
+  game && game.tejos.forEach(t => scene.remove(t.mesh));
+  if (game) game.tejos = [];
+  clearDecals();
+  if (manoRing) { cancha.remove(manoRing); manoRing = null; }
+  resetMechas(false);
+}
+
+function startRound() {
+  game.round++; game.scored = false; clearCancha();
+  const n = game.players.length, k = (game.round - 1) % n;
+  game.order = game.players.map((_, i) => (i + k) % n); game.idx = 0;
+  nextThrow();
+}
+
+function current() { return game.players[game.order[game.idx]]; }
+
+function nextThrow() {
+  const p = current();
+  renderBoard(); renderTurn();
+  reticle.visible = false; setGauge(0, lastP[p.name]);
+  if (online()) return netTurn(p);
+  if (p.cpu) {
+    phase = 'cpu'; hint('Don Chepe está midiendo…', true);
+    planCpu(p);
+  } else {
+    phase = 'aim';
+    hint(game.thrown < 2 ? 'Arrastra hacia abajo para cargar · a los lados para apuntar · suelta' : 'Arrastra y suelta para lanzar', true);
+    if (settings.mode === 'local' && game.players.length > 1) toast(`Turno de ${p.name}`);
+  }
+}
+
+/* ---------- Don Chepe ---------- */
+function aimForUV(tu, tv) {
+  let lo = 0, hi = 1, L = tu;
+  for (let k = 0; k < 2; k++) {
+    lo = 0; hi = 1;
+    for (let i = 0; i < 18; i++) { const m = (lo + hi) / 2, pr = predict({ L, P: m }); const v = pr ? toUV(pr.p).v : -9; if (v < tv) lo = m; else hi = m; }
+    const pr = predict({ L, P: (lo + hi) / 2 }); if (pr) L += tu - toUV(pr.p).u;
+  }
+  return { L, P: (lo + hi) / 2 };
+}
+function planCpu(p) {
+  const d = DIFF[settings.diff];
+  let tu = 0, tv = 0;
+  if (settings.diff >= 2 && Math.random() < (settings.diff === 3 ? .7 : .35)) { const a = MECHA_ANG[Math.floor(Math.random() * 4)]; tu = Math.cos(a) * .035; tv = Math.sin(a) * .035; }
+  const ideal = aimForUV(tu, tv);
+  const sig = d.s * Math.pow(W.D / 18.5, .7);
+  const fin = { L: ideal.L + gauss() * sig, P: clamp(ideal.P + gauss() * sig / dvdP, .02, 1) };
+  cpuAim = { from: { L: rand(-.5, .5), P: rand(.2, .45) }, to: fin, t: 0, dur: rand(1.1, 1.6) };
+}
+function updateCpu(dt) {
+  if (!cpuAim) return;
+  cpuAim.t += dt; const k = ease(clamp(cpuAim.t / cpuAim.dur, 0, 1));
+  const wob = Math.sin(cpuAim.t * 5) * .015 * (1 - k);
+  const aim = { L: lerp(cpuAim.from.L, cpuAim.to.L, k) + wob, P: lerp(cpuAim.from.P, cpuAim.to.P, k) };
+  setGauge(aim.P, lastP[current().name]); showReticle(aim);
+  if (cpuAim.t >= cpuAim.dur + .25) { const a = cpuAim.to; cpuAim = null; launch(a); }
+}
+
+/* ---------- Puntería del jugador ---------- */
+function wobble(holdT, t) {
+  const amp = .016 + clamp(holdT - 1.6, 0, 3) * .05;
+  return { x: amp * (Math.sin(2.1 * t + 1.3) * .7 + Math.sin(3.7 * t) * .3), y: amp * (Math.sin(1.7 * t + .4) * .7 + Math.sin(4.3 * t + 2) * .3), amp };
+}
+function currentAim(now) {
+  if (!drag) return null;
+  const w = wobble((now - drag.t0) / 1000, now / 1000);
+  return { L: drag.L + w.x, P: clamp(drag.P + w.y / dvdP, 0, 1), amp: w.amp };
+}
+function showReticle(aim) {
+  if (!aimHelpNow()) { reticle.visible = false; return; }
+  const pr = predict(aim);
+  if (!pr) { reticle.visible = false; return; }
+  reticle.visible = true;
+  reticle.position.copy(pr.p).addScaledVector(pr.n, .006);
+  reticle.quaternion.setFromUnitVectors(V(0, 0, 1), pr.n);
+  reticleCore.color.set(pr.kind === 'clay' ? '#f3c22f' : '#d8392d');
+  const s = 1 + (drag ? clamp(((performance.now() - drag.t0) / 1000 - 1.6) * .25, 0, .8) : 0);
+  reticle.scale.setScalar(s);
+  reticle.userData.uv = pr.kind === 'clay' ? toUV(pr.p) : null;
+}
+
+/* ---------- Lanzar ---------- */
+function finalAim(aim) { return { L: aim.L + gauss() * .012, P: aim.P + gauss() * .012 / dvdP }; }
+function launch(a) {
+  const p = current();
+  lastP[p.name] = a.P;
+  const v0 = aimToVel(a);
+  const sim = simulate(V(REL.x, REL.y, REL.z), v0, false);
+  const res = evaluate(sim);
+  const mesh = makeTejo(p.color); mesh.position.copy(sim.path[0].p); scene.add(mesh);
+  flight = { sim, res, mesh, t: 0, owner: game.order[game.idx], ev: 0, done: false, impactAt: sim.first === 'clay' ? sim.firstT : sim.duration, spin: rand(12, 18) * (Math.random() < .5 ? -1 : 1), tilt: V(rand(-.25, .25), 0, rand(-.25, .25)) };
+  reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
+  game.thrown++;
+  A.whoosh(); buzz(15);
+}
+
+function samplePath(path, t) {
+  let lo = 0, hi = path.length - 1;
+  if (t >= path[hi].t) return path[hi].p.clone();
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (path[m].t <= t) lo = m; else hi = m; }
+  const a = path[lo], b = path[hi]; return a.p.clone().lerp(b.p, (t - a.t) / Math.max(1e-6, b.t - a.t));
+}
+
+function updateFlight(dt) {
+  const f = flight; if (!f || f.done) return;
+  const remain = f.impactAt - f.t;
+  const slow = (f.res.valid && remain < .32 && remain > -.05 && !reduceMotion) ? .42 : 1;
+  f.t += dt * slow;
+  const sim = f.sim;
+  while (f.ev < sim.events.length && sim.events[f.ev].t <= f.t) { impactEvent(sim.events[f.ev], f); f.ev++; }
+  if (f.landed) return;
+  const p = samplePath(sim.path, Math.min(f.t, sim.duration));
+  f.mesh.position.copy(p);
+  const bounced = f.ev > 0;
+  f.mesh.rotation.set(f.tilt.x + (bounced ? f.t * 6 : 0), f.t * f.spin, f.tilt.z + (bounced ? f.t * 4 : 0));
+  if (f.t >= sim.duration) {
+    if (!sim.clay) { f.mesh.position.copy(sim.end); f.mesh.rotation.set(0, rand(0, 6), 0); }
+    finishFlight();
+  }
+}
+
+function impactEvent(e, f) {
+  const strong = clamp(e.speed / 12, .3, 1);
+  if (e.kind === 'clay') {
+    const { u, v } = f.sim.clay;
+    const pose = embedPose(u, v, f.sim.vEnd, f.res.emb);
+    f.mesh.position.copy(pose.pos); f.mesh.quaternion.copy(pose.q); f.landed = true;
+    A.thud(strong); buzz(30);
+    dirt(fromUV(u, v, .02), W.n, f.res.valid ? 30 : 16);
+    decal(u, v, T.crater, f.res.emb ? .1 : .14);
+    if (f.res.valid && (f.res.ring || f.res.emb)) A.clank();
+    if (f.res.valid) f.res.mechas.forEach((m, i) => later(i * .06, () => { explodeMecha(m); A.boom(f.res.kind === 'monona'); buzz([40, 30, 80]); }));
+    if (f.res.mechas && f.res.mechas.length) flashScreen();
+    shake = Math.max(shake, reduceMotion ? 0 : .012);
+    finishFlight();
+  } else if (e.kind === 'floor') { A.floor(); dirt(e.p, V(0, 1, 0), 10); }
+  else { A.wood(); shake = Math.max(shake, reduceMotion ? 0 : .006); }
+}
+
+function nuloWhy(sim) {
+  const z = sim.firstP ? sim.firstP.z : 0;
+  if (sim.first === 'frame') return 'Pegó en el marco';
+  if (sim.first === 'board') return z < -W.D - .3 ? 'Se fue largo al tablero' : 'Pegó en las tablas';
+  if (sim.first === 'wall') return 'Se fue a la pared';
+  if (sim.first === 'floor') return z > -W.D + .4 ? 'Se quedó corto' : 'Se fue por un lado';
+  return 'Nulo';
+}
+
+function finishFlight() {
+  const f = flight; if (f.done) return; f.done = true;
+  const p = game.players[f.owner], r = f.res;
+  game.tejos.push({ owner: f.owner, mesh: f.mesh, valid: r.valid, d: r.valid ? r.d : Infinity, u: r.u, v: r.v });
+  p.st.tiros++;
+  phase = 'result'; resultAt = performance.now();
+  const cm = r.valid ? Math.max(0, Math.round((r.d - RT) * 100)) : 0;
+  const delay = r.kind === 'monona' ? 2.6 : r.pts ? 2.0 : 1.5;
+  later(r.valid ? .12 : .35, () => {
+    if (r.pts) {
+      p.score += r.pts; game.scored = true;
+      if (r.kind === 'mecha') p.st.mechas++; else if (r.kind === 'embocinada') p.st.emb++; else p.st.mon++;
+      const label = { mecha: '¡MECHA!', embocinada: '¡EMBOCINADA!', monona: '¡MOÑONA!' }[r.kind];
+      announce(label, `${p.name.toUpperCase()} +${r.pts}`, r.kind === 'monona');
+      if (r.kind !== 'mecha') A.cheer();
+      bumpChip(f.owner); feed(p, `${label.replace(/[¡!]/g, '')} +${r.pts}`);
+    } else if (r.valid) {
+      toast(cm <= 1 ? 'Pegadito al bocín' : `En la greda, a ${cm} cm del bocín`); feed(p, `Greda · ${cm} cm`);
+    } else {
+      p.st.nulos++; announce('NULO', nuloWhy(f.sim).toUpperCase(), false, true); A.aww(); feed(p, `Nulo · ${nuloWhy(f.sim).toLowerCase()}`);
+    }
+    renderBoard();
+  });
+  flight = null;
+  later(delay, advance);
+}
+
+function advance() {
+  if (phase === 'over') return;
+  const leader = game.players.find(p => p.score >= game.goal);
+  if (game.mode !== 'reto' && leader) return gameOver(leader);
+  if (mechaMeshes.some(m => !m.userData.alive)) { resetMechas(true); }
+  if (game.mode === 'reto') {
+    if (game.thrown >= RETO_THROWS) return gameOver(game.players[0]);
+    return startRound();
+  }
+  game.idx++;
+  if (game.idx < game.order.length) return nextThrow();
+  endRound();
+}
+
+function endRound() {
+  phase = 'roundEnd'; resultAt = performance.now();
+  if (game.scored) { toast('Hubo puntos: esta ronda no hay mano'); later(1.3, startRound); return; }
+  const valid = game.tejos.filter(t => t.valid).sort((a, b) => a.d - b.d);
+  if (!valid.length) { toast('Nadie cayó en la greda: sin mano'); later(1.4, startRound); return; }
+  const best = valid[0], p = game.players[best.owner];
+  p.score += 1; p.st.manos++;
+  manoRing = new THREE.Mesh(new THREE.RingGeometry(RT * 1.25, RT * 1.6, 40), new THREE.MeshBasicMaterial({ color: p.color, transparent: true, depthWrite: false }));
+  manoRing.position.set(best.u, best.v, .006); manoRing.renderOrder = 6; cancha.add(manoRing);
+  toast(`Mano para ${p.name} +1`); feed(p, 'Mano +1'); bumpChip(best.owner); renderBoard(); A.tick();
+  closeup = { u: best.u, v: best.v };
+  later(1.9, () => { closeup = null; const leader = game.players.find(q => q.score >= game.goal); if (leader) gameOver(leader); else startRound(); });
+}
+
+function gameOver(winner) {
+  phase = 'over'; game.over = true; reticle.visible = false; hint('', false);
+  if (online()) netGameOver();
+  later(.9, () => { setHud(false); renderOver(winner); showScreen('over'); });
+}
+
+/* ================= Cámaras ================= */
+const camCur = { pos: V(0, 2, 4), look: V(0, 1, -10), fov: 40 };
+let closeup = null, orbit = 0;
+function aimPose() {
+  const dist = W.D + 2.1, span = Math.max(2.7, 2.0 / cam.aspect);
+  const t = performance.now() / 1000;
+  return { pos: V(Math.sin(t * .5) * .02, 1.78 + Math.sin(t * .8) * .01, 2.1), look: V(0, CY - .1, -W.D), fov: 2 * Math.atan(span / 2 / dist) * 180 / Math.PI };
+}
+function closePose(u = 0, v = 0) {
+  const c = fromUV(u * .6, v * .6);
+  const portrait = cam.aspect < 1;
+  return { pos: c.clone().addScaledVector(W.n, portrait ? 1.55 : 1.2).add(V(.18, .12, 0)), look: c, fov: portrait ? 44 : 36 };
+}
+function updateCamera(dt) {
+  let tgt, k = 5;
+  if (phase === 'menu' || phase === 'boot' || phase === 'over') {
+    orbit += dt * .12;
+    const r = 3.4, c = W.C;
+    tgt = { pos: V(Math.sin(orbit) * r * .8, 1.5 + Math.sin(orbit * .7) * .3, c.z + Math.cos(orbit) * r * .6 + 2.2), look: c.clone().add(V(0, .1, 0)), fov: 42 }; k = 2;
+  } else if (phase === 'flight' && flight) {
+    const f = flight, p = f.mesh.position, remain = f.impactAt - f.t;
+    const chase = { pos: p.clone().add(V(.15, .38, 1.35)), look: p.clone().lerp(W.C, .45), fov: 48 };
+    if (f.res.valid && remain < .55) { tgt = closePose(f.res.u, f.res.v); k = 7; }
+    else if (f.t < .12) { tgt = aimPose(); k = 6; }
+    else { tgt = chase; k = 9; }
+    if (!f.res.valid && f.ev > 0) { tgt = { pos: p.clone().add(V(.6, .9, 2.2)), look: p.clone(), fov: 46 }; k = 4; }
+  } else if (phase === 'result' || phase === 'roundEnd') {
+    const last = game && game.tejos[game.tejos.length - 1];
+    if (closeup) tgt = closePose(closeup.u, closeup.v);
+    else if (last && last.valid) tgt = closePose(last.u, last.v);
+    else if (last) tgt = { pos: last.mesh.position.clone().add(V(.7, 1.0, 2.3)), look: last.mesh.position.clone(), fov: 46 };
+    else tgt = aimPose();
+    k = 3;
+  } else tgt = aimPose();
+  const a = 1 - Math.exp(-k * dt);
+  camCur.pos.lerp(tgt.pos, a); camCur.look.lerp(tgt.look, a); camCur.fov = lerp(camCur.fov, tgt.fov, a);
+  cam.position.copy(camCur.pos);
+  if (shake > 0) { cam.position.add(V(gauss() * shake, gauss() * shake, 0)); shake = Math.max(0, shake - dt * .08); }
+  cam.fov = camCur.fov; cam.updateProjectionMatrix(); cam.lookAt(camCur.look);
+  // lupa: sigue la mira dentro de la greda
+  const ru = reticle.visible && reticle.userData.uv ? reticle.userData.uv : { u: 0, v: 0 };
+  const lu = clamp(ru.u, -.25, .25), lv = clamp(ru.v, -.3, .3);
+  lupaCur.u = lerp(lupaCur.u, lu, 1 - Math.exp(-4 * dt)); lupaCur.v = lerp(lupaCur.v, lv, 1 - Math.exp(-4 * dt));
+  const lc = fromUV(lupaCur.u, lupaCur.v);
+  lupaCam.position.copy(lc).addScaledVector(W.n, 1.15); lupaCam.up.copy(W.s); lupaCam.lookAt(lc);
+}
+const lupaCur = { u: 0, v: 0 };
+
+/* ================= Bucle ================= */
+let lastT = performance.now();
+function updateGame(dt, now) {
+  if (phase === 'aim' && drag) {
+    const aim = currentAim(now); drag.aim = aim;
+    setGauge(drag.P, lastP[current().name]); showReticle(aim);
+    if (aim.amp > .06 && !drag.warned) { drag.warned = true; hint('¡Te tiembla el pulso! Suelta ya', true); }
+    if (online()) netAim(aim, now);
+  }
+  if (phase === 'wait') netWatch();
+  if (phase === 'cpu') updateCpu(dt);
+  if (phase === 'flight') updateFlight(dt);
+  mechaMeshes.forEach(m => { if (m.userData.grow !== undefined) { m.userData.grow += dt * 3; const s = ease(clamp(m.userData.grow, 0, 1)); m.scale.setScalar(Math.max(.01, s)); if (m.userData.grow >= 1) delete m.userData.grow; } });
+  if (manoRing) { const s = 1 + Math.sin(now / 160) * .12; manoRing.scale.set(s, s, 1); }
+  if (reticle.visible) reticle.rotation.z += dt * .8;
+}
+function lupaOn() { return aimHelpNow() && !document.getElementById('hud').hidden && (phase === 'aim' || phase === 'cpu' || phase === 'wait' || (phase === 'flight' && flight && flight.t < flight.impactAt - .55)); }
+function render() {
+  const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
+  renderer.setScissorTest(false); renderer.setViewport(0, 0, w, h); renderer.clear(); renderer.render(scene, cam);
+  const el = document.getElementById('lupa'); const show = lupaOn();
+  el.style.visibility = show ? 'visible' : 'hidden';
+  if (show) {
+    const r = el.getBoundingClientRect(), b = 3;
+    const x = r.left + b, y = h - (r.bottom - b), s = r.width - b * 2;
+    renderer.setScissorTest(true); renderer.setScissor(x, y, s, s); renderer.setViewport(x, y, s, s);
+    lupaCam.aspect = 1; lupaCam.updateProjectionMatrix();
+    renderer.clear(); renderer.render(scene, lupaCam); renderer.setScissorTest(false);
+  }
+}
+function frame(now) {
+  const dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
+  if (!paused) { tickTimers(dt); updateGame(dt, now); updateFx(dt); }
+  updateCamera(paused ? 0 : dt);
+  render();
+  requestAnimationFrame(frame);
+}
+
+/* ================= Salas en línea =================
+   Todo viaja por "presence" de una sala con nombre (tejo-<código>):
+   - cada jugador publica {pid, name}; mientras apunta, {aim}; al soltar, {t}
+   - el anfitrión publica {g}: asientos, configuración, último tiro aceptado y una foto del estado
+   - cada teléfono corre el mismo motor con los mismos tiros, así todos ven lo mismo */
+const NET = { room: null, ready: false, sala: null, code: null, pid: null, g: null, lastG: null, myG: null, lostAt: 0, pending: {}, lastAimSent: 0, absent: {}, joinedAt: 0, creator: false, unsub: null };
+const r4 = x => Math.round(x * 1e4) / 1e4, r5 = x => Math.round(x * 1e5) / 1e5;
+const rid = () => Math.random().toString(36).slice(2, 8);
+function online() { return !!(game && game.mode === 'online'); }
+function amHost() { return !!(NET.g && NET.g.host === NET.pid); }
+function aimHelpNow() { return online() ? !!game.aimHelp : settings.aimHelp; }
+function myName() { return (settings.names[0] || 'Jugador').slice(0, 14); }
+
+function netInit() {
+  try { NET.pid = sessionStorage.getItem('tejo.pid'); } catch (e) { }
+  if (!NET.pid) { NET.pid = rid() + rid(); try { sessionStorage.setItem('tejo.pid', NET.pid); } catch (e) { } }
+  const c = window.claude;
+  if (c && typeof c.use === 'function') {
+    c.use('room').then(r => { NET.room = r; NET.ready = true; renderMenu(); }).catch(() => { NET.ready = true; renderMenu(); });
+  } else NET.ready = true;
+  setInterval(netTick, 1000);
+}
+function renderMenuOnline() {
+  const msg = $('onlineMsg');
+  if (!NET.ready) msg.textContent = 'Conectando…';
+  else if (!NET.room) msg.textContent = 'Las salas funcionan cuando abres el juego dentro de Claude con tu sesión iniciada. Tus amigos también necesitan acceso a esta página.';
+  else msg.textContent = 'Crea una sala y pásale el código a tus amigos, o escribe el código que te mandaron.';
+  $('btnJoin').disabled = !NET.room; $('codeIn').disabled = !NET.room;
+}
+
+function presentPids(peers) { const m = new Map(); peers.forEach(p => { const pr = p.presence || {}; if (typeof pr.pid === 'string') m.set(pr.pid, pr); }); return m; }
+function publishG(g) {
+  NET.g = g; NET.lastG = g; NET.myG = g;
+  if (NET.sala) NET.sala.presence({ g }).catch(() => { });
+}
+
+async function netEnter(code, create) {
+  if (!NET.room) return;
+  A.init();
+  const msg = $('onlineMsg'); msg.textContent = create ? 'Abriendo la sala…' : 'Entrando a la sala…';
+  try {
+    if (NET.sala) await netLeave();
+    const sala = await NET.room.join('tejo-' + code);
+    Object.assign(NET, { sala, code, g: null, lastG: null, myG: null, pending: {}, lostAt: 0, absent: {}, creator: create, joinedAt: performance.now() });
+    NET.unsub = sala.onPeers(netSync, netError);
+    const me = { v: 1, pid: NET.pid, name: myName() };
+    if (create) me.g = { code, ver: 1, host: NET.pid, phase: 'lobby', seats: [{ pid: NET.pid, name: myName() }], dist: settings.dist, goal: settings.goal, aimHelp: settings.aimHelp };
+    if (me.g) { NET.g = NET.lastG = NET.myG = me.g; }
+    await sala.presence(me);
+    showSala(); netSync();
+  } catch (e) {
+    msg.textContent = e && e.code === 'limit_reached' ? 'No se pudo abrir la sala ahora. Intenta en un momento.' : 'No se pudo entrar a la sala. Revisa tu conexión e intenta otra vez.';
+  }
+}
+async function netLeave() {
+  const s = NET.sala, un = NET.unsub;
+  Object.assign(NET, { sala: null, unsub: null, code: null, g: null, lastG: null, myG: null, pending: {} });
+  try { un && un(); } catch (e) { }
+  if (s) { try { await s.leave(); } catch (e) { } }
+}
+function netError(e) {
+  const code = NET.code;
+  if (e && ['upstream_error', 'limit_reached'].includes(e.code) && code) { setTimeout(() => { if (NET.code === code) netEnter(code, false); }, 1500); return; }
+  showMenu(); $('onlineMsg').textContent = 'Se cerró la conexión con la sala.';
+}
+function netCreate() { netEnter(String(1000 + Math.floor(Math.random() * 9000)), true); }
+function netJoinClick() {
+  const code = $('codeIn').value.replace(/\D/g, '');
+  if (code.length !== 4) { $('onlineMsg').textContent = 'El código de la sala tiene 4 números.'; return; }
+  netEnter(code, false);
+}
+
+/* ---------- sincronización ---------- */
+function netSync() {
+  if (!NET.sala) return;
+  const peers = NET.sala.peers();
+  let best = null;
+  for (const p of peers) {
+    const g = p.presence && p.presence.g;
+    if (g && typeof g === 'object' && g.code === NET.code && typeof g.ver === 'number' && typeof g.host === 'string')
+      if (!best || g.ver > best.ver || (g.ver === best.ver && g.host < best.host)) best = g;
+  }
+  if (best) { NET.g = best; NET.lastG = best; NET.lostAt = 0; }
+  else { NET.g = null; if (NET.lastG && !NET.lostAt) NET.lostAt = performance.now(); }
+  if (NET.myG && best && best.host !== NET.pid) { NET.myG = null; NET.sala.presence({ g: null }).catch(() => { }); }
+  if (NET.g && amHost()) hostDuties(peers);
+  applyG();
+  if (!$('sala').hidden) renderSala();
+}
+function hostDuties(peers) {
+  const g = NET.g, here = presentPids(peers);
+  if (g.phase === 'lobby') {
+    const seats = g.seats.filter(s => here.has(s.pid)).map(s => ({ pid: s.pid, name: String(here.get(s.pid).name || s.name).slice(0, 14) }));
+    here.forEach((pr, pid) => { if (seats.length < 4 && !seats.some(s => s.pid === pid) && pr.name) seats.push({ pid, name: String(pr.name).slice(0, 14) }); });
+    if (JSON.stringify(seats) !== JSON.stringify(g.seats)) publishG({ ...g, seats, ver: g.ver + 1 });
+  } else if (online() && game.gid === g.gid) hostCheckThrow(here);
+}
+function hostCheckThrow(here) {
+  if (!online() || game.over || !(phase === 'aim' || phase === 'wait')) return;
+  const p = current(); if (p.pid === NET.pid) return;
+  const t = here.get(p.pid) && here.get(p.pid).t;
+  if (t && t.n === game.thrown && t.gid === game.gid && isFinite(t.L) && isFinite(t.P))
+    acceptThrow({ n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid });
+}
+function acceptThrow(t) {
+  const g = NET.g; if (!g) return;
+  publishG({ ...g, last: { ...t, gid: game.gid }, ver: g.ver + 1 });
+  NET.pending[t.n] = t; tryConsume();
+}
+function applyG() {
+  const g = NET.g; if (!g || g.phase === 'lobby') return;
+  if (!g.setup || !g.gid) return;
+  if (!online() || game.gid !== g.gid) { startOnlineGame(g); return; }
+  if (g.last && g.last.gid === game.gid && g.last.n >= game.thrown && !NET.pending[g.last.n]) NET.pending[g.last.n] = g.last;
+  tryConsume();
+  const s = g.snap;
+  if (!amHost() && s && s.gid === game.gid && (phase === 'aim' || phase === 'wait') && !drag) {
+    if (s.seq > game.thrown || (s.seq === game.thrown && snapDiffers(s))) { restoreSnap(g); return; }
+  }
+  if (g.phase === 'over' && !game.over && (phase === 'aim' || phase === 'wait') && (!s || s.seq <= game.thrown)) {
+    gameOver([...game.players].sort((a, b) => b.score - a.score)[0]);
+  }
+}
+function tryConsume() {
+  if (!online() || game.over || !(phase === 'aim' || phase === 'wait')) return;
+  const t = NET.pending[game.thrown]; if (!t) return;
+  delete NET.pending[game.thrown];
+  if (current().pid !== t.pid) return;
+  drag = null;
+  if (t.skip) toast(`${current().name} no está: pierde el turno`);
+  launch({ L: t.L, P: t.P });
+}
+
+/* ---------- partida ---------- */
+function buildOnlineGame(g) {
+  const st = g.setup;
+  timers.length = 0; if (flight && flight.mesh) scene.remove(flight.mesh); flight = null; drag = null; cpuAim = null;
+  if (game) clearCancha();
+  if (Math.abs(W.D - st.dist) > .01) { setDistance(st.dist); buildHall(); }
+  computeDvdP();
+  const players = st.players.map((s, i) => { const p = newPlayer(String(s.name).slice(0, 14), i); p.pid = s.pid; return p; });
+  game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: st.goal, mode: 'online', gid: g.gid, aimHelp: !!st.aimHelp, thrown: 0, over: false };
+  NET.pending = {}; lastP = {}; clearFeed(); paused = false;
+  showScreen(null); setHud(true);
+}
+function startOnlineGame(g) {
+  buildOnlineGame(g);
+  if (g.snap && g.snap.gid === g.gid && g.snap.seq > 0) restoreSnap(g); else startRound();
+}
+function makeSnap() {
+  return {
+    gid: game.gid, seq: game.thrown, round: game.round, idx: game.idx, order: game.order, scored: game.scored ? 1 : 0,
+    sc: game.players.map(p => [p.score, p.st.mechas, p.st.emb, p.st.mon, p.st.manos, p.st.nulos, p.st.tiros]),
+    tj: game.tejos.map(t => [t.owner, t.valid ? 1 : 0, r4(t.u || 0), r4(t.v || 0), isFinite(t.d) ? r4(t.d) : -1, ...t.mesh.position.toArray().map(r4), ...t.mesh.quaternion.toArray().map(r4)])
+  };
+}
+function snapDiffers(s) { return s.round !== game.round || s.idx !== game.idx || game.players.some((p, i) => !s.sc[i] || s.sc[i][0] !== p.score); }
+function restoreSnap(g) {
+  const s = g.snap;
+  if (!online() || game.gid !== g.gid) buildOnlineGame(g);
+  timers.length = 0; if (flight && flight.mesh) scene.remove(flight.mesh); flight = null; drag = null;
+  clearCancha();
+  Object.assign(game, { round: s.round, idx: s.idx, order: s.order.slice(), scored: !!s.scored, thrown: s.seq, over: false });
+  game.players.forEach((p, i) => { const a = s.sc[i] || []; p.score = a[0] | 0; p.st = { mechas: a[1] | 0, emb: a[2] | 0, mon: a[3] | 0, manos: a[4] | 0, nulos: a[5] | 0, tiros: a[6] | 0 }; });
+  (s.tj || []).forEach(a => {
+    const [owner, valid, u, v, d, px, py, pz, qx, qy, qz, qw] = a;
+    if (!game.players[owner]) return;
+    const m = makeTejo(game.players[owner].color); m.position.set(px, py, pz); m.quaternion.set(qx, qy, qz, qw).normalize(); scene.add(m);
+    game.tejos.push({ owner, valid: !!valid, u, v, d: d < 0 ? Infinity : d, mesh: m });
+    if (valid) decal(u, v, T.crater, .14);
+  });
+  for (const n in NET.pending) if (+n < game.thrown) delete NET.pending[n];
+  showScreen(null); setHud(true); renderBoard();
+  nextThrow();
+}
+function netTurn(p) {
+  const mine = p.pid === NET.pid;
+  phase = mine ? 'aim' : 'wait';
+  if (mine) { hint('Te toca: arrastra hacia abajo y suelta', true); toast('Te toca'); buzz(25); }
+  else hint(`Esperando el tiro de ${p.name}…`, true);
+  if (NET.sala && amHost()) { publishG({ ...NET.g, snap: makeSnap(), ver: NET.g.ver + 1 }); hostCheckThrow(presentPids(NET.sala.peers())); }
+  tryConsume();
+}
+function netThrow(a) {
+  const t = { n: game.thrown, L: r5(a.L), P: r5(a.P), gid: game.gid, pid: NET.pid };
+  if (NET.sala) {
+    if (amHost()) { NET.sala.presence({ aim: null }).catch(() => { }); publishG({ ...NET.g, last: t, ver: NET.g.ver + 1 }); }
+    else NET.sala.presence({ t, aim: null }).catch(() => { });
+  }
+  launch({ L: t.L, P: t.P });
+}
+function netAim(aim, now) {
+  if (!NET.sala) return;
+  if (aim === null) { NET.sala.presence({ aim: null }).catch(() => { }); return; }
+  if (now - NET.lastAimSent < 80) return; NET.lastAimSent = now;
+  NET.sala.presence({ aim: { L: r4(aim.L), P: r4(aim.P), n: game.thrown } }).catch(() => { });
+}
+function netWatch() {
+  if (!NET.sala || !game) return;
+  const p = current(); let a = null;
+  for (const peer of NET.sala.peers()) { const pr = peer.presence || {}; if (pr.pid === p.pid && pr.aim && pr.aim.n === game.thrown) { a = pr.aim; break; } }
+  if (a && isFinite(a.L) && isFinite(a.P)) { const aim = { L: clamp(+a.L, -AIM.L, AIM.L), P: clamp(+a.P, 0, 1) }; showReticle(aim); setGauge(aim.P); }
+  else { reticle.visible = false; setGauge(0); }
+}
+function netGameOver() { if (NET.sala && amHost()) publishG({ ...NET.g, phase: 'over', snap: makeSnap(), ver: NET.g.ver + 1 }); }
+function netRematch() {
+  if (!amHost() || !NET.g || !NET.g.setup) return;
+  const g = NET.g, here = presentPids(NET.sala.peers());
+  let players = g.setup.players.filter(s => here.has(s.pid));
+  here.forEach((pr, pid) => { if (players.length < 4 && !players.some(s => s.pid === pid) && pr.name) players.push({ pid, name: String(pr.name).slice(0, 14) }); });
+  if (players.length > 1) players = [...players.slice(1), players[0]]; // empieza otro
+  publishG({ ...g, phase: 'play', gid: rid(), setup: { ...g.setup, players }, snap: null, last: null, ver: g.ver + 1 });
+  applyG();
+}
+function netStart() {
+  if (!amHost()) return;
+  const g = NET.g, here = presentPids(NET.sala.peers());
+  const players = g.seats.filter(s => here.has(s.pid)); if (players.length < 2) return;
+  A.init(); A.tick();
+  publishG({ ...g, phase: 'play', gid: rid(), setup: { players, dist: g.dist, goal: g.goal, aimHelp: g.aimHelp }, snap: null, last: null, ver: g.ver + 1 });
+  applyG();
+}
+
+/* ---------- cada segundo: anfitrión ausente, jugador ausente ---------- */
+function netTick() {
+  if (!NET.sala) return;
+  const now = performance.now(), peers = NET.sala.peers(), here = presentPids(peers);
+  if (!NET.g && NET.lastG && NET.lostAt && now - NET.lostAt > 2500) {
+    const lg = NET.lastG;
+    const order = (lg.phase === 'lobby' || !lg.setup ? lg.seats : lg.setup.players).map(s => s.pid);
+    const next = order.find(pid => here.has(pid)) || [...here.keys()].sort()[0];
+    if (next === NET.pid) {
+      const g = { ...lg, host: NET.pid, ver: lg.ver + 1 };
+      if (lg.phase === 'lobby') g.seats = lg.seats.filter(s => here.has(s.pid));
+      if (online() && game.gid === g.gid && (phase === 'aim' || phase === 'wait')) g.snap = makeSnap();
+      publishG(g); NET.lostAt = 0; toast('Ahora eres el anfitrión de la sala');
+      netSync();
+    }
+  }
+  if (amHost() && online() && !game.over && (phase === 'aim' || phase === 'wait')) {
+    const p = current();
+    if (p.pid !== NET.pid && !here.has(p.pid)) {
+      const k = p.pid + ':' + game.thrown; NET.absent[k] = NET.absent[k] || now;
+      if (now - NET.absent[k] > 6000) acceptThrow({ n: game.thrown, L: 0, P: 0, pid: p.pid, skip: 1 });
+    } else hostCheckThrow(here);
+  }
+  if (!$('sala').hidden) renderSala();
+}
+
+/* ---------- pantalla de la sala ---------- */
+function showSala() {
+  if (game) { clearCancha(); game = null; }
+  timers.length = 0; phase = 'menu'; reticle.visible = false;
+  setHud(false); showScreen('sala'); renderSala();
+}
+function renderSala() {
+  $('salaCode').textContent = NET.code || '—';
+  const g = NET.g || NET.lastG, here = NET.sala ? presentPids(NET.sala.peers()) : new Map();
+  const list = $('salaList'); list.innerHTML = '';
+  const seats = g ? (g.phase === 'lobby' || !g.setup ? g.seats : g.setup.players) : [];
+  const add = (name, color, tags, off) => {
+    const li = document.createElement('li'); li.style.setProperty('--c', color); if (off) li.className = 'off';
+    const b = document.createElement('b'); b.textContent = name; li.appendChild(b);
+    const s = document.createElement('span'); s.textContent = tags; li.appendChild(s); list.appendChild(li);
+  };
+  seats.forEach((s, i) => add(s.name, COLORS[i], [s.pid === NET.pid ? 'tú' : '', g && g.host === s.pid ? 'anfitrión' : '', here.has(s.pid) ? '' : 'fuera'].filter(Boolean).join(' · '), !here.has(s.pid)));
+  here.forEach((pr, pid) => { if (!seats.some(s => s.pid === pid)) add(String(pr.name || 'Alguien').slice(0, 14), '#8e7d66', (pid === NET.pid ? 'tú · ' : '') + 'mirando'); });
+  const info = $('salaInfo'), host = amHost();
+  if (!g) info.textContent = NET.creator ? 'Abriendo la sala…' : (performance.now() - NET.joinedAt > 5000 ? `No hay nadie en la sala ${NET.code}. Revisa el código o pide que la creen de nuevo.` : 'Buscando la sala…');
+  else if (g.phase !== 'lobby') info.textContent = 'La partida ya empezó. Entras a mirar.';
+  else if (host) info.textContent = seats.length < 2 ? 'Pásale el código a tus amigos. Cuando entren, aparecen aquí.' : 'Están listos. Empieza cuando quieras.';
+  else info.textContent = 'Esperando a que el anfitrión empiece la partida.';
+  $('salaRules').textContent = g ? `${fmtD(g.dist)} · partida a ${g.goal} · mira ${g.aimHelp ? 'activada' : 'apagada'} · hasta 4 jugadores` : '';
+  $('btnStart').hidden = !host || !g || g.phase !== 'lobby';
+  $('btnStart').disabled = seats.filter(s => here.has(s.pid)).length < 2;
+}
+function netBindUI() {
+  $('btnJoin').addEventListener('click', netJoinClick);
+  $('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') netJoinClick(); });
+  $('btnStart').addEventListener('click', netStart);
+  $('btnLeave').addEventListener('click', () => showMenu());
+  $('btnCopy').addEventListener('click', () => {
+    const txt = `Juguemos tejo en el Club El Cosmo. Sala ${NET.code}`;
+    try { navigator.clipboard.writeText(txt).then(() => toast('Código copiado'), () => toast(`El código es ${NET.code}`)); } catch (e) { toast(`El código es ${NET.code}`); }
+  });
+}
+
+/* ================= Interfaz ================= */
+const $ = id => document.getElementById(id);
+const fmtD = d => d.toLocaleString('es-CO', { maximumFractionDigits: 1 }) + ' m';
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } }
+};
+function saveSettings() { store.set('tejo.settings.v1', settings); }
+function loadSettings() { const s = store.get('tejo.settings.v1', null); if (s) Object.assign(settings, s); }
+function records() { return store.get('tejo.record.v1', {}); }
+
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id); }
+function setHud(on) { $('hud').hidden = !on; }
+function hint(text, on) { const h = $('hint'); if (text) h.textContent = text; h.classList.toggle('off', !on); }
+let toastTimer;
+function toast(text) { const t = $('toast'); t.textContent = text; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1900); }
+function announce(title, pts, big, nulo) {
+  const a = $('announce'); $('annT').textContent = title; $('annP').textContent = pts;
+  a.classList.remove('show', 'big'); void a.offsetWidth;
+  a.classList.toggle('big', !!big); a.classList.add('show');
+  $('annT').style.textShadow = nulo ? '3px 3px 0 #4c3a29, 6px 6px 0 #120d08' : '';
+}
+function flashScreen() { if (reduceMotion) return; const f = $('flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
+function clearFeed() { $('feed').innerHTML = ''; }
+function feed(p, text) {
+  const el = document.createElement('div'); el.style.setProperty('--c', p.color); el.textContent = `${p.name} · ${text}`;
+  const f = $('feed'); f.appendChild(el); while (f.children.length > 3) f.removeChild(f.firstChild);
+}
+function bumpChip(i) { const c = $('board').children[i]; if (!c) return; c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
+function setGauge(P, last) {
+  $('gaugeFill').style.height = (clamp(P, 0, 1) * 100) + '%';
+  const l = $('gaugeLast'); if (last === undefined) l.style.display = 'none'; else { l.style.display = 'block'; l.style.bottom = (last * 100) + '%'; }
+}
+function renderBoard() {
+  if (!game) return;
+  const cur = (phase === 'over' || !game.order.length) ? -1 : game.order[game.idx];
+  const b = $('board'); b.innerHTML = '';
+  game.players.forEach((p, i) => {
+    const c = document.createElement('div'); c.className = 'chip' + (i === cur ? ' on' : ''); c.style.setProperty('--c', p.color);
+    const goal = game.mode === 'reto' ? null : game.goal;
+    c.innerHTML = `<div class="nm"></div><div class="sc">${p.score}<small>${goal ? '/ ' + goal : 'pts'}</small></div>` + (goal ? `<div class="bar"><i style="width:${Math.min(100, p.score / goal * 100)}%"></i></div>` : '');
+    c.querySelector('.nm').textContent = p.name + (p.cpu ? ' · ' + DIFF[settings.diff].n.toLowerCase() : '') + (online() && p.pid === NET.pid ? ' · tú' : '');
+    b.appendChild(c);
+  });
+  if (game.mode === 'reto') {
+    const r = records()[settings.dist];
+    const c = document.createElement('div'); c.className = 'chip'; c.style.setProperty('--c', '#f5eddd');
+    c.innerHTML = `<div class="nm">Récord · ${fmtD(settings.dist)}</div><div class="sc">${r ?? '—'}<small>pts</small></div>`; b.appendChild(c);
+  }
+}
+function renderTurn() {
+  const p = current();
+  $('turnWho').textContent = game.mode === 'reto' ? `Tejo ${game.thrown + 1} de ${RETO_THROWS}` : (p.cpu ? 'Lanza Don Chepe' : (online() && p.pid === NET.pid) ? 'Te toca' : `Lanza ${p.name}`);
+  $('turnWho').style.color = p.color === COLORS[3] ? 'var(--yellow)' : '';
+  $('turnMeta').textContent = game.mode === 'reto' ? `${fmtD(W.D)} · mecha 3 · embocinada 6 · moñona 9` : `${online() ? 'Sala ' + NET.code + ' · ' : ''}Ronda ${game.round} · ${fmtD(W.D)} · partida a ${game.goal}`;
+}
+function renderOver(winner) {
+  const tbl = $('overStats');
+  const rows = [...game.players].map((p, i) => ({ p, i })).sort((a, b) => b.p.score - a.p.score);
+  tbl.innerHTML = `<tr><th>Jugador</th><th>Pts</th><th>Mecha</th><th>Emboc.</th><th>Moñona</th><th>Mano</th><th>Nulo</th></tr>` +
+    rows.map(({ p }) => `<tr class="${p === winner && game.mode !== 'reto' ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.mechas}</td><td>${p.st.emb}</td><td>${p.st.mon}</td><td>${p.st.manos}</td><td>${p.st.nulos}</td></tr>`).join('');
+  [...tbl.querySelectorAll('tr')].slice(1).forEach((tr, k) => tr.firstChild.textContent = rows[k].p.name);
+  if (game.mode === 'reto') {
+    const recs = records(), prev = recs[settings.dist], sc = winner.score;
+    const isNew = prev === undefined || sc > prev; if (isNew) { recs[settings.dist] = sc; store.set('tejo.record.v1', recs); }
+    $('overEyebrow').textContent = `Reto de ${RETO_THROWS} tejos · ${fmtD(settings.dist)}`;
+    $('overWinner').textContent = `${sc} puntos`;
+    $('overLine').textContent = isNew ? (prev === undefined ? 'Primer récord a esta distancia.' : `¡Nuevo récord! El anterior era ${prev}.`) : `Tu récord a esta distancia es ${prev}.`;
+    $('btnAgain').textContent = 'Otra vez';
+  } else {
+    const others = rows.filter(r => r.p !== winner).map(r => r.p.score);
+    $('overEyebrow').textContent = `Partida a ${game.goal} · ${fmtD(settings.dist)}`;
+    $('overWinner').textContent = `Ganó ${winner.name}`;
+    $('overLine').textContent = winner.cpu ? `Don Chepe te ganó ${winner.score} a ${others[0]} en ${game.round} rondas.` :
+      `${winner.score} a ${others.join(' a ')} en ${game.round} ${game.round === 1 ? 'ronda' : 'rondas'}.` + (game.mode === 'cpu' ? ' Don Chepe pide la revancha.' : '');
+    $('btnAgain').textContent = 'Revancha';
+  }
+  const on = online();
+  $('btnAgain').disabled = on && !amHost();
+  if (on && !amHost()) $('btnAgain').textContent = 'Esperando revancha';
+  $('btnOverMenu').textContent = on ? 'Salir de la sala' : 'Menú';
+}
+
+/* ---------- Menú ---------- */
+function setSeg(id, val) { $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(val)))); }
+function renderMenu() {
+  setSeg('segMode', settings.mode); setSeg('segCount', settings.count); setSeg('segDiff', settings.diff); setSeg('segDist', settings.dist); setSeg('segGoal', settings.goal);
+  $('swAim').setAttribute('aria-checked', String(settings.aimHelp));
+  $('grpDiff').hidden = settings.mode !== 'cpu';
+  $('grpGoal').hidden = settings.mode === 'reto';
+  $('segCount').hidden = settings.mode !== 'local';
+  $('grpOnline').hidden = settings.mode !== 'online';
+  $('btnPlay').textContent = settings.mode === 'online' ? 'Crear sala' : 'A jugar';
+  $('btnPlay').disabled = settings.mode === 'online' && !NET.room;
+  renderMenuOnline();
+  $('lblNames').textContent = settings.mode === 'local' ? 'Jugadores' : 'Tu nombre';
+  const n = settings.mode === 'local' ? settings.count : 1, box = $('names'); box.innerHTML = '';
+  box.style.gridTemplateColumns = n === 1 ? '1fr' : '1fr 1fr';
+  for (let i = 0; i < n; i++) {
+    const l = document.createElement('label'); l.style.setProperty('--c', COLORS[i]);
+    const inp = document.createElement('input'); inp.id = 'name' + i; inp.maxLength = 14; inp.value = settings.names[i] || ''; inp.placeholder = `Jugador ${i + 1}`; inp.autocomplete = 'off';
+    inp.setAttribute('aria-label', `Nombre del jugador ${i + 1}`);
+    inp.addEventListener('input', () => { settings.names[i] = inp.value.trim(); saveSettings(); });
+    l.appendChild(inp); box.appendChild(l);
+  }
+  const r = records()[settings.dist];
+  $('recordLine').textContent = r !== undefined ? `Tu récord en el reto a ${fmtD(settings.dist)}: ${r} puntos` : '';
+}
+function showMenu() {
+  if (NET.sala) netLeave();
+  phase = 'menu'; paused = false; timers.length = 0; drag = null; cpuAim = null;
+  if (flight) { scene.remove(flight.mesh); flight = null; }
+  if (game) clearCancha(); game = null; reticle.visible = false;
+  setHud(false); renderMenu(); showScreen('menu');
+}
+function bindSeg(id, key, conv) {
+  $(id).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    settings[key] = conv(b.dataset.v); saveSettings(); renderMenu(); A.init(); A.tick();
+    if (key === 'dist' && phase === 'menu') { setDistance(settings.dist); buildHall(); computeDvdP(); }
+  });
+}
+
+/* ---------- Pausa ---------- */
+function pause() {
+  if (!game || paused || phase === 'over' || phase === 'menu') return;
+  if (online()) { $('pauseInfo').textContent = `Sala ${NET.code} · la partida sigue mientras ves este menú`; $('btnRestart').hidden = true; $('btnMenu').textContent = 'Salir de la sala'; showScreen('pause'); return; }
+  $('btnRestart').hidden = false; $('btnMenu').textContent = 'Menú';
+  paused = true; drag = null; if (phase === 'aim') { setGauge(0, lastP[current().name]); reticle.visible = false; }
+  $('pauseInfo').textContent = game.mode === 'reto' ? `Reto · tejo ${Math.min(game.thrown + 1, RETO_THROWS)} de ${RETO_THROWS} · ${fmtD(W.D)}` : `Ronda ${game.round} · partida a ${game.goal} · ${fmtD(W.D)}`;
+  showScreen('pause');
+}
+function resume() { paused = false; showScreen(null); }
+function updateSoundBtn() { $('btnSound').classList.toggle('muted', settings.muted); $('btnSound').setAttribute('aria-label', settings.muted ? 'Activar sonido' : 'Silenciar'); }
+
+/* ---------- Entrada ---------- */
+let resultAt = 0;
+function bindInput() {
+  const cv = renderer.domElement;
+  cv.addEventListener('pointerdown', e => {
+    A.init();
+    if (paused || !game) return;
+    if (phase === 'result' || phase === 'roundEnd') { if (performance.now() - resultAt > 700) timers.forEach(t => t.t = Math.min(t.t, .05)); return; }
+    if (phase !== 'aim' || drag) return;
+    drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, t0: performance.now(), L: 0, P: 0 };
+    try { cv.setPointerCapture(e.pointerId); } catch (er) { }
+    hint('Suelta para lanzar · arrastra arriba del todo para cancelar', true);
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+    drag.L = clamp(dx / (innerWidth * .5) * AIM.L, -AIM.L, AIM.L);
+    drag.P = clamp(dy / (innerHeight * .42), 0, 1);
+  });
+  const up = e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const aim = currentAim(performance.now()); const P = drag.P; drag = null;
+    if (phase !== 'aim') return;
+    if (P < .06) { if (online()) netAim(null); reticle.visible = false; setGauge(0, lastP[current().name]); hint('Arrastra más hacia abajo para darle fuerza', true); return; }
+    if (online()) { netThrow(finalAim(aim)); return; }
+    launch(finalAim(aim));
+  };
+  cv.addEventListener('pointerup', up);
+  cv.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.id) { drag = null; reticle.visible = false; } });
+  window.addEventListener('keydown', e => {
+    if (e.target && e.target.tagName === 'INPUT') return;
+    if (e.key === 'Escape') { $('pause').hidden ? pause() : resume(); return; }
+    if (paused || !game) return;
+    if ((phase === 'result' || phase === 'roundEnd') && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); if (performance.now() - resultAt > 700) timers.forEach(t => t.t = Math.min(t.t, .05)); return; }
+    if (phase !== 'aim') return;
+    const keys = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] };
+    if (keys[e.key]) {
+      e.preventDefault(); A.init();
+      if (!drag) drag = { id: 'kb', L: 0, P: lastP[current().name] ?? .4, t0: performance.now() };
+      const f = e.shiftKey ? .25 : 1;
+      drag.L = clamp(drag.L + keys[e.key][0] * .02 * f, -AIM.L, AIM.L);
+      drag.P = clamp(drag.P + keys[e.key][1] * .01 * f, 0, 1);
+      drag.t0 = performance.now();
+      hint('Flechas para apuntar · Shift afina · Espacio lanza', true);
+    } else if ((e.key === ' ' || e.key === 'Enter') && drag && drag.id === 'kb') {
+      e.preventDefault(); const aim = currentAim(performance.now()); drag = null; if (aim.P >= .06) { if (online()) netThrow(finalAim(aim)); else launch(finalAim(aim)); }
+    }
+  });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && !online()) pause(); });
+}
+
+function bindUI() {
+  bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
+  bindSeg('segDist', 'dist', Number); bindSeg('segGoal', 'goal', Number);
+  $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; saveSettings(); renderMenu(); });
+  $('btnPlay').addEventListener('click', () => { A.init(); A.tick(); if (settings.mode === 'online') netCreate(); else startGame(); });
+  $('btnRules').addEventListener('click', () => showScreen('rules'));
+  $('btnRulesBack').addEventListener('click', () => { showScreen('menu'); });
+  $('btnPause').addEventListener('click', pause);
+  $('btnResume').addEventListener('click', resume);
+  $('btnRestart').addEventListener('click', () => { paused = false; clearCancha(); startGame(); });
+  $('btnMenu').addEventListener('click', showMenu);
+  $('btnAgain').addEventListener('click', () => { if (online()) return netRematch(); clearCancha(); startGame(); });
+  $('btnOverMenu').addEventListener('click', showMenu);
+  $('btnSound').addEventListener('click', () => { A.init(); settings.muted = !settings.muted; A.setMuted(settings.muted); saveSettings(); updateSoundBtn(); });
+  bindInput(); netBindUI();
+}
+
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix();
+}
+
+/* ================= Recarga en caliente ================= */
+function snapshot() {
+  const base = { settings: { ...settings } };
+  if (!game || game.over || phase === 'menu' || online()) return base;
+  return {
+    ...base, lastP, pending: phase === 'result' || phase === 'roundEnd',
+    game: {
+      players: game.players, round: game.round, order: game.order, idx: game.idx, goal: game.goal, mode: game.mode, thrown: game.thrown, scored: game.scored,
+      tejos: game.tejos.map(t => ({ owner: t.owner, valid: t.valid, d: isFinite(t.d) ? t.d : null, u: t.u, v: t.v, p: t.mesh.position.toArray(), q: t.mesh.quaternion.toArray() }))
+    }
+  };
+}
+function restore(data) {
+  if (!data || !data.game) return false;
+  try {
+    const g = data.game;
+    game = { ...g, tejos: [], over: false };
+    g.tejos.forEach(t => {
+      const m = makeTejo(game.players[t.owner].color); m.position.fromArray(t.p); m.quaternion.fromArray(t.q); scene.add(m);
+      game.tejos.push({ ...t, d: t.d == null ? Infinity : t.d, mesh: m });
+      if (t.valid) decal(t.u, t.v, T.crater, .14);
+    });
+    lastP = data.lastP || {};
+    showScreen(null); setHud(true); clearFeed();
+    if (data.pending) { phase = 'result'; advance(); } else nextThrow();
+    return true;
+  } catch (e) { game = null; return false; }
+}
+
+/* ================= Arranque ================= */
+async function boot(data) {
+  const ld = $('loading');
+  if (!window.THREE) { ld.textContent = 'No se pudo cargar el motor 3D. Revisa la conexión y vuelve a abrir la página.'; return; }
+  loadSettings();
+  if (data && data.settings) Object.assign(settings, data.settings);
+  try { await Promise.race([document.fonts.load('64px "Alfa Slab One"'), new Promise(r => setTimeout(r, 1800))]); } catch (e) { }
+  buildRenderer(); buildTextures();
+  setDistance(settings.dist); buildHall(); computeDvdP();
+  resize(); addEventListener('resize', resize);
+  A.muted = settings.muted; updateSoundBtn(); netInit(); bindUI();
+  ld.remove();
+  if (!restore(data)) showMenu();
+  requestAnimationFrame(t => { lastT = t; requestAnimationFrame(frame); });
+}
+(function () {
+  const hot = window.claude && window.claude.hot;
+  try { hot && hot.snapshot && hot.snapshot(snapshot); } catch (e) { }
+  const go = d => boot(d || {});
+  if (hot && hot.ready) hot.ready(go); else go(hot && hot.data || {});
+})();
+
+</script>
+</body>
+</html>
