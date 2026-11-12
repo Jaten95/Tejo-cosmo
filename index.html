@@ -92,6 +92,8 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
   width:min(86vw,420px);text-align:center;font-size:13px;font-weight:600;color:var(--paper);
   background:rgba(22,16,11,.78);padding:9px 14px;border-radius:999px;transition:opacity .3s;}
 #hint.off{opacity:0;}
+.skipBtn{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 70px);pointer-events:auto;font:800 14px var(--body);color:var(--ink);background:var(--yellow);padding:10px 16px;border-radius:3px;box-shadow:3px 3px 0 var(--red);white-space:nowrap;}
+.chip.off{opacity:.5;}
 #feed{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 72px);
   display:flex;flex-direction:column;gap:4px;max-width:62vw;}
 #feed div{font-size:12px;font-weight:600;background:rgba(22,16,11,.72);padding:4px 8px;border-left:3px solid var(--c);
@@ -207,6 +209,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     <button class="iconBtn" id="btnSound" aria-label="Sonido"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M17 9l5 6M22 9l-5 6"/></svg></button>
   </div>
   <div id="hint">Arrastra hacia abajo para cargar · suelta para lanzar</div>
+  <button class="skipBtn" id="btnSkip" hidden>Saltar turno</button>
 </div>
 <div id="announce" aria-live="assertive"><div class="t" id="annT"></div><div class="s"></div><div class="p" id="annP"></div></div>
 <div id="toast"></div>
@@ -1357,7 +1360,7 @@ async function netRejoin() {
     NET.sala = sala; NET.unsub = sala.onPeers(netSync, netError); NET.joinedAt = performance.now();
     const me = { v: 1, pid: NET.pid, name: myName() };
     if (NET.lastT) me.t = NET.lastT;
-    if (keepG) { me.g = { ...(NET.g && NET.g.host === NET.pid ? NET.g : keepG) }; me.g.ver = Math.max(me.g.ver, (NET.lastG && NET.lastG.ver) || 0) + 1; NET.myG = NET.g = NET.lastG = me.g; }
+    if (keepG && NET.lastG && NET.lastG.host === NET.pid) { me.g = NET.lastG; NET.myG = NET.g = me.g; }
     await sala.presence(me);
     netSync();
   } catch (e) { } finally { NET.rejoining = false; }
@@ -1365,6 +1368,7 @@ async function netRejoin() {
 let hiddenAt = 0;
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { hiddenAt = performance.now(); return; }
+  if (!$('hud').hidden) keepAwake(true);
   if (NET.sala && performance.now() - hiddenAt > 2000) netRejoin();
 });
 function netCreate() { netEnter(String(1000 + Math.floor(Math.random() * 9000)), true); }
@@ -1389,6 +1393,7 @@ function netSync() {
   if (NET.myG && best && best.host !== NET.pid) { NET.myG = null; NET.sala.presence({ g: null }).catch(() => { }); }
   if (NET.g && amHost()) hostDuties(peers);
   applyG();
+  if (online()) { const key = [...presentPids(peers).keys()].sort().join(','); if (key !== NET.hereKey) { NET.hereKey = key; renderBoard(); } }
   if (!$('sala').hidden) renderSala();
 }
 function hostDuties(peers) {
@@ -1425,13 +1430,24 @@ function applyG() {
     });
   }
   tryConsume();
-  const s = g.snap;
-  if (!amHost() && s && s.gid === game.gid && (phase === 'aim' || phase === 'wait') && !drag) {
-    if (s.seq > game.thrown || (s.seq === game.thrown && snapDiffers(s))) { restoreSnap(g); return; }
+  if ((phase === 'aim' || phase === 'wait') && !drag && !NET.pending[game.thrown]) {
+    const s = aheadSnap();
+    if (s) { restoreSnap(s); return; }
   }
-  if (g.phase === 'over' && !game.over && (phase === 'aim' || phase === 'wait') && (!s || s.seq <= game.thrown)) {
+  if (g.phase === 'over' && !game.over && (phase === 'aim' || phase === 'wait') && !aheadSnap()) {
     gameOver([...game.players].sort((a, b) => b.score - a.score)[0]);
   }
+}
+/* La foto de la partida más avanzada que publique cualquier jugador. Como todos corren
+   el mismo motor con los mismos tiros, la más avanzada es la correcta: solo se adelanta, nunca se retrocede. */
+function aheadSnap() {
+  if (!NET.sala || !online()) return null;
+  let best = null;
+  for (const peer of NET.sala.peers()) {
+    const s = peer.presence && peer.presence.s;
+    if (s && s.gid === game.gid && typeof s.seq === 'number' && s.seq > game.thrown && Array.isArray(s.sc) && Array.isArray(s.order) && (!best || s.seq > best.seq)) best = s;
+  }
+  return best;
 }
 function tryConsume() {
   if (!online() || game.over || !(phase === 'aim' || phase === 'wait')) return;
@@ -1457,7 +1473,8 @@ function buildOnlineGame(g) {
 }
 function startOnlineGame(g) {
   buildOnlineGame(g);
-  if (g.snap && g.snap.gid === g.gid && g.snap.seq > 0) restoreSnap(g); else startRound();
+  const s = aheadSnap();
+  if (s) restoreSnap(s); else startRound();
 }
 function makeSnap() {
   return {
@@ -1466,10 +1483,8 @@ function makeSnap() {
     tj: game.tejos.map(t => [t.owner, t.valid ? 1 : 0, r4(t.u || 0), r4(t.v || 0), isFinite(t.d) ? r4(t.d) : -1, ...t.mesh.position.toArray().map(r4), ...t.mesh.quaternion.toArray().map(r4)])
   };
 }
-function snapDiffers(s) { return s.round !== game.round || s.idx !== game.idx || game.players.some((p, i) => !s.sc[i] || s.sc[i][0] !== p.score); }
-function restoreSnap(g) {
-  const s = g.snap;
-  if (!online() || game.gid !== g.gid) buildOnlineGame(g);
+function restoreSnap(s) {
+  if (!online() || game.gid !== s.gid) { if (!NET.g || NET.g.gid !== s.gid || !NET.g.setup) return; buildOnlineGame(NET.g); }
   timers.length = 0; if (flight && flight.mesh) scene.remove(flight.mesh); flight = null; drag = null;
   clearCancha();
   Object.assign(game, { round: s.round, idx: s.idx, order: s.order.slice(), scored: !!s.scored, thrown: s.seq, over: false });
@@ -1483,6 +1498,8 @@ function restoreSnap(g) {
   });
   for (const n in NET.pending) if (+n < game.thrown) delete NET.pending[n];
   showScreen(null); setHud(true); renderBoard();
+  const winner = game.players.find(p => p.score >= game.goal);
+  if (winner) { gameOver(winner); return; }
   nextThrow();
 }
 function netTurn(p) {
@@ -1490,7 +1507,7 @@ function netTurn(p) {
   phase = mine ? 'aim' : 'wait';
   if (mine) { hint('Te toca: arrastra hacia abajo y suelta', true); toast('Te toca'); buzz(25); }
   else hint(`Esperando el tiro de ${p.name}…`, true);
-  if (NET.sala && amHost()) { publishG({ ...NET.g, snap: makeSnap(), ver: NET.g.ver + 1 }); hostCheckThrow(presentPids(NET.sala.peers())); }
+  if (NET.sala) { NET.sala.presence({ s: makeSnap() }).catch(() => { }); if (amHost()) hostCheckThrow(presentPids(NET.sala.peers())); }
   tryConsume();
 }
 function netThrow(a) {
@@ -1515,7 +1532,7 @@ function netWatch() {
   if (a && isFinite(a.L) && isFinite(a.P)) { const aim = { L: clamp(+a.L, -AIM.L, AIM.L), P: clamp(+a.P, 0, 1) }; showReticle(aim); setGauge(aim.P); }
   else { reticle.visible = false; setGauge(0); }
 }
-function netGameOver() { if (NET.sala && amHost()) publishG({ ...NET.g, phase: 'over', snap: makeSnap(), ver: NET.g.ver + 1 }); }
+function netGameOver() { if (NET.sala && amHost()) publishG({ ...NET.g, phase: 'over', ver: NET.g.ver + 1 }); }
 function netRematch() {
   if (!amHost() || !NET.g || !NET.g.setup) return;
   const g = NET.g, here = presentPids(NET.sala.peers());
@@ -1554,19 +1571,37 @@ function netTick() {
     if (next === NET.pid) {
       const g = { ...lg, host: NET.pid, ver: lg.ver + 1 };
       if (lg.phase === 'lobby') g.seats = lg.seats.filter(s => here.has(s.pid));
-      if (online() && game.gid === g.gid && (phase === 'aim' || phase === 'wait')) g.snap = makeSnap();
       publishG(g); NET.lostAt = 0; toast('Ahora eres el anfitrión de la sala');
       netSync();
     }
   }
-  if (amHost() && online() && !game.over && (phase === 'aim' || phase === 'wait')) {
-    const p = current();
-    if (p.pid !== NET.pid && !here.has(p.pid)) {
-      const k = p.pid + ':' + game.thrown; NET.absent[k] = NET.absent[k] || now;
-      if (now - NET.absent[k] > 6000) acceptThrow({ n: game.thrown, L: 0, P: 0, pid: p.pid, skip: 1 });
-    } else hostCheckThrow(here);
+  let skip = false;
+  if (online() && !game.over && (phase === 'aim' || phase === 'wait')) {
+    const p = current(), away = p.pid !== NET.pid && !here.has(p.pid);
+    if (phase === 'wait') hint(away ? `${p.name} perdió la señal. Esperando a que vuelva…` : `Esperando el tiro de ${p.name}…`, true);
+    if (amHost()) {
+      if (away) {
+        const k = p.pid + ':' + game.thrown; NET.absent[k] = NET.absent[k] || now;
+        if (now - NET.absent[k] > 12000) { skip = true; $('btnSkip').textContent = `Saltar turno de ${p.name}`; }
+      } else hostCheckThrow(here);
+    }
   }
+  $('btnSkip').hidden = !skip;
   if (!$('sala').hidden) renderSala();
+}
+function netSkip() {
+  if (!amHost() || !online() || game.over || !(phase === 'aim' || phase === 'wait')) return;
+  const p = current(); if (p.pid === NET.pid) return;
+  $('btnSkip').hidden = true;
+  acceptThrow({ n: game.thrown, L: 0, P: 0, pid: p.pid, skip: 1 });
+}
+/* Mantener la pantalla encendida mientras se juega: si el celular se bloquea, se cae la conexión */
+let wakeLock = null;
+async function keepAwake(on) {
+  try {
+    if (on && !wakeLock && navigator.wakeLock && !document.hidden) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); }
+    else if (!on && wakeLock) { const w = wakeLock; wakeLock = null; await w.release(); }
+  } catch (e) { wakeLock = null; }
 }
 
 /* ---------- pantalla de la sala ---------- */
@@ -1611,6 +1646,7 @@ function netBindUI() {
   $('btnStart').addEventListener('click', netStart);
   $('btnLeave').addEventListener('click', () => showMenu());
   $('btnRefresh').addEventListener('click', netRefresh);
+  $('btnSkip').addEventListener('click', netSkip);
   $('btnCopy').addEventListener('click', () => {
     const txt = `Juguemos tejo en el Club El Cosmo. Sala ${NET.code}`;
     try { navigator.clipboard.writeText(txt).then(() => toast('Código copiado'), () => toast(`El código es ${NET.code}`)); } catch (e) { toast(`El código es ${NET.code}`); }
@@ -1629,7 +1665,7 @@ function loadSettings() { const s = store.get('tejo.settings.v1', null); if (s) 
 function records() { return store.get('tejo.record.v1', {}); }
 
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id); }
-function setHud(on) { $('hud').hidden = !on; }
+function setHud(on) { $('hud').hidden = !on; keepAwake(on); }
 function hint(text, on) { const h = $('hint'); if (text) h.textContent = text; h.classList.toggle('off', !on); }
 let toastTimer;
 function toast(text) { const t = $('toast'); t.textContent = text; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1900); }
@@ -1655,10 +1691,11 @@ function renderBoard() {
   const cur = (phase === 'over' || !game.order.length) ? -1 : game.order[game.idx];
   const b = $('board'); b.innerHTML = '';
   game.players.forEach((p, i) => {
-    const c = document.createElement('div'); c.className = 'chip' + (i === cur ? ' on' : ''); c.style.setProperty('--c', p.color);
+    const away = online() && NET.sala && p.pid !== NET.pid && !presentPids(NET.sala.peers()).has(p.pid);
+    const c = document.createElement('div'); c.className = 'chip' + (i === cur ? ' on' : '') + (away ? ' off' : ''); c.style.setProperty('--c', p.color);
     const goal = game.mode === 'reto' ? null : game.goal;
     c.innerHTML = `<div class="nm"></div><div class="sc">${p.score}<small>${goal ? '/ ' + goal : 'pts'}</small></div>` + (goal ? `<div class="bar"><i style="width:${Math.min(100, p.score / goal * 100)}%"></i></div>` : '');
-    c.querySelector('.nm').textContent = p.name + (p.cpu ? ' · ' + DIFF[settings.diff].n.toLowerCase() : '') + (online() && p.pid === NET.pid ? ' · tú' : '');
+    c.querySelector('.nm').textContent = p.name + (p.cpu ? ' · ' + DIFF[settings.diff].n.toLowerCase() : '') + (online() && p.pid === NET.pid ? ' · tú' : '') + (away ? ' · sin señal' : '');
     b.appendChild(c);
   });
   if (game.mode === 'reto') {
