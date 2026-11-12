@@ -1241,6 +1241,11 @@ const SUPA = {
 function loadScript(src) {
   return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.async = true; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
 }
+/* Límites del plan gratis de Supabase: 5 llamadas de presence por cliente cada 30 s y
+   100 mensajes por segundo en todo el proyecto (si se pasa, desconecta a todos).
+   Por eso presence solo dice quién está (una vez al entrar) y el estado del juego viaja
+   por broadcast: cada uno manda su estado completo cuando cambia, y lo reenvía cuando
+   alguien entra para que el recién llegado se ponga al día. */
 async function supaRoom() {
   if (!window.supabase) await loadScript(SUPA.lib);
   const client = window.supabase.createClient(SUPA.url, SUPA.key, { auth: { persistSession: false, autoRefreshToken: false }, realtime: { params: { eventsPerSecond: 20 } } });
@@ -1249,22 +1254,45 @@ async function supaRoom() {
       return new Promise((resolve, reject) => {
         const key = NET.pid + '.' + rid();
         const ch = client.channel(name, { config: { presence: { key }, broadcast: { self: false } } });
-        const handlers = new Set(), aims = {};
-        let my = {}, peers = [], joined = false, closed = false;
+        const handlers = new Set(), remote = {}, aims = {};
+        let my = {}, peers = [], joined = false, closed = false, tracked = false, resendT = 0, lastFull = 0, notifyQ = false, sendQ = false, lastBody = '';
+        const ident = () => ({ pid: my.pid, name: my.name });
         const rebuild = () => {
           const st = ch.presenceState(), out = [];
           for (const k in st) {
             if (k === key) continue;
             const metas = st[k] || [], m = metas[metas.length - 1] || {};
-            const pres = Object.assign({}, m); delete pres.presence_ref;
+            const pres = Object.assign({ pid: m.pid, name: m.name }, remote[k] || {});
             if (aims[k]) pres.aim = aims[k];
             out.push({ peer: k, isMe: false, presence: pres });
           }
           out.push({ peer: key, isMe: true, presence: Object.assign({}, my) });
           peers = out;
-          handlers.forEach(h => { try { h({ peers }); } catch (e) { } });
+          if (!notifyQ) { notifyQ = true; setTimeout(() => { notifyQ = false; if (!closed) handlers.forEach(h => { try { h({ peers }); } catch (e) { } }); }, 16); }
         };
+        // el estado completo sale como mucho cada 300 ms y solo si cambió
+        const doSend = (force) => {
+          if (closed) return;
+          const body = JSON.stringify(my);
+          if (!force && body === lastBody) return;
+          lastBody = body; lastFull = performance.now();
+          ch.send({ type: 'broadcast', event: 'st', payload: { k: key, d: my } }).catch(() => { });
+        };
+        const sendFull = (force) => {
+          if (closed || !joined) return;
+          if (!sendQ && performance.now() - lastFull >= 150) return doSend(force);
+          if (sendQ) return; sendQ = true;
+          setTimeout(() => { sendQ = false; doSend(force); }, 150);
+        };
+        const sendFullSoon = () => { clearTimeout(resendT); resendT = setTimeout(() => sendFull(true), 250 + Math.random() * 400); };
+        const doTrack = () => { if (!closed && my.pid) { tracked = true; ch.track(ident()).catch(() => { }); } };
         ch.on('presence', { event: 'sync' }, rebuild);
+        ch.on('presence', { event: 'join' }, ({ key: k }) => { if (k !== key) sendFullSoon(); });
+        ch.on('presence', { event: 'leave' }, ({ key: k }) => { const st = ch.presenceState(); if (!st[k]) { delete remote[k]; delete aims[k]; } });
+        ch.on('broadcast', { event: 'st' }, msg => {
+          const p = msg && msg.payload; if (!p || typeof p.k !== 'string' || !p.d || typeof p.d !== 'object') return;
+          remote[p.k] = p.d; rebuild();
+        });
         ch.on('broadcast', { event: 'aim' }, msg => {
           const p = msg && msg.payload; if (!p || typeof p.k !== 'string') return;
           if (p.aim) aims[p.k] = p.aim; else delete aims[p.k];
@@ -1275,28 +1303,30 @@ async function supaRoom() {
             const p = Object.assign({}, patch);
             if ('aim' in p) {
               const a = p.aim; delete p.aim;
-              ch.send({ type: 'broadcast', event: 'aim', payload: { k: key, aim: a || null } });
+              ch.send({ type: 'broadcast', event: 'aim', payload: { k: key, aim: a || null } }).catch(() => { });
               if (!Object.keys(p).length) return;
             }
+            const before = JSON.stringify(ident());
             for (const k in p) { if (p[k] === null) delete my[k]; else my[k] = p[k]; }
             rebuild();
-            await ch.track(my);
+            if (!tracked || JSON.stringify(ident()) !== before) doTrack();
+            sendFull();
           },
           peers: () => peers,
           connected: () => { try { return client.realtime.isConnected(); } catch (e) { return true; } },
           onPeers(h) { handlers.add(h); setTimeout(() => h({ peers }), 0); return () => handlers.delete(h); },
-          async leave() { closed = true; handlers.clear(); document.removeEventListener('visibilitychange', onVis); try { await ch.untrack(); } catch (e) { } try { await client.removeChannel(ch); } catch (e) { } }
+          async leave() { closed = true; handlers.clear(); clearTimeout(resendT); clearInterval(keep); try { await ch.untrack(); } catch (e) { } try { await client.removeChannel(ch); } catch (e) { } }
         };
-        const onVis = () => { if (!document.hidden && !closed && Object.keys(my).length) ch.track(my).catch(() => { }); };
-        document.addEventListener('visibilitychange', onVis);
-        const timer = setTimeout(() => { if (!joined) { joined = true; reject({ code: 'upstream_error' }); } }, 12000);
+        // red de seguridad: reenviar el estado cada 20 s por si alguien se perdió un mensaje
+        const keep = setInterval(() => { if (performance.now() - lastFull > 20000) sendFull(true); }, 5000);
+        const timer = setTimeout(() => { if (!joined) { joined = true; clearInterval(keep); reject({ code: 'upstream_error' }); } }, 12000);
         ch.subscribe(status => {
           if (closed) return;
           if (status === 'SUBSCRIBED') {
             if (!joined) { joined = true; clearTimeout(timer); resolve(sala); }
-            else if (Object.keys(my).length) ch.track(my).catch(() => { }); // volver a anunciarse tras reconectar
+            else { doTrack(); sendFullSoon(); } // volvió la conexión: anunciarse y mandar el estado
           } else if ((status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') && !joined) {
-            joined = true; clearTimeout(timer); reject({ code: 'upstream_error' });
+            joined = true; clearTimeout(timer); clearInterval(keep); reject({ code: 'upstream_error' });
           }
         });
       });
@@ -1511,26 +1541,31 @@ function netTurn(p) {
   tryConsume();
 }
 function netThrow(a) {
+  if (phase !== 'aim' || current().pid !== NET.pid) return;
   const t = { n: game.thrown, L: r5(a.L), P: r5(a.P), gid: game.gid, pid: NET.pid };
   NET.lastT = t;
+  launch({ L: t.L, P: t.P });
   if (NET.sala) {
     NET.sala.presence({ t, aim: null }).catch(() => { });
     if (amHost()) publishG({ ...NET.g, last: t, ver: NET.g.ver + 1 });
   }
-  launch({ L: t.L, P: t.P });
 }
 function netAim(aim, now) {
   if (!NET.sala) return;
   if (aim === null) { NET.sala.presence({ aim: null }).catch(() => { }); return; }
-  if (now - NET.lastAimSent < 80) return; NET.lastAimSent = now;
+  if (now - NET.lastAimSent < (NET.via === 'supabase' ? 220 : 80)) return; NET.lastAimSent = now;
   NET.sala.presence({ aim: { L: r4(aim.L), P: r4(aim.P), n: game.thrown } }).catch(() => { });
 }
 function netWatch() {
   if (!NET.sala || !game) return;
   const p = current(); let a = null;
   for (const peer of NET.sala.peers()) { const pr = peer.presence || {}; if (pr.pid === p.pid && pr.aim && pr.aim.n === game.thrown) { a = pr.aim; break; } }
-  if (a && isFinite(a.L) && isFinite(a.P)) { const aim = { L: clamp(+a.L, -AIM.L, AIM.L), P: clamp(+a.P, 0, 1) }; showReticle(aim); setGauge(aim.P); }
-  else { reticle.visible = false; setGauge(0); }
+  if (a && isFinite(a.L) && isFinite(a.P)) {
+    const tgt = { L: clamp(+a.L, -AIM.L, AIM.L), P: clamp(+a.P, 0, 1) }, w = NET.watch;
+    if (!w || w.n !== game.thrown) NET.watch = { n: game.thrown, L: tgt.L, P: tgt.P };
+    else { w.L += (tgt.L - w.L) * .2; w.P += (tgt.P - w.P) * .2; }
+    showReticle(NET.watch); setGauge(NET.watch.P);
+  } else { reticle.visible = false; setGauge(0); }
 }
 function netGameOver() { if (NET.sala && amHost()) publishG({ ...NET.g, phase: 'over', ver: NET.g.ver + 1 }); }
 function netRematch() {
