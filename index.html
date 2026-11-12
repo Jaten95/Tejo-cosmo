@@ -92,6 +92,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
   width:min(86vw,420px);text-align:center;font-size:13px;font-weight:600;color:var(--paper);
   background:rgba(22,16,11,.78);padding:9px 14px;border-radius:999px;transition:opacity .3s;}
 #hint.off{opacity:0;}
+#turn .clock{align-self:flex-start;margin-top:4px;font:400 18px/1 var(--display);color:var(--ink);background:var(--yellow);padding:5px 9px 4px;font-variant-numeric:tabular-nums;box-shadow:2px 2px 0 var(--ink);}
+#turn .clock.low{background:var(--red);color:var(--paper);animation:tick 1s steps(1) infinite;}
+@keyframes tick{50%{transform:scale(1.08);}}
 .skipBtn{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 70px);pointer-events:auto;font:800 14px var(--body);color:var(--ink);background:var(--yellow);padding:10px 16px;border-radius:3px;box-shadow:3px 3px 0 var(--red);white-space:nowrap;}
 .chip.off{opacity:.5;}
 #feed{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 72px);
@@ -229,7 +232,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 
 <div id="hud" hidden>
   <header id="board"></header>
-  <div id="turn"><div class="who" id="turnWho"></div><div class="meta" id="turnMeta"></div></div>
+  <div id="turn"><div class="who" id="turnWho"></div><div class="meta" id="turnMeta"></div><div class="clock" id="clock" hidden></div></div>
   <div id="lupa"><span>LUPA</span></div>
   <div id="gauge" aria-hidden="true"><div id="gaugeFill"></div><div id="gaugeLast"></div><b>FUERZA</b></div>
   <div id="feed" aria-live="polite"></div>
@@ -296,7 +299,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.14</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.15</span></div>
   </div></div>
 </section>
 
@@ -338,6 +341,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     <p class="prose"><b>Ronda:</b> cada jugador lanza un tejo por ronda. Una mecha reventada queda reventada hasta que empiece la siguiente ronda. Gana quien llegue primero a la meta.</p>
     <p class="prose"><b>Reto:</b> 10 tejos para hacer el mayor puntaje posible. La mano no cuenta.</p>
     <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
+    <p class="prose"><b>Tiempo en salas:</b> tienes 15 segundos para lanzar. Si no lanzas, tu tiro es nulo y pasa el turno.</p>
     <p class="prose"><b>Salas:</b> uno crea la sala y pasa el código de 4 números; hasta 4 jugadores, cada uno en su celular. Si alguien no está cuando le toca, pierde el turno.</p>
     <div class="cta"><button class="btn" id="btnRulesBack">Entendido</button></div>
   </div></div>
@@ -371,7 +375,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-const GAME_VERSION = "1.14";
+const GAME_VERSION = "1.15";
 'use strict';
 /* ================= Constantes del mundo (metros) ================= */
 const G = 9.81;
@@ -1245,14 +1249,14 @@ function showReticle(aim) {
 
 /* ---------- Lanzar ---------- */
 function finalAim(aim) { return { L: aim.L + gauss() * .012, P: aim.P + gauss() * .012 / dvdP }; }
-function launch(a) {
+function launch(a, opts) {
   const p = current();
   lastP[p.name] = a.P;
   const v0 = aimToVel(a);
   const sim = simulate(V(REL.x, REL.y, REL.z), v0, false);
   const res = evaluate(sim);
   const mesh = makeTejo(p.color, p.design, p.name); mesh.position.copy(sim.path[0].p); scene.add(mesh);
-  flight = { sim, res, mesh, t: 0, owner: game.order[game.idx], ev: 0, done: false, impactAt: sim.first === 'clay' ? sim.firstT : sim.duration, spin: rand(12, 18) * (Math.random() < .5 ? -1 : 1), tilt: V(rand(-.25, .25), 0, rand(-.25, .25)) };
+  flight = { timeout: !!(opts && opts.timeout), sim, res, mesh, t: 0, owner: game.order[game.idx], ev: 0, done: false, impactAt: sim.first === 'clay' ? sim.firstT : sim.duration, spin: rand(12, 18) * (Math.random() < .5 ? -1 : 1), tilt: V(rand(-.25, .25), 0, rand(-.25, .25)) };
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
   game.thrown++;
   A.whoosh(); buzz(15);
@@ -1329,7 +1333,8 @@ function finishFlight() {
     } else if (r.valid) {
       toast(cm <= 1 ? 'Pegadito al bocín' : `En la greda, a ${cm} cm del bocín`); feed(p, `Greda · ${cm} cm`);
     } else {
-      p.st.nulos++; announce('NULO', nuloWhy(f.sim).toUpperCase(), false, true); A.aww(); feed(p, `Nulo · ${nuloWhy(f.sim).toLowerCase()}`);
+      const why = f.timeout ? 'Se le acabó el tiempo' : nuloWhy(f.sim);
+      p.st.nulos++; announce('NULO', why.toUpperCase(), false, true); A.aww(); feed(p, `Nulo · ${why.toLowerCase()}`);
     }
     renderBoard();
   });
@@ -1695,7 +1700,7 @@ function hostCheckThrow(here) {
   const p = current(); if (p.pid === NET.pid) return;
   const t = here.get(p.pid) && here.get(p.pid).t;
   if (t && t.n === game.thrown && t.gid === game.gid && isFinite(t.L) && isFinite(t.P))
-    acceptThrow({ n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid });
+    acceptThrow({ n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0 });
 }
 function acceptThrow(t) {
   const g = NET.g; if (!g) return;
@@ -1716,7 +1721,7 @@ function applyG() {
     game.players.forEach(p => {
       const pr = here.get(p.pid), t = pr && pr.t;
       if (t && t.gid === game.gid && typeof t.n === 'number' && t.n >= game.thrown && !NET.pending[t.n] && isFinite(t.L) && isFinite(t.P))
-        NET.pending[t.n] = { n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid };
+        NET.pending[t.n] = { n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0 };
     });
   }
   tryConsume();
@@ -1745,8 +1750,8 @@ function tryConsume() {
   delete NET.pending[game.thrown];
   if (current().pid !== t.pid) return;
   drag = null;
-  if (t.skip) toast(`${current().name} no está: pierde el turno`);
-  launch({ L: t.L, P: t.P });
+  if (t.skip) toast(current().pid === NET.pid ? 'Se te acabó el tiempo: nulo' : `${current().name} no lanzó a tiempo: nulo`);
+  launch({ L: t.L, P: t.P }, { timeout: !!t.skip });
 }
 
 /* ---------- partida ---------- */
@@ -1799,9 +1804,11 @@ function restoreSnap(s) {
   if (winner) { gameOver(winner); return; }
   nextThrow();
 }
+const TURN_LIMIT = 15000;        // segundos para lanzar antes del nulo
 function netTurn(p) {
   const mine = p.pid === NET.pid;
   phase = mine ? 'aim' : 'wait';
+  NET.turnAt = performance.now(); NET.turnN = game.thrown;
   if (mine) { hint('Te toca: arrastra hacia abajo y suelta', true); toast('Te toca'); buzz(25); }
   else hint(`Esperando el tiro de ${p.name}…`, true);
   if (NET.sala) { NET.sala.presence({ s: makeSnap() }).catch(() => { }); if (amHost()) hostCheckThrow(presentPids(NET.sala.peers())); }
@@ -1882,19 +1889,38 @@ function netTick() {
       netSync();
     }
   }
-  let skip = false;
-  if (online() && !game.over && (phase === 'aim' || phase === 'wait')) {
+  if (online() && !game.over && (phase === 'aim' || phase === 'wait') && NET.turnN === game.thrown) {
     const p = current(), away = p.pid !== NET.pid && !here.has(p.pid);
-    if (phase === 'wait') hint(away ? `${p.name} perdió la señal. Esperando a que vuelva…` : `Esperando el tiro de ${p.name}…`, true);
-    if (amHost()) {
-      if (away) {
-        const k = p.pid + ':' + game.thrown; NET.absent[k] = NET.absent[k] || now;
-        if (now - NET.absent[k] > 12000) { skip = true; $('btnSkip').textContent = `Saltar turno de ${p.name}`; }
-      } else hostCheckThrow(here);
+    const left = Math.ceil((TURN_LIMIT - (now - NET.turnAt)) / 1000);
+    setClock(left);
+    if (phase === 'wait') hint(away ? `${p.name} perdió la señal: si no vuelve, su tiro es nulo` : `Esperando el tiro de ${p.name}…`, true);
+    if (phase === 'aim' && p.pid === NET.pid && left <= 5 && left > 0) { hint(`¡Lanza ya! Quedan ${left} s`, true); if (left <= 3) buzz(15); }
+    // mi turno: al llegar a 0 mi propio celular hace el nulo
+    if (phase === 'aim' && p.pid === NET.pid && left <= 0) timeoutNulo();
+    // el anfitrión lo hace por el que no está (o tiene el celular dormido)
+    else if (amHost() && p.pid !== NET.pid) {
+      const grace = away ? 0 : 10000;
+      if (now - NET.turnAt > TURN_LIMIT + grace) acceptThrow({ n: game.thrown, L: 0, P: 0, pid: p.pid, skip: 1 });
+      else if (!away) hostCheckThrow(here);
     }
-  }
-  $('btnSkip').hidden = !skip;
+  } else setClock(null);
   if (!$('sala').hidden) renderSala();
+}
+function setClock(left) {
+  const c = $('clock');
+  if (left === null || left === undefined) { c.hidden = true; return; }
+  c.hidden = false; c.textContent = `${Math.max(0, left)} s`; c.classList.toggle('low', left <= 5);
+}
+function timeoutNulo() {
+  if (phase !== 'aim' || current().pid !== NET.pid) return;
+  drag = null; reticle.visible = false; setClock(null);
+  const t = { n: game.thrown, L: 0, P: 0, gid: game.gid, pid: NET.pid, skip: 1 };
+  NET.lastT = t;
+  NET.pending[t.n] = t; tryConsume();
+  if (NET.sala) {
+    NET.sala.presence({ t, aim: null }).catch(() => { });
+    if (amHost()) publishG({ ...NET.g, last: t, ver: NET.g.ver + 1 });
+  }
 }
 function netSkip() {
   if (!amHost() || !online() || game.over || !(phase === 'aim' || phase === 'wait')) return;
