@@ -269,7 +269,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.11</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.12</span></div>
   </div></div>
 </section>
 
@@ -299,7 +299,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     </table>
     <p class="prose"><b>Lanzar:</b> pon el dedo en cualquier parte y arrástralo hacia abajo para cargar fuerza; muévelo a los lados para apuntar. Suelta para lanzar. Si te quedas mucho rato apuntando, el pulso empieza a temblar.</p>
     <p class="prose"><b>Nulo:</b> si el tejo pega primero en el marco, el tablero o el piso, no cuenta. Solo vale lo que cae en la greda.</p>
-    <p class="prose"><b>Ronda:</b> cada jugador lanza un tejo por ronda. Las mechas reventadas se reponen después de cada lanzamiento. Gana quien llegue primero a la meta.</p>
+    <p class="prose"><b>Ronda:</b> cada jugador lanza un tejo por ronda. Una mecha reventada queda reventada hasta que empiece la siguiente ronda. Gana quien llegue primero a la meta.</p>
     <p class="prose"><b>Reto:</b> 10 tejos para hacer el mayor puntaje posible. La mano no cuenta.</p>
     <p class="prose"><b>Salas:</b> uno crea la sala y pasa el código de 4 números; hasta 4 jugadores, cada uno en su celular. Si alguien no está cuando le toca, pierde el turno.</p>
     <div class="cta"><button class="btn" id="btnRulesBack">Entendido</button></div>
@@ -334,7 +334,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-const GAME_VERSION = "1.11";
+const GAME_VERSION = "1.12";
 'use strict';
 /* ================= Constantes del mundo (metros) ================= */
 const G = 9.81;
@@ -1090,7 +1090,6 @@ function advance() {
   if (phase === 'over') return;
   const leader = game.players.find(p => p.score >= game.goal);
   if (game.mode !== 'reto' && leader) return gameOver(leader);
-  if (mechaMeshes.some(m => !m.userData.alive)) { resetMechas(true); }
   if (game.mode === 'reto') {
     if (game.thrown >= RETO_THROWS) return gameOver(game.players[0]);
     return startRound();
@@ -1509,10 +1508,16 @@ function startOnlineGame(g) {
   const s = aheadSnap();
   if (s) restoreSnap(s); else startRound();
 }
+/* Deja las mechas como estaban en la foto: las reventadas siguen reventadas, con su quemón */
+function applyMechas(mk) {
+  if (!Array.isArray(mk)) return;
+  mechaMeshes.forEach((m, i) => { if (mk[i] === 0) { m.userData.alive = false; m.visible = false; decal(m.userData.u, m.userData.v, T.scorch, .16, .002); } });
+}
 function makeSnap() {
   return {
     gid: game.gid, seq: game.thrown, round: game.round, idx: game.idx, order: game.order, scored: game.scored ? 1 : 0,
     sc: game.players.map(p => [p.score, p.st.mechas, p.st.emb, p.st.mon, p.st.manos, p.st.nulos, p.st.tiros]),
+    mk: mechaMeshes.map(m => m.userData.alive ? 1 : 0),
     tj: game.tejos.map(t => [t.owner, t.valid ? 1 : 0, r4(t.u || 0), r4(t.v || 0), isFinite(t.d) ? r4(t.d) : -1, ...t.mesh.position.toArray().map(r4), ...t.mesh.quaternion.toArray().map(r4)])
   };
 }
@@ -1522,6 +1527,7 @@ function restoreSnap(s) {
   clearCancha();
   Object.assign(game, { round: s.round, idx: s.idx, order: s.order.slice(), scored: !!s.scored, thrown: s.seq, over: false });
   game.players.forEach((p, i) => { const a = s.sc[i] || []; p.score = a[0] | 0; p.st = { mechas: a[1] | 0, emb: a[2] | 0, mon: a[3] | 0, manos: a[4] | 0, nulos: a[5] | 0, tiros: a[6] | 0 }; });
+  applyMechas(s.mk);
   (s.tj || []).forEach(a => {
     const [owner, valid, u, v, d, px, py, pz, qx, qy, qz, qw] = a;
     if (!game.players[owner]) return;
@@ -1909,6 +1915,7 @@ function snapshot() {
     ...base, lastP, pending: phase === 'result' || phase === 'roundEnd',
     game: {
       players: game.players, round: game.round, order: game.order, idx: game.idx, goal: game.goal, mode: game.mode, thrown: game.thrown, scored: game.scored,
+      mk: mechaMeshes.map(m => m.userData.alive ? 1 : 0),
       tejos: game.tejos.map(t => ({ owner: t.owner, valid: t.valid, d: isFinite(t.d) ? t.d : null, u: t.u, v: t.v, p: t.mesh.position.toArray(), q: t.mesh.quaternion.toArray() }))
     }
   };
@@ -1923,6 +1930,7 @@ function restore(data) {
       game.tejos.push({ ...t, d: t.d == null ? Infinity : t.d, mesh: m });
       if (t.valid) decal(t.u, t.v, T.crater, .14);
     });
+    applyMechas(g.mk);
     lastP = data.lastP || {};
     showScreen(null); setHud(true); clearFeed();
     if (data.pending) { phase = 'result'; advance(); } else nextThrow();
