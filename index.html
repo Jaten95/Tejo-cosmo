@@ -1192,14 +1192,89 @@ function netInit() {
   if (!NET.pid) { NET.pid = rid() + rid(); try { sessionStorage.setItem('tejo.pid', NET.pid); } catch (e) { } }
   const c = window.claude;
   if (c && typeof c.use === 'function') {
+    NET.via = 'claude';
     c.use('room').then(r => { NET.room = r; NET.ready = true; renderMenu(); }).catch(() => { NET.ready = true; renderMenu(); });
-  } else NET.ready = true;
+  } else {
+    NET.via = 'supabase';
+    supaRoom().then(r => { NET.room = r; NET.ready = true; renderMenu(); }).catch(() => { NET.ready = true; renderMenu(); });
+  }
   setInterval(netTick, 1000);
+}
+
+/* ---------- Salas fuera de Claude: Supabase Realtime ----------
+   Misma forma que la sala de Claude (presence / peers / onPeers / leave).
+   La mira en vivo viaja por broadcast; el resto por presence. */
+const SUPA = {
+  url: 'https://iqttymzbjjftjxdzgagn.supabase.co',
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxdHR5bXpiampmdGp4ZHpnYWduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1MDQ0OTksImV4cCI6MjExMDA4MDQ5OX0._HKDTC7-nM8MLmXUSqugFsMyEXYKY9v9xwTsRv2nrzk',
+  lib: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js'
+};
+function loadScript(src) {
+  return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.async = true; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+}
+async function supaRoom() {
+  if (!window.supabase) await loadScript(SUPA.lib);
+  const client = window.supabase.createClient(SUPA.url, SUPA.key, { auth: { persistSession: false, autoRefreshToken: false }, realtime: { params: { eventsPerSecond: 20 } } });
+  return {
+    join(name) {
+      return new Promise((resolve, reject) => {
+        const key = NET.pid + '.' + rid();
+        const ch = client.channel(name, { config: { presence: { key }, broadcast: { self: false } } });
+        const handlers = new Set(), aims = {};
+        let my = {}, peers = [], joined = false, closed = false;
+        const rebuild = () => {
+          const st = ch.presenceState(), out = [];
+          for (const k in st) {
+            if (k === key) continue;
+            const metas = st[k] || [], m = metas[metas.length - 1] || {};
+            const pres = Object.assign({}, m); delete pres.presence_ref;
+            if (aims[k]) pres.aim = aims[k];
+            out.push({ peer: k, isMe: false, presence: pres });
+          }
+          out.push({ peer: key, isMe: true, presence: Object.assign({}, my) });
+          peers = out;
+          handlers.forEach(h => { try { h({ peers }); } catch (e) { } });
+        };
+        ch.on('presence', { event: 'sync' }, rebuild);
+        ch.on('broadcast', { event: 'aim' }, msg => {
+          const p = msg && msg.payload; if (!p || typeof p.k !== 'string') return;
+          if (p.aim) aims[p.k] = p.aim; else delete aims[p.k];
+          rebuild();
+        });
+        const sala = {
+          async presence(patch) {
+            const p = Object.assign({}, patch);
+            if ('aim' in p) {
+              const a = p.aim; delete p.aim;
+              ch.send({ type: 'broadcast', event: 'aim', payload: { k: key, aim: a || null } });
+              if (!Object.keys(p).length) return;
+            }
+            for (const k in p) { if (p[k] === null) delete my[k]; else my[k] = p[k]; }
+            rebuild();
+            await ch.track(my);
+          },
+          peers: () => peers,
+          onPeers(h) { handlers.add(h); setTimeout(() => h({ peers }), 0); return () => handlers.delete(h); },
+          async leave() { closed = true; handlers.clear(); try { await ch.untrack(); } catch (e) { } try { await client.removeChannel(ch); } catch (e) { } }
+        };
+        const timer = setTimeout(() => { if (!joined) { joined = true; reject({ code: 'upstream_error' }); } }, 12000);
+        ch.subscribe(status => {
+          if (closed) return;
+          if (status === 'SUBSCRIBED') {
+            if (!joined) { joined = true; clearTimeout(timer); resolve(sala); }
+            else if (Object.keys(my).length) ch.track(my).catch(() => { }); // volver a anunciarse tras reconectar
+          } else if ((status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') && !joined) {
+            joined = true; clearTimeout(timer); reject({ code: 'upstream_error' });
+          }
+        });
+      });
+    }
+  };
 }
 function renderMenuOnline() {
   const msg = $('onlineMsg');
   if (!NET.ready) msg.textContent = 'Conectando…';
-  else if (!NET.room) msg.textContent = 'Las salas funcionan cuando abres el juego dentro de Claude con tu sesión iniciada. Tus amigos también necesitan acceso a esta página.';
+  else if (!NET.room) msg.textContent = NET.via === 'supabase' ? 'No se pudo conectar con el servidor de salas. Revisa tu internet y recarga la página.' : 'Las salas funcionan cuando abres el juego dentro de Claude con tu sesión iniciada. Tus amigos también necesitan acceso a esta página.';
   else msg.textContent = 'Crea una sala y pásale el código a tus amigos, o escribe el código que te mandaron.';
   $('btnJoin').disabled = !NET.room; $('codeIn').disabled = !NET.room;
 }
