@@ -296,7 +296,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.13</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.14</span></div>
   </div></div>
 </section>
 
@@ -318,6 +318,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     <p class="prose" id="salaRules"></p>
     <div class="cta">
       <button class="btn" id="btnStart" hidden>Empezar partida</button>
+      <button class="btn" id="btnWatch" hidden>Mirar la partida</button>
       <button class="btn ghost" id="btnLeave">Salir de la sala</button>
     </div>
   </div></div>
@@ -370,7 +371,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-const GAME_VERSION = "1.13";
+const GAME_VERSION = "1.14";
 'use strict';
 /* ================= Constantes del mundo (metros) ================= */
 const G = 9.81;
@@ -1606,7 +1607,7 @@ async function netEnter(code, create) {
   try {
     if (NET.sala) await netLeave();
     const sala = await NET.room.join('tejo-' + code);
-    Object.assign(NET, { sala, code, g: null, lastG: null, myG: null, pending: {}, lostAt: 0, absent: {}, creator: create, joinedAt: performance.now() });
+    Object.assign(NET, { sala, code, g: null, lastG: null, myG: null, pending: {}, lostAt: 0, absent: {}, creator: create, watching: false, joinedAt: performance.now() });
     NET.unsub = sala.onPeers(netSync, netError);
     fixLocalDesigns();
     const me = { v: 1, pid: NET.pid, name: myName(), design: settings.designs[0] };
@@ -1620,7 +1621,7 @@ async function netEnter(code, create) {
 }
 async function netLeave() {
   const s = NET.sala, un = NET.unsub;
-  Object.assign(NET, { sala: null, unsub: null, code: null, g: null, lastG: null, myG: null, pending: {} });
+  Object.assign(NET, { sala: null, unsub: null, code: null, g: null, lastG: null, myG: null, pending: {}, watching: false });
   try { un && un(); } catch (e) { }
   if (s) { try { await s.leave(); } catch (e) { } }
 }
@@ -1704,7 +1705,11 @@ function acceptThrow(t) {
 function applyG() {
   const g = NET.g; if (!g || g.phase === 'lobby') return;
   if (!g.setup || !g.gid) return;
-  if (!online() || game.gid !== g.gid) { startOnlineGame(g); return; }
+  if (!online() || game.gid !== g.gid) {
+    const inGame = g.setup.players.some(s => s.pid === NET.pid);
+    if (!inGame && !NET.watching) { if ($('sala').hidden) showSala(); else renderSala(); return; }
+    startOnlineGame(g); return;
+  }
   if (g.last && g.last.gid === game.gid && g.last.n >= game.thrown && !NET.pending[g.last.n]) NET.pending[g.last.n] = g.last;
   if (NET.sala) {
     const here = presentPids(NET.sala.peers());
@@ -1928,7 +1933,14 @@ function renderSala() {
   renderMyDesign(g, seats);
   const info = $('salaInfo'), host = amHost();
   if (!g) info.textContent = NET.creator ? 'Abriendo la sala…' : 'Buscando la sala…';
-  else if (g.phase !== 'lobby') info.textContent = 'La partida ya empezó. Entras a mirar.';
+  const started = !!(g && g.phase !== 'lobby' && g.setup);
+  const inGame = started && g.setup.players.some(s => s.pid === NET.pid);
+  const full = !!(g && g.phase === 'lobby' && !seats.some(s => s.pid === NET.pid) && seats.length >= 4);
+  $('btnWatch').hidden = !(started && !inGame);
+  if (!g) { }
+  else if (started && !inGame) info.textContent = `La partida de la sala ${NET.code} ya empezó, así que no puedes entrar a jugar. Si hay cupo, entras en la revancha cuando el anfitrión la inicie. Mientras tanto puedes mirarla.`;
+  else if (started) info.textContent = 'La partida ya empezó.';
+  else if (full) info.textContent = 'La sala está llena: ya hay 4 jugadores. Si alguien sale, entras de una; si no, crea otra sala.';
   else if (host) info.textContent = seats.length < 2 ? 'Pásale el código a tus amigos. Cuando entren, aparecen aquí.' : 'Están listos. Empieza cuando quieras.';
   else info.textContent = 'Esperando a que el anfitrión empiece la partida.';
   $('salaRules').textContent = g ? `${fmtD(g.dist)} · partida a ${g.goal} · mira ${g.aimHelp ? 'activada' : 'apagada'} · hasta 4 jugadores` : '';
@@ -1967,6 +1979,7 @@ function netBindUI() {
   $('btnLeave').addEventListener('click', () => showMenu());
   $('btnRefresh').addEventListener('click', netRefresh);
   $('btnSkip').addEventListener('click', netSkip);
+  $('btnWatch').addEventListener('click', () => { NET.watching = true; applyG(); });
   $('btnCopy').addEventListener('click', () => {
     const txt = `Juguemos tejo en el Club El Cosmo. Sala ${NET.code}`;
     try { navigator.clipboard.writeText(txt).then(() => toast('Código copiado'), () => toast(`El código es ${NET.code}`)); } catch (e) { toast(`El código es ${NET.code}`); }
