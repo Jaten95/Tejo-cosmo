@@ -286,6 +286,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     <div class="cta">
       <button class="btn" id="btnResume">Seguir</button>
       <button class="btn ghost" id="btnRestart">Reiniciar</button>
+      <button class="btn ghost" id="btnReconnect" hidden>Reconectar</button>
       <button class="btn ghost" id="btnMenu">Menú</button>
     </div>
   </div></div>
@@ -1257,6 +1258,7 @@ async function supaRoom() {
             await ch.track(my);
           },
           peers: () => peers,
+          connected: () => { try { return client.realtime.isConnected(); } catch (e) { return true; } },
           onPeers(h) { handlers.add(h); setTimeout(() => h({ peers }), 0); return () => handlers.delete(h); },
           async leave() { closed = true; handlers.clear(); document.removeEventListener('visibilitychange', onVis); try { await ch.untrack(); } catch (e) { } try { await client.removeChannel(ch); } catch (e) { } }
         };
@@ -1316,9 +1318,33 @@ async function netLeave() {
 }
 function netError(e) {
   const code = NET.code;
-  if (e && ['upstream_error', 'limit_reached'].includes(e.code) && code) { setTimeout(() => { if (NET.code === code) netEnter(code, false); }, 1500); return; }
+  if (e && ['upstream_error', 'limit_reached'].includes(e.code) && code) { setTimeout(() => { if (NET.code === code) netRejoin(); }, 1500); return; }
   showMenu(); $('onlineMsg').textContent = 'Se cerró la conexión con la sala.';
 }
+/* Reconectar a la misma sala sin tocar la partida: se vuelve a anunciar con su último tiro
+   (y con la sala, si es el anfitrión); applyG pone al día lo que se haya perdido. */
+async function netRejoin() {
+  if (!NET.code || !NET.room || NET.rejoining) return;
+  NET.rejoining = true;
+  const code = NET.code, old = NET.sala, un = NET.unsub, keepG = NET.myG;
+  try {
+    try { un && un(); } catch (e) { }
+    try { old && await old.leave(); } catch (e) { }
+    const sala = await NET.room.join('tejo-' + code);
+    if (NET.code !== code) { try { await sala.leave(); } catch (e) { } return; }
+    NET.sala = sala; NET.unsub = sala.onPeers(netSync, netError); NET.joinedAt = performance.now();
+    const me = { v: 1, pid: NET.pid, name: myName() };
+    if (NET.lastT) me.t = NET.lastT;
+    if (keepG) { me.g = { ...(NET.g && NET.g.host === NET.pid ? NET.g : keepG) }; me.g.ver = Math.max(me.g.ver, (NET.lastG && NET.lastG.ver) || 0) + 1; NET.myG = NET.g = NET.lastG = me.g; }
+    await sala.presence(me);
+    netSync();
+  } catch (e) { } finally { NET.rejoining = false; }
+}
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { hiddenAt = performance.now(); return; }
+  if (NET.sala && performance.now() - hiddenAt > 2000) netRejoin();
+});
 function netCreate() { netEnter(String(1000 + Math.floor(Math.random() * 9000)), true); }
 function netJoinClick() {
   const code = $('codeIn').value.replace(/\D/g, '');
@@ -1368,6 +1394,14 @@ function applyG() {
   if (!g.setup || !g.gid) return;
   if (!online() || game.gid !== g.gid) { startOnlineGame(g); return; }
   if (g.last && g.last.gid === game.gid && g.last.n >= game.thrown && !NET.pending[g.last.n]) NET.pending[g.last.n] = g.last;
+  if (NET.sala) {
+    const here = presentPids(NET.sala.peers());
+    game.players.forEach(p => {
+      const pr = here.get(p.pid), t = pr && pr.t;
+      if (t && t.gid === game.gid && typeof t.n === 'number' && t.n >= game.thrown && !NET.pending[t.n] && isFinite(t.L) && isFinite(t.P))
+        NET.pending[t.n] = { n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid };
+    });
+  }
   tryConsume();
   const s = g.snap;
   if (!amHost() && s && s.gid === game.gid && (phase === 'aim' || phase === 'wait') && !drag) {
@@ -1439,9 +1473,10 @@ function netTurn(p) {
 }
 function netThrow(a) {
   const t = { n: game.thrown, L: r5(a.L), P: r5(a.P), gid: game.gid, pid: NET.pid };
+  NET.lastT = t;
   if (NET.sala) {
-    if (amHost()) { NET.sala.presence({ aim: null }).catch(() => { }); publishG({ ...NET.g, last: t, ver: NET.g.ver + 1 }); }
-    else NET.sala.presence({ t, aim: null }).catch(() => { });
+    NET.sala.presence({ t, aim: null }).catch(() => { });
+    if (amHost()) publishG({ ...NET.g, last: t, ver: NET.g.ver + 1 });
   }
   launch({ L: t.L, P: t.P });
 }
@@ -1481,6 +1516,11 @@ function netStart() {
 function netTick() {
   if (!NET.sala) return;
   const now = performance.now(), peers = NET.sala.peers(), here = presentPids(peers);
+  if (NET.sala.connected && !NET.sala.connected()) {
+    NET.discSince = NET.discSince || now;
+    if (now - NET.discSince > 4000) { NET.discSince = 0; netRejoin(); }
+  } else NET.discSince = 0;
+  if (online()) applyG();
   if (!NET.g && !NET.lastG && now - NET.joinedAt > 3000 && [...here.keys()].sort()[0] === NET.pid) {
     publishG({ code: NET.code, ver: 1, host: NET.pid, phase: 'lobby', seats: [{ pid: NET.pid, name: myName() }], dist: settings.dist, goal: settings.goal, aimHelp: settings.aimHelp });
     netSync();
@@ -1681,8 +1721,8 @@ function bindSeg(id, key, conv) {
 /* ---------- Pausa ---------- */
 function pause() {
   if (!game || paused || phase === 'over' || phase === 'menu') return;
-  if (online()) { $('pauseInfo').textContent = `Sala ${NET.code} · la partida sigue mientras ves este menú`; $('btnRestart').hidden = true; $('btnMenu').textContent = 'Salir de la sala'; showScreen('pause'); return; }
-  $('btnRestart').hidden = false; $('btnMenu').textContent = 'Menú';
+  if (online()) { $('pauseInfo').textContent = `Sala ${NET.code} · la partida sigue mientras ves este menú. Si no ves los tiros de los demás, toca Reconectar.`; $('btnRestart').hidden = true; $('btnReconnect').hidden = false; $('btnMenu').textContent = 'Salir de la sala'; showScreen('pause'); return; }
+  $('btnRestart').hidden = false; $('btnReconnect').hidden = true; $('btnMenu').textContent = 'Menú';
   paused = true; drag = null; if (phase === 'aim') { setGauge(0, lastP[current().name]); reticle.visible = false; }
   $('pauseInfo').textContent = game.mode === 'reto' ? `Reto · tejo ${Math.min(game.thrown + 1, RETO_THROWS)} de ${RETO_THROWS} · ${fmtD(W.D)}` : `Ronda ${game.round} · partida a ${game.goal} · ${fmtD(W.D)}`;
   showScreen('pause');
@@ -1750,6 +1790,7 @@ function bindUI() {
   $('btnRulesBack').addEventListener('click', () => { showScreen('menu'); });
   $('btnPause').addEventListener('click', pause);
   $('btnResume').addEventListener('click', resume);
+  $('btnReconnect').addEventListener('click', () => { resume(); toast('Reconectando a la sala…'); netRejoin(); });
   $('btnRestart').addEventListener('click', () => { paused = false; clearCancha(); startGame(); });
   $('btnMenu').addEventListener('click', showMenu);
   $('btnAgain').addEventListener('click', () => { if (online()) return netRematch(); clearCancha(); startGame(); });
