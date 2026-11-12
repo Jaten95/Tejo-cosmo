@@ -159,6 +159,8 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 .btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--red);}
 .btn.ghost{background:transparent;color:var(--paper);box-shadow:none;border:2px solid var(--wood-3);font-family:var(--body);font-weight:800;font-size:15px;}
 .record{font-size:12px;color:var(--muted);}
+.foot{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:-4px;}
+.ver{margin-left:auto;font:800 11px/1 var(--body);letter-spacing:.08em;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap;}
 .rulesT{width:100%;border-collapse:collapse;font-size:14px;}
 .rulesT td{padding:9px 4px;border-bottom:1px solid var(--wood-2);vertical-align:top;}
 .rulesT td:first-child{font-family:var(--display);font-size:16px;white-space:nowrap;padding-right:10px;}
@@ -267,7 +269,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="record" id="recordLine"></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.11</span></div>
   </div></div>
 </section>
 
@@ -332,6 +334,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+const GAME_VERSION = "1.11";
 'use strict';
 /* ================= Constantes del mundo (metros) ================= */
 const G = 9.81;
