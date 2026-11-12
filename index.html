@@ -160,6 +160,8 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 .code small{font-size:10.5px;font-weight:800;letter-spacing:.16em;color:var(--dim);}
 .code b{font-family:var(--display);font-size:46px;letter-spacing:.14em;line-height:1;color:var(--flag-y);font-weight:400;font-variant-numeric:tabular-nums;}
 .code button{font-weight:800;font-size:13px;padding:9px 12px;border:2px solid var(--wood-3);border-radius:3px;}
+.mini{font-weight:800;font-size:13px;padding:8px 12px;border:2px solid var(--wood-3);border-radius:3px;color:var(--paper);}
+.mini:disabled{opacity:.45;}
 .seats{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
 .seats li{display:flex;align-items:center;gap:10px;background:var(--ink);padding:11px 12px;border-left:4px solid var(--c);border-radius:3px;min-width:0;}
 .seats li b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
@@ -249,6 +251,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     <h2>Sala en línea</h2>
     <div class="code"><div><small>CÓDIGO</small><b id="salaCode">—</b></div><button id="btnCopy">Copiar</button></div>
     <p class="prose" id="salaInfo"></p>
+    <div class="row"><h3>En la sala</h3><button class="mini" id="btnRefresh">Actualizar</button></div>
     <ul class="seats" id="salaList"></ul>
     <p class="prose" id="salaRules"></p>
     <div class="cta">
@@ -1255,8 +1258,10 @@ async function supaRoom() {
           },
           peers: () => peers,
           onPeers(h) { handlers.add(h); setTimeout(() => h({ peers }), 0); return () => handlers.delete(h); },
-          async leave() { closed = true; handlers.clear(); try { await ch.untrack(); } catch (e) { } try { await client.removeChannel(ch); } catch (e) { } }
+          async leave() { closed = true; handlers.clear(); document.removeEventListener('visibilitychange', onVis); try { await ch.untrack(); } catch (e) { } try { await client.removeChannel(ch); } catch (e) { } }
         };
+        const onVis = () => { if (!document.hidden && !closed && Object.keys(my).length) ch.track(my).catch(() => { }); };
+        document.addEventListener('visibilitychange', onVis);
         const timer = setTimeout(() => { if (!joined) { joined = true; reject({ code: 'upstream_error' }); } }, 12000);
         ch.subscribe(status => {
           if (closed) return;
@@ -1476,6 +1481,10 @@ function netStart() {
 function netTick() {
   if (!NET.sala) return;
   const now = performance.now(), peers = NET.sala.peers(), here = presentPids(peers);
+  if (!NET.g && !NET.lastG && now - NET.joinedAt > 3000 && [...here.keys()].sort()[0] === NET.pid) {
+    publishG({ code: NET.code, ver: 1, host: NET.pid, phase: 'lobby', seats: [{ pid: NET.pid, name: myName() }], dist: settings.dist, goal: settings.goal, aimHelp: settings.aimHelp });
+    netSync();
+  }
   if (!NET.g && NET.lastG && NET.lostAt && now - NET.lostAt > 2500) {
     const lg = NET.lastG;
     const order = (lg.phase === 'lobby' || !lg.setup ? lg.seats : lg.setup.players).map(s => s.pid);
@@ -1517,7 +1526,7 @@ function renderSala() {
   seats.forEach((s, i) => add(s.name, COLORS[i], [s.pid === NET.pid ? 'tú' : '', g && g.host === s.pid ? 'anfitrión' : '', here.has(s.pid) ? '' : 'fuera'].filter(Boolean).join(' · '), !here.has(s.pid)));
   here.forEach((pr, pid) => { if (!seats.some(s => s.pid === pid)) add(String(pr.name || 'Alguien').slice(0, 14), '#8e7d66', (pid === NET.pid ? 'tú · ' : '') + 'mirando'); });
   const info = $('salaInfo'), host = amHost();
-  if (!g) info.textContent = NET.creator ? 'Abriendo la sala…' : (performance.now() - NET.joinedAt > 5000 ? `No hay nadie en la sala ${NET.code}. Revisa el código o pide que la creen de nuevo.` : 'Buscando la sala…');
+  if (!g) info.textContent = NET.creator ? 'Abriendo la sala…' : 'Buscando la sala…';
   else if (g.phase !== 'lobby') info.textContent = 'La partida ya empezó. Entras a mirar.';
   else if (host) info.textContent = seats.length < 2 ? 'Pásale el código a tus amigos. Cuando entren, aparecen aquí.' : 'Están listos. Empieza cuando quieras.';
   else info.textContent = 'Esperando a que el anfitrión empiece la partida.';
@@ -1525,11 +1534,21 @@ function renderSala() {
   $('btnStart').hidden = !host || !g || g.phase !== 'lobby';
   $('btnStart').disabled = seats.filter(s => here.has(s.pid)).length < 2;
 }
+async function netRefresh() {
+  if (!NET.code || NET.refreshing) return;
+  NET.refreshing = true; $('btnRefresh').disabled = true; $('salaInfo').textContent = 'Actualizando la sala…';
+  const code = NET.code, keep = amHost() ? NET.g : null;
+  try {
+    await netEnter(code, false);
+    if (keep && NET.sala) { publishG({ ...keep, ver: keep.ver + 1 }); netSync(); }
+  } finally { NET.refreshing = false; $('btnRefresh').disabled = false; if (!$('sala').hidden) renderSala(); }
+}
 function netBindUI() {
   $('btnJoin').addEventListener('click', netJoinClick);
   $('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') netJoinClick(); });
   $('btnStart').addEventListener('click', netStart);
   $('btnLeave').addEventListener('click', () => showMenu());
+  $('btnRefresh').addEventListener('click', netRefresh);
   $('btnCopy').addEventListener('click', () => {
     const txt = `Juguemos tejo en el Club El Cosmo. Sala ${NET.code}`;
     try { navigator.clipboard.writeText(txt).then(() => toast('Código copiado'), () => toast(`El código es ${NET.code}`)); } catch (e) { toast(`El código es ${NET.code}`); }
