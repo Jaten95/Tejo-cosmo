@@ -193,6 +193,33 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 .seats li b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
 .seats li span{margin-left:auto;font-size:10.5px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;font-weight:800;white-space:nowrap;}
 .seats li.off{opacity:.5;}
+.names label{padding-left:4px;}
+.dz{flex:none;width:38px;height:38px;border-radius:50%;padding:0;display:grid;place-items:center;}
+.dz img,.ic{border-radius:50%;display:block;}
+.dz img{width:34px;height:34px;box-shadow:0 0 0 2px rgba(245,237,221,.18);}
+.chip .nm{display:flex;align-items:center;gap:5px;}
+.chip .nm .ic{width:16px;height:16px;flex:none;}
+.seats li .ic{width:26px;height:26px;flex:none;}
+.myDz{display:flex;align-items:center;gap:12px;background:var(--ink);padding:10px 12px;border-radius:3px;text-align:left;border-left:4px solid var(--flag-y);}
+.myDz img{width:44px;height:44px;border-radius:50%;flex:none;}
+.myDz span{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.myDz small{font:800 10.5px/1 var(--body);letter-spacing:.16em;color:var(--dim);}
+.myDz b{font-weight:600;font-size:14px;}
+.myDz em{margin-left:auto;font-style:normal;font-weight:800;font-size:13px;color:var(--yellow);}
+.myDz:disabled em{display:none;}
+#picker{position:fixed;inset:0;z-index:20;background:rgba(10,7,4,.72);display:flex;align-items:flex-end;justify-content:center;
+  padding:calc(env(safe-area-inset-top,0px) + 16px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));}
+.pkPanel{width:min(100%,520px);max-height:86%;overflow-y:auto;background:var(--wood);border-top:12px solid transparent;border-image:var(--stripes) 1;
+  padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;flex-direction:column;gap:14px;}
+.pkHead{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.pkHead h2{font-size:24px;}
+.pkGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;}
+.pk{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;background:var(--ink);border-radius:4px;border:2px solid transparent;}
+.pk img{width:62px;height:62px;border-radius:50%;}
+.pk span{font-size:11.5px;font-weight:600;color:var(--muted);text-align:center;line-height:1.2;}
+.pk[aria-pressed="true"]{border-color:var(--yellow);}
+.pk[aria-pressed="true"] span{color:var(--paper);}
+.pk:disabled{opacity:.35;cursor:not-allowed;}
 @media (prefers-reduced-motion:reduce){#announce.show{animation-duration:1.4s;}.chip.bump .sc{animation:none;}#flash.go{animation:none;}}
 @media (min-width:760px){#turn .who{font-size:26px;}.chip .sc{font-size:26px;}#lupa{width:220px;top:calc(env(safe-area-inset-top,0px) + 86px);}#turn{top:calc(env(safe-area-inset-top,0px) + 90px);}}
 </style>
@@ -269,15 +296,23 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.12</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.13</span></div>
   </div></div>
 </section>
+
+<div id="picker" hidden>
+  <div class="pkPanel" role="dialog" aria-labelledby="pickTitle">
+    <div class="pkHead"><h2 id="pickTitle">Escoge tu grabado</h2><button class="mini" id="pickClose" type="button">Cerrar</button></div>
+    <div class="pkGrid" id="pickGrid"></div>
+  </div>
+</div>
 
 <section class="screen" id="sala" hidden>
   <div class="panel"><div class="pin">
     <h2>Sala en línea</h2>
     <div class="code"><div><small>CÓDIGO</small><b id="salaCode">—</b></div><button id="btnCopy">Copiar</button></div>
     <p class="prose" id="salaInfo"></p>
+    <button class="myDz" id="myDz" type="button"><img id="myDzImg" alt=""><span><small>TU GRABADO</small><b id="myDzName"></b></span><em>Cambiar</em></button>
     <div class="row"><h3>En la sala</h3><button class="mini" id="btnRefresh">Actualizar</button></div>
     <ul class="seats" id="salaList"></ul>
     <p class="prose" id="salaRules"></p>
@@ -301,6 +336,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     <p class="prose"><b>Nulo:</b> si el tejo pega primero en el marco, el tablero o el piso, no cuenta. Solo vale lo que cae en la greda.</p>
     <p class="prose"><b>Ronda:</b> cada jugador lanza un tejo por ronda. Una mecha reventada queda reventada hasta que empiece la siguiente ronda. Gana quien llegue primero a la meta.</p>
     <p class="prose"><b>Reto:</b> 10 tejos para hacer el mayor puntaje posible. La mano no cuenta.</p>
+    <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
     <p class="prose"><b>Salas:</b> uno crea la sala y pasa el código de 4 números; hasta 4 jugadores, cada uno en su celular. Si alguien no está cuando le toca, pierde el turno.</p>
     <div class="cta"><button class="btn" id="btnRulesBack">Entendido</button></div>
   </div></div>
@@ -334,7 +370,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-const GAME_VERSION = "1.12";
+const GAME_VERSION = "1.13";
 'use strict';
 /* ================= Constantes del mundo (metros) ================= */
 const G = 9.81;
@@ -644,13 +680,219 @@ function buildReticle() {
   reticleCore = mat; reticle.renderOrder = 5; reticle.visible = false; scene.add(reticle);
 }
 
-function makeTejo(color) {
+function makeTejo(color, design, name) {
   const geo = new THREE.CylinderGeometry(RT * .92, RT, TT, 30, 1);
   const steel = std({ color: '#6f7376', metalness: .85, roughness: .42 });
-  const paint = std({ color, metalness: .15, roughness: .55 });
+  const paint = tejoTopMaterial(color, design, name);
   const m = new THREE.Mesh(geo, [steel, paint, steel]);
   m.castShadow = true; return m;
 }
+
+/* ================= Diseños grabados en el tejo ================= */
+const DESIGNS = [
+  { id: 'sol', n: 'Sol muisca' }, { id: 'rana', n: 'Rana muisca' }, { id: 'espiral', n: 'Espiral muisca' }, { id: 'poporo', n: 'Poporo' },
+  { id: 'condor', n: 'Cóndor' }, { id: 'colibri', n: 'Colibrí' }, { id: 'orquidea', n: 'Orquídea' }, { id: 'cafe', n: 'Café' },
+  { id: 'palma', n: 'Palma de cera' }, { id: 'sombrero', n: 'Vueltiao' }, { id: 'mecha', n: 'Mecha' }, { id: 'bocin', n: 'Bocín' },
+  { id: 'nueve', n: 'Moñona 9' }, { id: 'ini', n: 'Iniciales' }
+];
+const DESIGN_IDS = DESIGNS.map(d => d.id);
+const designName = id => (DESIGNS.find(d => d.id === id) || { n: 'Sin diseño' }).n;
+function initials(name) {
+  const w = String(name || '').trim().split(/\s+/).filter(Boolean);
+  const s = w.length > 1 ? w[0][0] + w[1][0] : (w[0] || '?').slice(0, 2);
+  return s.toUpperCase();
+}
+function freeDesign(prefer, taken) { return prefer.concat(DESIGN_IDS).find(id => !taken.includes(id)) || null; }
+
+/* Cada diseño se dibuja en blanco sobre un círculo de radio 1 (y hacia abajo) */
+const DRAW = {
+  sol(g) {
+    g.lineWidth = .1; g.beginPath(); g.arc(0, 0, .4, 0, 7); g.stroke();
+    g.beginPath(); g.arc(0, 0, .14, 0, 7); g.fill();
+    for (let i = 0; i < 16; i++) {
+      g.save(); g.rotate(i * Math.PI / 8); g.beginPath();
+      const L = i % 2 ? .78 : .97; g.moveTo(-.07, -.5); g.lineTo(0, -L); g.lineTo(.07, -.5); g.closePath(); g.fill(); g.restore();
+    }
+  },
+  rana(g) {
+    g.beginPath(); g.ellipse(0, .08, .3, .4, 0, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(0, -.42, .23, .18, 0, 0, 7); g.fill();
+    g.lineWidth = .12; g.lineCap = 'round'; g.lineJoin = 'round';
+    [-1, 1].forEach(s => {
+      g.beginPath(); g.moveTo(.2 * s, -.12); g.lineTo(.55 * s, -.3); g.lineTo(.58 * s, -.62); g.stroke();
+      g.beginPath(); g.moveTo(.22 * s, .32); g.lineTo(.62 * s, .42); g.lineTo(.42 * s, .82); g.stroke();
+      [[.58, -.7], [.36, .88]].forEach(([x, y]) => { g.beginPath(); g.arc(x * s, y, .09, 0, 7); g.fill(); });
+    });
+    g.globalCompositeOperation = 'destination-out';
+    [-1, 1].forEach(s => { g.beginPath(); g.arc(.1 * s, -.47, .05, 0, 7); g.fill(); });
+    g.lineWidth = .05; g.beginPath(); g.moveTo(0, -.15); g.lineTo(0, .35); g.stroke();
+    g.globalCompositeOperation = 'source-over';
+  },
+  espiral(g) {
+    g.lineWidth = .1; g.lineCap = 'round'; g.beginPath();
+    for (let t = 0; t <= 15.4; t += .04) { const r = .04 + t * .056; const x = Math.cos(t) * r, y = Math.sin(t) * r; t ? g.lineTo(x, y) : g.moveTo(x, y); }
+    g.stroke();
+  },
+  poporo(g) {
+    g.beginPath(); g.ellipse(0, .32, .5, .45, 0, 0, 7); g.fill();
+    g.fillRect(-.09, -.6, .18, .6);
+    g.beginPath(); g.ellipse(0, -.66, .2, .07, 0, 0, 7); g.fill();
+    [[-.22, -.12], [.22, -.12], [-.16, -.32], [.16, -.32]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, .085, 0, 7); g.fill(); });
+    g.globalCompositeOperation = 'destination-out'; g.lineWidth = .05;
+    [.18, .42].forEach(y => { g.beginPath(); g.ellipse(0, y, .44, .08, 0, 0, Math.PI); g.stroke(); });
+    g.globalCompositeOperation = 'source-over';
+  },
+  condor(g) {
+    const R = [[.12, -.2], [.45, -.34], [.76, -.36], [.97, -.28], [.86, -.2], [.96, -.11], [.84, -.07], [.9, .02], [.74, .02], [.58, .1], [.34, .14], [.14, .2]];
+    g.beginPath(); g.moveTo(0, -.2); R.forEach(([x, y]) => g.lineTo(x, y)); g.lineTo(.1, .5); g.lineTo(-.1, .5);
+    R.slice().reverse().forEach(([x, y]) => g.lineTo(-x, y)); g.closePath(); g.fill();
+    g.beginPath(); g.arc(0, -.36, .1, 0, 7); g.fill();
+    g.beginPath(); g.moveTo(-.04, -.3); g.lineTo(0, -.18); g.lineTo(.04, -.3); g.fill();
+    g.globalCompositeOperation = 'destination-out'; g.lineWidth = .045;
+    g.beginPath(); g.arc(0, -.22, .13, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
+    [-1, 1].forEach(s => { for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo((.3 + k * .17) * s, -.2 + k * .02); g.lineTo((.38 + k * .17) * s, .02 + k * .01); g.stroke(); } });
+    g.globalCompositeOperation = 'source-over';
+  },
+  colibri(g) {
+    g.beginPath(); g.ellipse(.06, .1, .38, .17, -.5, 0, 7); g.fill();
+    g.beginPath(); g.arc(-.28, -.12, .14, 0, 7); g.fill();
+    g.lineWidth = .055; g.lineCap = 'round'; g.beginPath(); g.moveTo(-.38, -.16); g.lineTo(-.95, -.36); g.stroke();
+    g.beginPath(); g.ellipse(.14, -.3, .46, .13, -1.05, 0, 7); g.fill();
+    g.beginPath(); g.moveTo(.3, .28); g.lineTo(.62, .66); g.lineTo(.46, .3); g.lineTo(.72, .46); g.lineTo(.38, .2); g.closePath(); g.fill();
+    g.globalCompositeOperation = 'destination-out';
+    g.beginPath(); g.arc(-.31, -.15, .035, 0, 7); g.fill();
+    g.lineWidth = .035; for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(.0 + k * .1, -.18 - k * .08); g.lineTo(.22 + k * .1, -.52 - k * .06); g.stroke(); }
+    g.globalCompositeOperation = 'source-over';
+  },
+  orquidea(g) {
+    [-90, -18, 54, 126, 198].forEach(d => { const a = d * Math.PI / 180; g.beginPath(); g.ellipse(Math.cos(a) * .44, Math.sin(a) * .44, .34, .15, a, 0, 7); g.fill(); });
+    g.beginPath(); g.ellipse(0, .36, .24, .3, 0, 0, 7); g.fill();
+    g.globalCompositeOperation = 'destination-out';
+    g.beginPath(); g.arc(0, 0, .1, 0, 7); g.fill();
+    g.lineWidth = .035; [-90, -18, 54, 126, 198].forEach(d => { const a = d * Math.PI / 180; g.beginPath(); g.moveTo(Math.cos(a) * .2, Math.sin(a) * .2); g.lineTo(Math.cos(a) * .7, Math.sin(a) * .7); g.stroke(); });
+    g.beginPath(); g.moveTo(0, .16); g.lineTo(0, .58); g.stroke();
+    g.globalCompositeOperation = 'source-over';
+  },
+  cafe(g) {
+    [[-.27, .02, -.45], [.27, -.02, .45]].forEach(([x, y, r]) => { g.beginPath(); g.ellipse(x, y, .3, .5, r, 0, 7); g.fill(); });
+    g.globalCompositeOperation = 'destination-out'; g.lineWidth = .07; g.lineCap = 'round';
+    [[-.27, .02, -.45], [.27, -.02, .45]].forEach(([x, y, r]) => {
+      g.save(); g.translate(x, y); g.rotate(r); g.beginPath(); g.moveTo(0, -.4); g.bezierCurveTo(.14, -.12, -.14, .12, 0, .4); g.stroke(); g.restore();
+    });
+    g.globalCompositeOperation = 'source-over';
+  },
+  palma(g) {
+    g.beginPath(); g.moveTo(-.05, -.3); g.lineTo(.05, -.3); g.lineTo(.08, .9); g.lineTo(-.08, .9); g.closePath(); g.fill();
+    g.lineWidth = .075; g.lineCap = 'round';
+    [[-.85, -.05], [-.7, -.55], [-.3, -.82], [.3, -.82], [.7, -.55], [.85, -.05], [0, -.88]].forEach(([x, y]) => {
+      g.beginPath(); g.moveTo(0, -.32); g.quadraticCurveTo(x * .45, y < -.7 ? -.95 : -.75, x, y); g.stroke();
+    });
+    g.globalCompositeOperation = 'destination-out'; g.lineWidth = .025;
+    for (let y = -.1; y < .85; y += .16) { g.beginPath(); g.moveTo(-.1, y); g.lineTo(.1, y); g.stroke(); }
+    g.globalCompositeOperation = 'source-over';
+  },
+  sombrero(g) {
+    g.beginPath(); g.ellipse(0, .34, .96, .3, 0, 0, 7); g.fill();
+    g.beginPath(); g.moveTo(-.42, .32); g.lineTo(-.32, -.48); g.quadraticCurveTo(0, -.62, .32, -.48); g.lineTo(.42, .32); g.closePath(); g.fill();
+    g.globalCompositeOperation = 'destination-out'; g.lineWidth = .045;
+    [-.3, -.02, .2].forEach((y, k) => { g.beginPath(); const w = .36 + k * .03; for (let x = -w; x <= w + .001; x += .09) { const yy = y + ((Math.round((x + w) / .09) % 2) ? .06 : -.03); x === -w ? g.moveTo(x, yy) : g.lineTo(x, yy); } g.stroke(); });
+    g.beginPath(); g.ellipse(0, .36, .72, .18, 0, .2, Math.PI - .2); g.stroke();
+    g.globalCompositeOperation = 'source-over';
+  },
+  mecha(g) {
+    g.beginPath(); g.moveTo(0, -.08); g.lineTo(-.44, .72); g.lineTo(.44, .72); g.closePath(); g.fill();
+    g.beginPath(); for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8 - Math.PI / 2, r = i % 2 ? .16 : .42; g.lineTo(Math.cos(a) * r, -.5 + Math.sin(a) * r); } g.closePath(); g.fill();
+    g.globalCompositeOperation = 'destination-out'; g.lineWidth = .05;
+    g.beginPath(); g.moveTo(-.22, .55); g.lineTo(.22, .55); g.stroke();
+    g.globalCompositeOperation = 'source-over';
+  },
+  bocin(g) {
+    g.lineWidth = .15; g.beginPath(); g.arc(0, 0, .66, 0, 7); g.stroke();
+    g.beginPath(); for (let i = 0; i < 10; i++) { const a = i * Math.PI / 5 - Math.PI / 2, r = i % 2 ? .17 : .42; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill();
+  },
+  nueve(g) { textAt(g, '9', 1.55); },
+  ini(g, name) { const t = initials(name); textAt(g, t, t.length > 1 ? 1.05 : 1.45); },
+  none(g) { textAt(g, '?', 1.2); }
+};
+function textAt(g, t, size) {
+  const R = g.__R, S = g.canvas.width;
+  g.save(); g.setTransform(1, 0, 0, 1, S / 2, S / 2);
+  g.font = `400 ${Math.round(size * R)}px "Alfa Slab One", Georgia, serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(t, 0, .06 * R); g.restore();
+}
+
+/* Máscara del diseño (blanco = grabado) */
+function designMask(id, name, S) {
+  const c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d');
+  g.translate(S / 2, S / 2); const R = S * .34; g.scale(R, R); g.__R = R;
+  g.fillStyle = '#fff'; g.strokeStyle = '#fff';
+  (DRAW[id] || DRAW.none)(g, name);
+  return c;
+}
+/* Cara del tejo: acero cepillado, aro con el color del jugador y el diseño grabado (borde de sombra y de luz) */
+function engraveCanvas(id, color, name, S) {
+  const c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d'), h = S / 2;
+  const gr = g.createRadialGradient(h * .8, h * .7, S * .05, h, h, h); gr.addColorStop(0, '#b3b8bc'); gr.addColorStop(1, '#7b8085');
+  g.fillStyle = gr; g.fillRect(0, 0, S, S);
+  g.globalAlpha = .12; for (let r = 4; r < h; r += 3) { g.strokeStyle = r % 2 ? '#fff' : '#3b3f43'; g.lineWidth = 1; g.beginPath(); g.arc(h, h, r, 0, 7); g.stroke(); }
+  g.globalAlpha = 1;
+  g.lineWidth = S * .1; g.strokeStyle = color; g.beginPath(); g.arc(h, h, h * .86, 0, 7); g.stroke();
+  g.lineWidth = S * .012; g.strokeStyle = 'rgba(20,16,12,.65)'; g.beginPath(); g.arc(h, h, h * .76, 0, 7); g.stroke();
+  const m = designMask(id, name, S), off = Math.max(1, S / 110);
+  const layer = (fill, dx, dy) => {   // máscara menos máscara corrida = borde de un lado
+    const l = document.createElement('canvas'); l.width = l.height = S; const lg = l.getContext('2d');
+    lg.drawImage(m, 0, 0); lg.globalCompositeOperation = 'source-in'; lg.fillStyle = fill; lg.fillRect(0, 0, S, S);
+    if (dx || dy) { lg.globalCompositeOperation = 'destination-out'; lg.drawImage(m, dx, dy); }
+    return l;
+  };
+  g.drawImage(layer('#34373b', 0, 0), 0, 0);              // fondo del grabado
+  g.drawImage(layer('rgba(10,10,12,.85)', off, off), 0, 0);   // sombra arriba-izquierda
+  g.drawImage(layer('rgba(235,238,240,.9)', -off, -off), 0, 0); // brillo abajo-derecha
+  return c;
+}
+function bumpCanvas(id, name, S) {
+  const c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, S, S);
+  const m = designMask(id, name, S), l = document.createElement('canvas'); l.width = l.height = S; const lg = l.getContext('2d');
+  lg.drawImage(m, 0, 0); lg.globalCompositeOperation = 'source-in'; lg.fillStyle = '#000'; lg.fillRect(0, 0, S, S);
+  g.drawImage(l, 0, 0); return c;
+}
+const topMatCache = {};
+function tejoTopMaterial(color, id, name) {
+  const key = [color, id || 'none', id === 'ini' ? initials(name) : ''].join('|');
+  if (topMatCache[key]) return topMatCache[key];
+  const map = new THREE.CanvasTexture(engraveCanvas(id, color, name, 256)); map.encoding = THREE.sRGBEncoding; map.anisotropy = 4;
+  const bump = new THREE.CanvasTexture(bumpCanvas(id, name, 256));
+  return (topMatCache[key] = new THREE.MeshStandardMaterial({ color: '#b4b4b4', map, bumpMap: bump, bumpScale: .006, metalness: .6, roughness: .45 }));
+}
+const iconCache = {};
+function designIcon(id, color, name) {
+  const key = [color, id || 'none', id === 'ini' ? initials(name) : ''].join('|');
+  if (iconCache[key]) return iconCache[key];
+  const S = 96, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d');
+  g.beginPath(); g.arc(S / 2, S / 2, S / 2 - 1, 0, 7); g.clip();
+  g.drawImage(engraveCanvas(id, color, name, S), 0, 0);
+  return (iconCache[key] = c.toDataURL());
+}
+
+/* ---------- selector de diseño ---------- */
+let pickerCb = null;
+function openPicker({ title, current, taken, color, name, onPick }) {
+  const box = $('pickGrid'); box.innerHTML = '';
+  $('pickTitle').textContent = title || 'Escoge tu grabado';
+  DESIGNS.forEach(d => {
+    const b = document.createElement('button'); b.className = 'pk'; b.type = 'button';
+    const busy = taken.includes(d.id) && d.id !== current;
+    b.disabled = busy; if (d.id === current) b.setAttribute('aria-pressed', 'true');
+    const img = document.createElement('img'); img.src = designIcon(d.id, color, name); img.alt = '';
+    const s = document.createElement('span'); s.textContent = busy ? 'Ocupado' : d.n;
+    b.append(img, s);
+    b.addEventListener('click', () => { closePicker(); A.tick(); onPick(d.id); });
+    box.appendChild(b);
+  });
+  pickerCb = onPick; $('picker').hidden = false;
+}
+function closePicker() { $('picker').hidden = true; pickerCb = null; }
 
 /* ================= Física del lanzamiento ================= */
 const AIM = { P0: 0.6, span: () => 2.4 + W.D * 0.05, L: 0.9 };
@@ -872,7 +1114,13 @@ function buzz(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['Javi', 'Pacho', 'Mafe', 'Leo'], diff: 1, dist: 18.5, goal: 27, aimHelp: true, muted: false };
+const settings = { mode: 'cpu', count: 2, names: ['Javi', 'Pacho', 'Mafe', 'Leo'], designs: ['sol', 'condor', 'colibri', 'cafe'], diff: 1, dist: 18.5, goal: 27, aimHelp: true, muted: false };
+/* Cada jugador del mismo celular con un diseño distinto */
+function fixLocalDesigns() {
+  if (!Array.isArray(settings.designs)) settings.designs = [];
+  const used = [];
+  for (let i = 0; i < 4; i++) { let d = settings.designs[i]; if (!DESIGN_IDS.includes(d) || used.includes(d)) d = freeDesign(['sol', 'condor', 'colibri', 'cafe'], used); settings.designs[i] = d; used.push(d); }
+}
 const RETO_THROWS = 10;
 let game = null;
 let phase = 'boot';          // boot | menu | aim | cpu | flight | result | roundEnd | over
@@ -892,16 +1140,18 @@ function computeDvdP() {
   dvdP = (a && b) ? Math.max(.3, (toUV(b.p).v - toUV(a.p).v) / .06) : 1.4;
 }
 
-function newPlayer(name, i, cpu) { return { name, color: COLORS[i], score: 0, cpu: !!cpu, st: { mechas: 0, emb: 0, mon: 0, manos: 0, nulos: 0, tiros: 0 } }; }
+function newPlayer(name, i, cpu, design) { return { name, color: COLORS[i], design: design || null, score: 0, cpu: !!cpu, st: { mechas: 0, emb: 0, mon: 0, manos: 0, nulos: 0, tiros: 0 } }; }
 
 function startGame() {
   timers.length = 0; flight && flight.mesh && scene.remove(flight.mesh); flight = null; drag = null; cpuAim = null;
   if (Math.abs(W.D - settings.dist) > .01 || !hall) { setDistance(settings.dist); buildHall(); }
   computeDvdP();
   let players;
-  if (settings.mode === 'cpu') players = [newPlayer(settings.names[0] || 'Tú', 0), newPlayer('Don Chepe', 1, true)];
-  else if (settings.mode === 'local') players = settings.names.slice(0, settings.count).map((n, i) => newPlayer(n || `Jugador ${i + 1}`, i));
-  else players = [newPlayer(settings.names[0] || 'Tú', 0)];
+  fixLocalDesigns();
+  const D = settings.designs;
+  if (settings.mode === 'cpu') players = [newPlayer(settings.names[0] || 'Tú', 0, false, D[0]), newPlayer('Don Chepe', 1, true, freeDesign(['sombrero', 'condor', 'sol'], [D[0]]))];
+  else if (settings.mode === 'local') players = settings.names.slice(0, settings.count).map((n, i) => newPlayer(n || `Jugador ${i + 1}`, i, false, D[i]));
+  else players = [newPlayer(settings.names[0] || 'Tú', 0, false, D[0])];
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: settings.goal, mode: settings.mode, thrown: 0, over: false };
   lastP = {};
   clearFeed();
@@ -1000,7 +1250,7 @@ function launch(a) {
   const v0 = aimToVel(a);
   const sim = simulate(V(REL.x, REL.y, REL.z), v0, false);
   const res = evaluate(sim);
-  const mesh = makeTejo(p.color); mesh.position.copy(sim.path[0].p); scene.add(mesh);
+  const mesh = makeTejo(p.color, p.design, p.name); mesh.position.copy(sim.path[0].p); scene.add(mesh);
   flight = { sim, res, mesh, t: 0, owner: game.order[game.idx], ev: 0, done: false, impactAt: sim.first === 'clay' ? sim.firstT : sim.duration, spin: rand(12, 18) * (Math.random() < .5 ? -1 : 1), tilt: V(rand(-.25, .25), 0, rand(-.25, .25)) };
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
   game.thrown++;
@@ -1358,7 +1608,8 @@ async function netEnter(code, create) {
     const sala = await NET.room.join('tejo-' + code);
     Object.assign(NET, { sala, code, g: null, lastG: null, myG: null, pending: {}, lostAt: 0, absent: {}, creator: create, joinedAt: performance.now() });
     NET.unsub = sala.onPeers(netSync, netError);
-    const me = { v: 1, pid: NET.pid, name: myName() };
+    fixLocalDesigns();
+    const me = { v: 1, pid: NET.pid, name: myName(), design: settings.designs[0] };
     if (create) me.g = { code, ver: 1, host: NET.pid, phase: 'lobby', seats: [{ pid: NET.pid, name: myName() }], dist: settings.dist, goal: settings.goal, aimHelp: settings.aimHelp };
     if (me.g) { NET.g = NET.lastG = NET.myG = me.g; }
     await sala.presence(me);
@@ -1390,7 +1641,7 @@ async function netRejoin() {
     const sala = await NET.room.join('tejo-' + code);
     if (NET.code !== code) { try { await sala.leave(); } catch (e) { } return; }
     NET.sala = sala; NET.unsub = sala.onPeers(netSync, netError); NET.joinedAt = performance.now();
-    const me = { v: 1, pid: NET.pid, name: myName() };
+    const me = { v: 1, pid: NET.pid, name: myName(), design: settings.designs[0] };
     if (NET.lastT) me.t = NET.lastT;
     if (keepG && NET.lastG && NET.lastG.host === NET.pid) { me.g = NET.lastG; NET.myG = NET.g = me.g; }
     await sala.presence(me);
@@ -1431,8 +1682,10 @@ function netSync() {
 function hostDuties(peers) {
   const g = NET.g, here = presentPids(peers);
   if (g.phase === 'lobby') {
-    const seats = g.seats.filter(s => here.has(s.pid)).map(s => ({ pid: s.pid, name: String(here.get(s.pid).name || s.name).slice(0, 14) }));
+    let seats = g.seats.filter(s => here.has(s.pid)).map(s => ({ pid: s.pid, name: String(here.get(s.pid).name || s.name).slice(0, 14) }));
     here.forEach((pr, pid) => { if (seats.length < 4 && !seats.some(s => s.pid === pid) && pr.name) seats.push({ pid, name: String(pr.name).slice(0, 14) }); });
+    const used = [];
+    seats = seats.map(s => { const want = here.get(s.pid) && here.get(s.pid).design; const d = DESIGN_IDS.includes(want) && !used.includes(want) ? want : null; if (d) used.push(d); return { ...s, design: d }; });
     if (JSON.stringify(seats) !== JSON.stringify(g.seats)) publishG({ ...g, seats, ver: g.ver + 1 });
   } else if (online() && game.gid === g.gid) hostCheckThrow(here);
 }
@@ -1498,7 +1751,7 @@ function buildOnlineGame(g) {
   if (game) clearCancha();
   if (Math.abs(W.D - st.dist) > .01) { setDistance(st.dist); buildHall(); }
   computeDvdP();
-  const players = st.players.map((s, i) => { const p = newPlayer(String(s.name).slice(0, 14), i); p.pid = s.pid; return p; });
+  const players = st.players.map((s, i) => { const p = newPlayer(String(s.name).slice(0, 14), i, false, DESIGN_IDS.includes(s.design) ? s.design : null); p.pid = s.pid; return p; });
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: st.goal, mode: 'online', gid: g.gid, aimHelp: !!st.aimHelp, thrown: 0, over: false };
   NET.pending = {}; lastP = {}; clearFeed(); paused = false;
   showScreen(null); setHud(true);
@@ -1531,7 +1784,7 @@ function restoreSnap(s) {
   (s.tj || []).forEach(a => {
     const [owner, valid, u, v, d, px, py, pz, qx, qy, qz, qw] = a;
     if (!game.players[owner]) return;
-    const m = makeTejo(game.players[owner].color); m.position.set(px, py, pz); m.quaternion.set(qx, qy, qz, qw).normalize(); scene.add(m);
+    const pl = game.players[owner]; const m = makeTejo(pl.color, pl.design, pl.name); m.position.set(px, py, pz); m.quaternion.set(qx, qy, qz, qw).normalize(); scene.add(m);
     game.tejos.push({ owner, valid: !!valid, u, v, d: d < 0 ? Infinity : d, mesh: m });
     if (valid) decal(u, v, T.crater, .14);
   });
@@ -1583,13 +1836,18 @@ function netRematch() {
   let players = g.setup.players.filter(s => here.has(s.pid));
   here.forEach((pr, pid) => { if (players.length < 4 && !players.some(s => s.pid === pid) && pr.name) players.push({ pid, name: String(pr.name).slice(0, 14) }); });
   if (players.length > 1) players = [...players.slice(1), players[0]]; // empieza otro
+  players = withDesigns(players.map(s => ({ ...s, design: here.get(s.pid) && DESIGN_IDS.includes(here.get(s.pid).design) ? here.get(s.pid).design : s.design })));
   publishG({ ...g, phase: 'play', gid: rid(), setup: { ...g.setup, players }, snap: null, last: null, ver: g.ver + 1 });
   applyG();
+}
+function withDesigns(list) {
+  const used = [];
+  return list.map(s => { let d = DESIGN_IDS.includes(s.design) && !used.includes(s.design) ? s.design : null; if (!d) d = freeDesign([], used); used.push(d); return { ...s, design: d }; });
 }
 function netStart() {
   if (!amHost()) return;
   const g = NET.g, here = presentPids(NET.sala.peers());
-  const players = g.seats.filter(s => here.has(s.pid)); if (players.length < 2) return;
+  const players = withDesigns(g.seats.filter(s => here.has(s.pid))); if (players.length < 2) return;
   A.init(); A.tick();
   publishG({ ...g, phase: 'play', gid: rid(), setup: { players, dist: g.dist, goal: g.goal, aimHelp: g.aimHelp }, snap: null, last: null, ver: g.ver + 1 });
   applyG();
@@ -1659,13 +1917,15 @@ function renderSala() {
   const g = NET.g || NET.lastG, here = NET.sala ? presentPids(NET.sala.peers()) : new Map();
   const list = $('salaList'); list.innerHTML = '';
   const seats = g ? (g.phase === 'lobby' || !g.setup ? g.seats : g.setup.players) : [];
-  const add = (name, color, tags, off) => {
+  const add = (name, color, tags, off, design) => {
     const li = document.createElement('li'); li.style.setProperty('--c', color); if (off) li.className = 'off';
+    const ic = document.createElement('img'); ic.className = 'ic'; ic.alt = ''; ic.src = designIcon(design, color, name); li.appendChild(ic);
     const b = document.createElement('b'); b.textContent = name; li.appendChild(b);
     const s = document.createElement('span'); s.textContent = tags; li.appendChild(s); list.appendChild(li);
   };
-  seats.forEach((s, i) => add(s.name, COLORS[i], [s.pid === NET.pid ? 'tú' : '', g && g.host === s.pid ? 'anfitrión' : '', here.has(s.pid) ? '' : 'fuera'].filter(Boolean).join(' · '), !here.has(s.pid)));
-  here.forEach((pr, pid) => { if (!seats.some(s => s.pid === pid)) add(String(pr.name || 'Alguien').slice(0, 14), '#8e7d66', (pid === NET.pid ? 'tú · ' : '') + 'mirando'); });
+  seats.forEach((s, i) => add(s.name, COLORS[i], [s.pid === NET.pid ? 'tú' : '', g && g.host === s.pid ? 'anfitrión' : '', here.has(s.pid) ? '' : 'fuera'].filter(Boolean).join(' · '), !here.has(s.pid), s.design));
+  here.forEach((pr, pid) => { if (!seats.some(s => s.pid === pid)) add(String(pr.name || 'Alguien').slice(0, 14), '#8e7d66', (pid === NET.pid ? 'tú · ' : '') + 'mirando', false, pr.design); });
+  renderMyDesign(g, seats);
   const info = $('salaInfo'), host = amHost();
   if (!g) info.textContent = NET.creator ? 'Abriendo la sala…' : 'Buscando la sala…';
   else if (g.phase !== 'lobby') info.textContent = 'La partida ya empezó. Entras a mirar.';
@@ -1684,7 +1944,23 @@ async function netRefresh() {
     if (keep && NET.sala) { publishG({ ...keep, ver: keep.ver + 1 }); netSync(); }
   } finally { NET.refreshing = false; $('btnRefresh').disabled = false; if (!$('sala').hidden) renderSala(); }
 }
+/* Mi grabado en la sala: lo que pedí y si me lo dieron */
+function renderMyDesign(g, seats) {
+  const i = Math.max(0, seats.findIndex(s => s.pid === NET.pid)), mine = seats.find(s => s.pid === NET.pid);
+  const want = settings.designs[0], got = mine ? mine.design : want;
+  $('myDzImg').src = designIcon(got || want, COLORS[i] || COLORS[0], myName());
+  $('myDzName').textContent = mine && !mine.design ? `${designName(want)} está ocupado: escoge otro` : designName(got || want);
+  $('myDz').disabled = !!(g && g.phase !== 'lobby');
+}
+function netPickDesign() {
+  const g = NET.g || NET.lastG; const seats = g ? (g.seats || []) : [];
+  const i = Math.max(0, seats.findIndex(s => s.pid === NET.pid));
+  const taken = seats.filter(s => s.pid !== NET.pid && s.design).map(s => s.design);
+  openPicker({ title: 'Escoge tu grabado', current: settings.designs[0], taken, color: COLORS[i] || COLORS[0], name: myName(),
+    onPick: id => { settings.designs[0] = id; fixLocalDesigns(); saveSettings(); if (NET.sala) NET.sala.presence({ design: id }).catch(() => { }); renderSala(); } });
+}
 function netBindUI() {
+  $('myDz').addEventListener('click', netPickDesign);
   $('btnJoin').addEventListener('click', netJoinClick);
   $('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') netJoinClick(); });
   $('btnStart').addEventListener('click', netStart);
@@ -1739,7 +2015,8 @@ function renderBoard() {
     const c = document.createElement('div'); c.className = 'chip' + (i === cur ? ' on' : '') + (away ? ' off' : ''); c.style.setProperty('--c', p.color);
     const goal = game.mode === 'reto' ? null : game.goal;
     c.innerHTML = `<div class="nm"></div><div class="sc">${p.score}<small>${goal ? '/ ' + goal : 'pts'}</small></div>` + (goal ? `<div class="bar"><i style="width:${Math.min(100, p.score / goal * 100)}%"></i></div>` : '');
-    c.querySelector('.nm').textContent = p.name + (p.cpu ? ' · ' + DIFF[settings.diff].n.toLowerCase() : '') + (online() && p.pid === NET.pid ? ' · tú' : '') + (away ? ' · sin señal' : '');
+    const nm = c.querySelector('.nm'); const ic = document.createElement('img'); ic.className = 'ic'; ic.alt = ''; ic.src = designIcon(p.design, p.color, p.name);
+    nm.append(ic, document.createTextNode(p.name + (p.cpu ? ' · ' + DIFF[settings.diff].n.toLowerCase() : '') + (online() && p.pid === NET.pid ? ' · tú' : '') + (away ? ' · sin señal' : '')));
     b.appendChild(c);
   });
   if (game.mode === 'reto') {
@@ -1784,6 +2061,7 @@ function renderOver(winner) {
 /* ---------- Menú ---------- */
 function setSeg(id, val) { $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(val)))); }
 function renderMenu() {
+  fixLocalDesigns();
   setSeg('segMode', settings.mode); setSeg('segCount', settings.count); setSeg('segDiff', settings.diff); setSeg('segDist', settings.dist); setSeg('segGoal', settings.goal);
   $('swAim').setAttribute('aria-checked', String(settings.aimHelp));
   $('grpDiff').hidden = settings.mode !== 'cpu';
@@ -1800,8 +2078,17 @@ function renderMenu() {
     const l = document.createElement('label'); l.style.setProperty('--c', COLORS[i]);
     const inp = document.createElement('input'); inp.id = 'name' + i; inp.maxLength = 14; inp.value = settings.names[i] || ''; inp.placeholder = `Jugador ${i + 1}`; inp.autocomplete = 'off';
     inp.setAttribute('aria-label', `Nombre del jugador ${i + 1}`);
-    inp.addEventListener('input', () => { settings.names[i] = inp.value.trim(); saveSettings(); });
-    l.appendChild(inp); box.appendChild(l);
+    inp.addEventListener('input', () => { settings.names[i] = inp.value.trim(); saveSettings(); const im = l.querySelector('img'); if (settings.designs[i] === 'ini') im.src = designIcon('ini', COLORS[i], settings.names[i]); });
+    const dz = document.createElement('button'); dz.type = 'button'; dz.className = 'dz'; dz.id = 'dz' + i;
+    dz.setAttribute('aria-label', `Grabado del jugador ${i + 1}: ${designName(settings.designs[i])}`);
+    const im = document.createElement('img'); im.alt = ''; im.src = designIcon(settings.designs[i], COLORS[i], settings.names[i]); dz.appendChild(im);
+    dz.addEventListener('click', e => {
+      e.preventDefault();
+      const taken = settings.mode === 'local' ? settings.designs.filter((d, k) => k !== i && k < settings.count) : (settings.mode === 'cpu' ? ['sombrero'] : []);
+      openPicker({ title: settings.mode === 'local' ? `Grabado de ${settings.names[i] || 'Jugador ' + (i + 1)}` : 'Escoge tu grabado', current: settings.designs[i], taken, color: COLORS[i], name: settings.names[i],
+        onPick: id => { settings.designs[i] = id; saveSettings(); renderMenu(); } });
+    });
+    l.append(dz, inp); box.appendChild(l);
   }
   const r = records()[settings.dist];
   $('recordLine').textContent = r !== undefined ? `Tu récord en el reto a ${fmtD(settings.dist)}: ${r} puntos` : '';
@@ -1898,6 +2185,8 @@ function bindUI() {
   $('btnMenu').addEventListener('click', showMenu);
   $('btnAgain').addEventListener('click', () => { if (online()) return netRematch(); clearCancha(); startGame(); });
   $('btnOverMenu').addEventListener('click', showMenu);
+  $('pickClose').addEventListener('click', closePicker);
+  $('picker').addEventListener('click', e => { if (e.target === $('picker')) closePicker(); });
   $('btnSound').addEventListener('click', () => { A.init(); settings.muted = !settings.muted; A.setMuted(settings.muted); saveSettings(); updateSoundBtn(); });
   bindInput(); netBindUI();
 }
@@ -1926,7 +2215,7 @@ function restore(data) {
     const g = data.game;
     game = { ...g, tejos: [], over: false };
     g.tejos.forEach(t => {
-      const m = makeTejo(game.players[t.owner].color); m.position.fromArray(t.p); m.quaternion.fromArray(t.q); scene.add(m);
+      const pl = game.players[t.owner]; const m = makeTejo(pl.color, pl.design, pl.name); m.position.fromArray(t.p); m.quaternion.fromArray(t.q); scene.add(m);
       game.tejos.push({ ...t, d: t.d == null ? Infinity : t.d, mesh: m });
       if (t.valid) decal(t.u, t.v, T.crater, .14);
     });
