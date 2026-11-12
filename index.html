@@ -299,7 +299,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.16</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.17</span></div>
   </div></div>
 </section>
 
@@ -375,7 +375,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-const GAME_VERSION = "1.16";
+const GAME_VERSION = "1.17";
 'use strict';
 /* ================= Constantes del mundo (metros) ================= */
 const G = 9.81;
@@ -818,13 +818,10 @@ const DRAW = {
   nueve(g) { textAt(g, '9', 1.55); },
   ini(g, name) { const t = initials(name); textAt(g, t, t.length > 1 ? 1.05 : 1.45); },
   none(g) { textAt(g, '?', 1.2); },
-  /* Bandera del orgullo ondeando: seis franjas con esmalte de color dentro del grabado */
+  /* Bandera del orgullo ondeando, sin asta: seis franjas con esmalte de color dentro del grabado */
   orgullo(g, name, colored) {
     const C = ['#e40303', '#ff8c00', '#ffed00', '#008026', '#004dff', '#750787'];
-    const x0 = -.66, x1 = .86, top = -.5, h = 1 / 6, wave = x => .07 * Math.sin((x - x0) * 4.2);
-    if (colored) g.fillStyle = '#4a4d51';
-    g.fillRect(-.86, -.66, .1, 1.5);                            // asta
-    g.beginPath(); g.arc(-.81, -.7, .07, 0, 7); g.fill();
+    const x0 = -.82, x1 = .82, top = -.5, h = 1 / 6, wave = x => .07 * Math.sin((x - x0) * 4.2);
     for (let k = 0; k < 6; k++) {
       if (colored) g.fillStyle = C[k];
       g.beginPath();
