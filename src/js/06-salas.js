@@ -330,7 +330,7 @@ function makeSnap() {
     gid: game.gid, seq: game.thrown, round: game.round, idx: game.idx, order: game.order, scored: game.scored ? 1 : 0,
     sc: game.players.map(p => [p.score, p.st.mechas, p.st.emb, p.st.mon, p.st.manos, p.st.nulos, p.st.tiros]),
     mk: mechaMeshes.map(m => m.userData.alive ? 1 : 0),
-    tj: game.tejos.map(t => [t.owner, t.valid ? 1 : 0, r4(t.u || 0), r4(t.v || 0), isFinite(t.d) ? r4(t.d) : -1, ...t.mesh.position.toArray().map(r4), ...t.mesh.quaternion.toArray().map(r4)])
+    tj: game.tejos.map(t => [t.owner, t.valid ? 1 : 0, r4(t.u || 0), r4(t.v || 0), isFinite(t.d) ? r4(t.d) : -1, ...t.mesh.position.toArray().map(r4), ...t.mesh.quaternion.toArray().map(r4), t.pts || 0])
   };
 }
 function restoreSnap(s) {
@@ -344,7 +344,7 @@ function restoreSnap(s) {
     const [owner, valid, u, v, d, px, py, pz, qx, qy, qz, qw] = a;
     if (!game.players[owner]) return;
     const pl = game.players[owner]; const m = makeTejo(pl.color, pl.design, pl.name); m.position.set(px, py, pz); m.quaternion.set(qx, qy, qz, qw).normalize(); scene.add(m);
-    game.tejos.push({ owner, valid: !!valid, u, v, d: d < 0 ? Infinity : d, mesh: m });
+    game.tejos.push({ owner, valid: !!valid, u, v, d: d < 0 ? Infinity : d, mesh: m, pts: a[12] | 0 });
     if (valid) decal(u, v, T.crater, .14);
   });
   for (const n in NET.pending) if (+n < game.thrown) delete NET.pending[n];

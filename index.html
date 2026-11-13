@@ -376,7 +376,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.60</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.61</span></div>
   </div></div>
 </section>
 
@@ -433,7 +433,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     </table>
     <p class="prose"><b>Lanzar:</b> pon el dedo en cualquier parte y arrástralo hacia abajo para cargar fuerza; muévelo a los lados para apuntar. Suelta para lanzar. Si te quedas mucho rato apuntando, el pulso empieza a temblar.</p>
     <p class="prose"><b>Nulo:</b> si el tejo pega primero en el marco, el tablero o el piso, no cuenta. Solo vale lo que cae en la greda.</p>
-    <p class="prose"><b>Ronda:</b> cada jugador lanza un tejo por ronda. Una mecha reventada queda reventada hasta que empiece la siguiente ronda. Si nadie hizo puntos, el que quedó más cerca (la mano) lanza primero en la siguiente ronda; si no, la salida va rotando. Gana quien llegue primero a la meta.</p>
+    <p class="prose"><b>Ronda:</b> cada jugador lanza un tejo por ronda. Una mecha reventada queda reventada hasta que empiece la siguiente ronda. Si nadie hizo puntos, el que quedó más cerca (la mano) lanza primero en la siguiente ronda. Si hubo puntos, lanza primero el que más puntos hizo en la ronda; si empatan, el que quedó más cerca del bocín. Gana quien llegue primero a la meta.</p>
     <p class="prose"><b>Choques:</b> si tu tejo le pega a otro, lo corre en la greda. Tus puntos se cuentan donde quede tu tejo, y los tejos corridos pelean la mano desde su nuevo lugar. Si caes casi encima de otro tejo, el tuyo rebota en el metal: si se sale de la greda es nulo.</p>
     <p class="prose"><b>Bocín:</b> si el tejo cae encima del aro de metal y no revienta mecha, a veces se resbala: cuenta donde quede en la greda, y si se sale es nulo.</p>
     <p class="prose"><b>Equipos:</b> con 4 o más jugadores se puede jugar en 2 equipos (o en 3 con 6 jugadores). Se arman al azar, los turnos se alternan entre equipos y los puntos de cada jugador suman para su equipo.</p>
@@ -475,7 +475,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.60";
+const GAME_VERSION = "1.61";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -2473,7 +2473,7 @@ function finishFlight() {
   const f = flight; if (f.done) return; f.done = true;
   const p = game.players[f.owner], r = f.res;
   (r.moved || []).forEach(m => { const t = game.tejos[m.i]; if (t) { t.u = m.u; t.v = m.v; t.d = Math.hypot(m.u, m.v); } });
-  game.tejos.push({ owner: f.owner, mesh: f.mesh, valid: r.valid, d: r.valid ? r.d : Infinity, u: r.u, v: r.v });
+  game.tejos.push({ owner: f.owner, mesh: f.mesh, valid: r.valid, d: r.valid ? r.d : Infinity, u: r.u, v: r.v, pts: r.pts || 0 });
   const hitNames = (r.hits || []).map(i => game.tejos[i] && game.tejos[i].owner).filter(o => o !== undefined)
     .map(o => o === f.owner ? 'a su propio tejo' : `al tejo de ${game.players[o].name}`).filter((x, k, a) => a.indexOf(x) === k);
   let hitText = hitNames.length ? `Le pegó ${hitNames.join(' y ')}` : '';
@@ -2579,7 +2579,14 @@ function advance() {
 
 function endRound() {
   phase = 'roundEnd'; resultAt = performance.now();
-  if (game.scored) { toast('Hubo puntos: esta ronda no hay mano'); later(1.3, startRound); return; }
+  if (game.scored) {   // hubo puntos: no hay mano y sale el que más puntos hizo en la ronda (si empatan, el que quedó más cerca del bocín)
+    const top = topScorer();
+    if (!top) { toast('Hubo puntos: esta ronda no hay mano'); later(1.3, startRound); return; }
+    const name = game.players[top.first].name;
+    toast(top.tie ? `Sin mano · empate en puntos: ${name} quedó más cerca y lanza primero`
+      : top.several ? `Sin mano · ${name} hizo más puntos y lanza primero` : `Sin mano · ${name} hizo los puntos y lanza primero`);
+    later(1.6, () => startRound(top.first)); return;
+  }
   const valid = game.tejos.filter(t => t.valid).sort((a, b) => a.d - b.d);
   if (!valid.length) { toast('Nadie cayó en la greda: sin mano'); later(1.4, startRound); return; }
   const best = valid[0], p = game.players[best.owner];
@@ -2589,6 +2596,19 @@ function endRound() {
   toast(`Mano para ${p.name}${teamOf(p) ? ' (' + teamOf(p).name + ')' : ''} +1 · lanza primero`); feed(p, 'Mano +1'); bumpChip(best.owner); renderBoard(); A.tick();
   closeup = { u: best.u, v: best.v };
   later(1.9, () => { closeup = null; const leader = winnerNow(); if (leader) gameOver(leader); else startRound(best.owner); });   // sin puntos: sale el que quedó más cerca
+}
+
+// Quién hizo más puntos en esta ronda; si empatan, el que tiene el tejo más cerca del bocín (y si no, el que los hizo primero)
+function topScorer() {
+  const pts = new Map(), near = new Map();
+  game.tejos.forEach(t => {
+    if (t.pts) pts.set(t.owner, (pts.get(t.owner) || 0) + t.pts);
+    if (t.valid && isFinite(t.d)) near.set(t.owner, Math.min(near.has(t.owner) ? near.get(t.owner) : Infinity, t.d));
+  });
+  if (!pts.size) return null;
+  const max = Math.max(...pts.values()), top = [...pts.keys()].filter(o => pts.get(o) === max);
+  const dist = o => near.has(o) ? near.get(o) : Infinity;
+  return { first: top.reduce((a, b) => dist(b) < dist(a) ? b : a), tie: top.length > 1, several: pts.size > 1 };
 }
 
 function gameOver(winner) {
@@ -3396,7 +3416,7 @@ function makeSnap() {
     gid: game.gid, seq: game.thrown, round: game.round, idx: game.idx, order: game.order, scored: game.scored ? 1 : 0,
     sc: game.players.map(p => [p.score, p.st.mechas, p.st.emb, p.st.mon, p.st.manos, p.st.nulos, p.st.tiros]),
     mk: mechaMeshes.map(m => m.userData.alive ? 1 : 0),
-    tj: game.tejos.map(t => [t.owner, t.valid ? 1 : 0, r4(t.u || 0), r4(t.v || 0), isFinite(t.d) ? r4(t.d) : -1, ...t.mesh.position.toArray().map(r4), ...t.mesh.quaternion.toArray().map(r4)])
+    tj: game.tejos.map(t => [t.owner, t.valid ? 1 : 0, r4(t.u || 0), r4(t.v || 0), isFinite(t.d) ? r4(t.d) : -1, ...t.mesh.position.toArray().map(r4), ...t.mesh.quaternion.toArray().map(r4), t.pts || 0])
   };
 }
 function restoreSnap(s) {
@@ -3410,7 +3430,7 @@ function restoreSnap(s) {
     const [owner, valid, u, v, d, px, py, pz, qx, qy, qz, qw] = a;
     if (!game.players[owner]) return;
     const pl = game.players[owner]; const m = makeTejo(pl.color, pl.design, pl.name); m.position.set(px, py, pz); m.quaternion.set(qx, qy, qz, qw).normalize(); scene.add(m);
-    game.tejos.push({ owner, valid: !!valid, u, v, d: d < 0 ? Infinity : d, mesh: m });
+    game.tejos.push({ owner, valid: !!valid, u, v, d: d < 0 ? Infinity : d, mesh: m, pts: a[12] | 0 });
     if (valid) decal(u, v, T.crater, .14);
   });
   for (const n in NET.pending) if (+n < game.thrown) delete NET.pending[n];
@@ -3981,7 +4001,7 @@ function snapshot() {
     game: {
       players: game.players, teamsN: game.teams ? game.teams.length : 0, round: game.round, order: game.order, idx: game.idx, goal: game.goal, mode: game.mode, thrown: game.thrown, scored: game.scored,
       mk: mechaMeshes.map(m => m.userData.alive ? 1 : 0),
-      tejos: game.tejos.map(t => ({ owner: t.owner, valid: t.valid, d: isFinite(t.d) ? t.d : null, u: t.u, v: t.v, p: t.mesh.position.toArray(), q: t.mesh.quaternion.toArray() }))
+      tejos: game.tejos.map(t => ({ owner: t.owner, valid: t.valid, d: isFinite(t.d) ? t.d : null, u: t.u, v: t.v, pts: t.pts || 0, p: t.mesh.position.toArray(), q: t.mesh.quaternion.toArray() }))
     }
   };
 }

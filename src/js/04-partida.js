@@ -265,7 +265,7 @@ function finishFlight() {
   const f = flight; if (f.done) return; f.done = true;
   const p = game.players[f.owner], r = f.res;
   (r.moved || []).forEach(m => { const t = game.tejos[m.i]; if (t) { t.u = m.u; t.v = m.v; t.d = Math.hypot(m.u, m.v); } });
-  game.tejos.push({ owner: f.owner, mesh: f.mesh, valid: r.valid, d: r.valid ? r.d : Infinity, u: r.u, v: r.v });
+  game.tejos.push({ owner: f.owner, mesh: f.mesh, valid: r.valid, d: r.valid ? r.d : Infinity, u: r.u, v: r.v, pts: r.pts || 0 });
   const hitNames = (r.hits || []).map(i => game.tejos[i] && game.tejos[i].owner).filter(o => o !== undefined)
     .map(o => o === f.owner ? 'a su propio tejo' : `al tejo de ${game.players[o].name}`).filter((x, k, a) => a.indexOf(x) === k);
   let hitText = hitNames.length ? `Le pegó ${hitNames.join(' y ')}` : '';
@@ -371,7 +371,14 @@ function advance() {
 
 function endRound() {
   phase = 'roundEnd'; resultAt = performance.now();
-  if (game.scored) { toast('Hubo puntos: esta ronda no hay mano'); later(1.3, startRound); return; }
+  if (game.scored) {   // hubo puntos: no hay mano y sale el que más puntos hizo en la ronda (si empatan, el que quedó más cerca del bocín)
+    const top = topScorer();
+    if (!top) { toast('Hubo puntos: esta ronda no hay mano'); later(1.3, startRound); return; }
+    const name = game.players[top.first].name;
+    toast(top.tie ? `Sin mano · empate en puntos: ${name} quedó más cerca y lanza primero`
+      : top.several ? `Sin mano · ${name} hizo más puntos y lanza primero` : `Sin mano · ${name} hizo los puntos y lanza primero`);
+    later(1.6, () => startRound(top.first)); return;
+  }
   const valid = game.tejos.filter(t => t.valid).sort((a, b) => a.d - b.d);
   if (!valid.length) { toast('Nadie cayó en la greda: sin mano'); later(1.4, startRound); return; }
   const best = valid[0], p = game.players[best.owner];
@@ -381,6 +388,19 @@ function endRound() {
   toast(`Mano para ${p.name}${teamOf(p) ? ' (' + teamOf(p).name + ')' : ''} +1 · lanza primero`); feed(p, 'Mano +1'); bumpChip(best.owner); renderBoard(); A.tick();
   closeup = { u: best.u, v: best.v };
   later(1.9, () => { closeup = null; const leader = winnerNow(); if (leader) gameOver(leader); else startRound(best.owner); });   // sin puntos: sale el que quedó más cerca
+}
+
+// Quién hizo más puntos en esta ronda; si empatan, el que tiene el tejo más cerca del bocín (y si no, el que los hizo primero)
+function topScorer() {
+  const pts = new Map(), near = new Map();
+  game.tejos.forEach(t => {
+    if (t.pts) pts.set(t.owner, (pts.get(t.owner) || 0) + t.pts);
+    if (t.valid && isFinite(t.d)) near.set(t.owner, Math.min(near.has(t.owner) ? near.get(t.owner) : Infinity, t.d));
+  });
+  if (!pts.size) return null;
+  const max = Math.max(...pts.values()), top = [...pts.keys()].filter(o => pts.get(o) === max);
+  const dist = o => near.has(o) ? near.get(o) : Infinity;
+  return { first: top.reduce((a, b) => dist(b) < dist(a) ? b : a), tie: top.length > 1, several: pts.size > 1 };
 }
 
 function gameOver(winner) {

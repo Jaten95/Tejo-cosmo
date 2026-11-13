@@ -291,7 +291,7 @@ function snapshot() {
     game: {
       players: game.players, teamsN: game.teams ? game.teams.length : 0, round: game.round, order: game.order, idx: game.idx, goal: game.goal, mode: game.mode, thrown: game.thrown, scored: game.scored,
       mk: mechaMeshes.map(m => m.userData.alive ? 1 : 0),
-      tejos: game.tejos.map(t => ({ owner: t.owner, valid: t.valid, d: isFinite(t.d) ? t.d : null, u: t.u, v: t.v, p: t.mesh.position.toArray(), q: t.mesh.quaternion.toArray() }))
+      tejos: game.tejos.map(t => ({ owner: t.owner, valid: t.valid, d: isFinite(t.d) ? t.d : null, u: t.u, v: t.v, pts: t.pts || 0, p: t.mesh.position.toArray(), q: t.mesh.quaternion.toArray() }))
     }
   };
 }
