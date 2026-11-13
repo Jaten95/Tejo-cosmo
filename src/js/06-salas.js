@@ -145,6 +145,7 @@ function publishG(g) {
 
 async function netEnter(code, create) {
   if (!NET.room) return;
+  if (!(settings.names[0] || '').trim()) { $('onlineMsg').textContent = 'Escribe tu nombre para entrar a una sala: así te ven los demás.'; const i = $('name0'); if (i) i.focus(); return; }
   A.init();
   const msg = $('onlineMsg'); msg.textContent = create ? 'Abriendo la sala…' : 'Entrando a la sala…';
   try {

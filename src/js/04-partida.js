@@ -1,13 +1,13 @@
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['Javi', 'Pacho', 'Mafe', 'Leo', 'Caro', 'Nico'], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, muted: false };
+const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, muted: false };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
   const used = [];
   if (!Array.isArray(settings.names)) settings.names = [];
-  ['Javi', 'Pacho', 'Mafe', 'Leo', 'Caro', 'Nico'].forEach((n, i) => { if (settings.names[i] === undefined) settings.names[i] = n; });
+  for (let i = 0; i < MAX_PLAYERS; i++) if (typeof settings.names[i] !== 'string') settings.names[i] = '';
   for (let i = 0; i < MAX_PLAYERS; i++) { let d = settings.designs[i]; if (!DESIGN_IDS.includes(d) || used.includes(d)) d = freeDesign(['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], used); settings.designs[i] = d; used.push(d); }
 }
 /* ---------- Equipos ---------- */

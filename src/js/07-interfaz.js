@@ -7,7 +7,15 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } }
 };
 function saveSettings() { store.set('tejo.settings.v1', settings); }
-function loadSettings() { const s = store.get('tejo.settings.v1', null); if (s) Object.assign(settings, s); }
+function loadSettings() {
+  const s = store.get('tejo.settings.v1', null); if (s) Object.assign(settings, s);
+  // antes el juego traía nombres de ejemplo (Javi, Pacho…); se borran para que cada quien escriba el suyo
+  if (!settings.namesV2) {
+    const OLD = ['Javi', 'Pacho', 'Mafe', 'Leo', 'Caro', 'Nico'];
+    settings.names = (settings.names || []).map((n, i) => n === OLD[i] ? '' : n);
+    settings.namesV2 = 1; saveSettings();
+  }
+}
 function records() { return store.get('tejo.record.v1', {}); }
 
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id); }
@@ -136,7 +144,7 @@ function renderMenu() {
   box.style.gridTemplateColumns = n === 1 ? '1fr' : '1fr 1fr';
   for (let i = 0; i < n; i++) {
     const l = document.createElement('label'); l.style.setProperty('--c', COLORS[i]);
-    const inp = document.createElement('input'); inp.id = 'name' + i; inp.maxLength = 14; inp.value = settings.names[i] || ''; inp.placeholder = `Jugador ${i + 1}`; inp.autocomplete = 'off';
+    const inp = document.createElement('input'); inp.id = 'name' + i; inp.maxLength = 14; inp.value = settings.names[i] || ''; inp.placeholder = n === 1 ? 'Escribe tu nombre' : `Jugador ${i + 1}`; inp.autocomplete = 'off';
     inp.setAttribute('aria-label', `Nombre del jugador ${i + 1}`);
     inp.addEventListener('input', () => { settings.names[i] = inp.value.trim(); saveSettings(); const im = l.querySelector('img'); if (settings.designs[i] === 'ini') im.src = designIcon('ini', COLORS[i], settings.names[i]); });
     const dz = document.createElement('button'); dz.type = 'button'; dz.className = 'dz'; dz.id = 'dz' + i;

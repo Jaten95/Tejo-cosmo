@@ -304,7 +304,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <div class="seg" id="segMode">
         <button data-v="cpu">Contra<small>Don Chepe</small></button>
         <button data-v="online">Salas<small>en línea</small></button>
-        <button data-v="local">Turnos<small>mismo cel</small></button>
+        <button data-v="local">Turnos<small>local</small></button>
         <button data-v="reto">Reto<small>10 tejos</small></button>
       </div>
     </div>
@@ -349,7 +349,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.29</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.30</span></div>
   </div></div>
 </section>
 
@@ -446,7 +446,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.29";
+const GAME_VERSION = "1.30";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -1307,13 +1307,13 @@ function buzz(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['Javi', 'Pacho', 'Mafe', 'Leo', 'Caro', 'Nico'], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, muted: false };
+const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, muted: false };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
   const used = [];
   if (!Array.isArray(settings.names)) settings.names = [];
-  ['Javi', 'Pacho', 'Mafe', 'Leo', 'Caro', 'Nico'].forEach((n, i) => { if (settings.names[i] === undefined) settings.names[i] = n; });
+  for (let i = 0; i < MAX_PLAYERS; i++) if (typeof settings.names[i] !== 'string') settings.names[i] = '';
   for (let i = 0; i < MAX_PLAYERS; i++) { let d = settings.designs[i]; if (!DESIGN_IDS.includes(d) || used.includes(d)) d = freeDesign(['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], used); settings.designs[i] = d; used.push(d); }
 }
 /* ---------- Equipos ---------- */
@@ -2274,6 +2274,7 @@ function publishG(g) {
 
 async function netEnter(code, create) {
   if (!NET.room) return;
+  if (!(settings.names[0] || '').trim()) { $('onlineMsg').textContent = 'Escribe tu nombre para entrar a una sala: así te ven los demás.'; const i = $('name0'); if (i) i.focus(); return; }
   A.init();
   const msg = $('onlineMsg'); msg.textContent = create ? 'Abriendo la sala…' : 'Entrando a la sala…';
   try {
@@ -2752,7 +2753,15 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } }
 };
 function saveSettings() { store.set('tejo.settings.v1', settings); }
-function loadSettings() { const s = store.get('tejo.settings.v1', null); if (s) Object.assign(settings, s); }
+function loadSettings() {
+  const s = store.get('tejo.settings.v1', null); if (s) Object.assign(settings, s);
+  // antes el juego traía nombres de ejemplo (Javi, Pacho…); se borran para que cada quien escriba el suyo
+  if (!settings.namesV2) {
+    const OLD = ['Javi', 'Pacho', 'Mafe', 'Leo', 'Caro', 'Nico'];
+    settings.names = (settings.names || []).map((n, i) => n === OLD[i] ? '' : n);
+    settings.namesV2 = 1; saveSettings();
+  }
+}
 function records() { return store.get('tejo.record.v1', {}); }
 
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id); }
@@ -2881,7 +2890,7 @@ function renderMenu() {
   box.style.gridTemplateColumns = n === 1 ? '1fr' : '1fr 1fr';
   for (let i = 0; i < n; i++) {
     const l = document.createElement('label'); l.style.setProperty('--c', COLORS[i]);
-    const inp = document.createElement('input'); inp.id = 'name' + i; inp.maxLength = 14; inp.value = settings.names[i] || ''; inp.placeholder = `Jugador ${i + 1}`; inp.autocomplete = 'off';
+    const inp = document.createElement('input'); inp.id = 'name' + i; inp.maxLength = 14; inp.value = settings.names[i] || ''; inp.placeholder = n === 1 ? 'Escribe tu nombre' : `Jugador ${i + 1}`; inp.autocomplete = 'off';
     inp.setAttribute('aria-label', `Nombre del jugador ${i + 1}`);
     inp.addEventListener('input', () => { settings.names[i] = inp.value.trim(); saveSettings(); const im = l.querySelector('img'); if (settings.designs[i] === 'ini') im.src = designIcon('ini', COLORS[i], settings.names[i]); });
     const dz = document.createElement('button'); dz.type = 'button'; dz.className = 'dz'; dz.id = 'dz' + i;
