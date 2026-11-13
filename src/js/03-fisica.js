@@ -210,7 +210,7 @@ function burst(pos, normal, { count = 60, colors = ['#ffd27a', '#ff8a3a', '#fff3
   });
 }
 function dirt(pos, normal, n = 26) {
-  burst(pos, normal, { count: n, colors: ['#6f675b', '#8d8476', '#544c41'], speed: [.6, 1.8], grav: 7, life: .7, size: .028, spread: .8 });
+  burst(pos, normal, { count: n, colors: ['#9a5532', '#b8723f', '#74401f'], speed: [.6, 1.8], grav: 7, life: .7, size: .028, spread: .8 });
 }
 function smoke(pos, n = 9) {
   if (reduceMotion) n = 4;

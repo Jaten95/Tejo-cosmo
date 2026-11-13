@@ -56,22 +56,6 @@ function noiseFill(g, w, h, base, n, spread, alpha) {
     const r = rand(.6, 3.2); g.beginPath(); g.arc(rand(0, w), rand(0, h), r, 0, 7); g.fill();
   }
 }
-function makeClayTex() {
-  const [c, g] = cnv(512, 512);
-  noiseFill(g, 512, 512, '#6a6356', 9000, 1, .16);
-  g.globalAlpha = .18;
-  for (let i = 0; i < 26; i++) { // pasadas de la pala
-    g.strokeStyle = Math.random() < .5 ? '#5d564b' : '#9a9283'; g.lineWidth = rand(8, 30);
-    g.beginPath(); const y = rand(0, 512); g.moveTo(-20, y); g.bezierCurveTo(150, y + rand(-40, 40), 350, y + rand(-40, 40), 540, y + rand(-30, 30)); g.stroke();
-  }
-  g.globalAlpha = .35;
-  for (let i = 0; i < 18; i++) { // huellas de tejos viejos
-    const x = rand(30, 482), y = rand(30, 482), r = rand(14, 22);
-    const gr = g.createRadialGradient(x, y, r * .3, x, y, r); gr.addColorStop(0, '#4b453c'); gr.addColorStop(.8, '#5e574c'); gr.addColorStop(1, 'rgba(0,0,0,0)');
-    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
-  }
-  g.globalAlpha = 1; return tex(c);
-}
 function makeFloorTex() {
   const [c, g] = cnv(512, 512);
   noiseFill(g, 512, 512, '#5e4a3a', 12000, 1, .22);
@@ -127,7 +111,7 @@ function softTex() {
 function craterTex() {
   const [c, g] = cnv(128, 128);
   const gr = g.createRadialGradient(64, 64, 10, 64, 64, 64);
-  gr.addColorStop(0, 'rgba(30,24,18,.95)'); gr.addColorStop(.55, 'rgba(50,42,34,.7)'); gr.addColorStop(.75, 'rgba(160,150,135,.35)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  gr.addColorStop(0, 'rgba(62,28,12,.95)'); gr.addColorStop(.55, 'rgba(98,48,24,.7)'); gr.addColorStop(.75, 'rgba(214,150,100,.4)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
   g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return tex(c, 1, 1, false);
 }
 function scorchTex() {
@@ -163,7 +147,8 @@ function buildRenderer() {
 }
 
 function buildTextures() {
-  T.clay = makeClayTex(); T.floor = makeFloorTex(); T.wall = makeWallTex();
+  const greda = makeGreda(); T.clay = greda.map; T.clayBump = greda.bump; T.backboard = makeBackboard();
+  T.floor = makeFloorTex(); T.wall = makeWallTex();
   T.woodGreen = makeWoodTex('#2b6b47', '#f3c22f');
   T.woodRed = makeWoodTex('#7d2a21', null);
   T.woodPlain = makeWoodTex('#5a4029', null);
@@ -247,7 +232,7 @@ function buildCancha() {
   const m = new THREE.Matrix4().makeBasis(W.a, W.s, W.n);
   cancha.quaternion.setFromRotationMatrix(m); cancha.position.copy(W.C);
   hall.add(cancha);
-  clayMat = std({ map: T.clay, roughness: .96, metalness: 0, color: '#ffffff' });
+  clayMat = std({ map: T.clay, bumpMap: T.clayBump, bumpScale: .0035, roughness: .86, metalness: 0, color: '#ffffff' });
   const clay = new THREE.Mesh(new THREE.PlaneGeometry(HU * 2, HV * 2, 1, 1), clayMat); clay.receiveShadow = true; cancha.add(clay);
   const frameMat = std({ map: T.woodGreen, roughness: .8 });
   const fw = FW, depth = .2;
@@ -260,15 +245,13 @@ function buildCancha() {
   // bocín
   const ring = new THREE.Mesh(new THREE.TorusGeometry(RB, .0075, 12, 56), std({ color: '#9aa0a4', metalness: .9, roughness: .32 }));
   ring.position.z = .001; ring.castShadow = true; cancha.add(ring);
-  const inner = new THREE.Mesh(new THREE.CircleGeometry(RB - .006, 40), std({ color: '#5f584d', roughness: 1 }));
+  const inner = new THREE.Mesh(new THREE.CircleGeometry(RB - .006, 40), std({ color: '#5e2f17', roughness: 1 }));
   inner.position.z = -.004; cancha.add(inner);
   // soporte y tablero
   const sup = new THREE.Mesh(new THREE.BoxGeometry(HU * 2 + fw * 2, .34, .75), std({ map: T.woodRed, roughness: .9 }));
   sup.position.set(0, .17, -W.D - .4); sup.castShadow = true; hall.add(sup); cancha.userData.sup = sup;
-  const board = new THREE.Mesh(new THREE.BoxGeometry(3.3, 2.5, .08), std({ map: T.woodPlain, roughness: .85, color: '#d9b08a' }));
+  const board = new THREE.Mesh(new THREE.BoxGeometry(3.3, 2.5, .08), [std({ map: T.woodPlain, roughness: .85 }), std({ map: T.woodPlain, roughness: .85 }), std({ map: T.woodPlain, roughness: .85 }), std({ map: T.woodPlain, roughness: .85 }), std({ map: T.backboard, roughness: .82 }), std({ map: T.woodPlain, roughness: .85 })]);
   board.position.set(0, 1.25, W.ZB - .04); board.receiveShadow = true; hall.add(board);
-  const boardBand = new THREE.Mesh(new THREE.PlaneGeometry(3.3, .22), std({ map: T.stripes, roughness: .8 }));
-  boardBand.position.set(0, 2.38, W.ZB + .002); hall.add(boardBand);
   [-1.65, 1.65].forEach(x => { const sb = new THREE.Mesh(new THREE.BoxGeometry(.06, 1.7, 2.4), std({ map: T.woodPlain, roughness: .85 })); sb.position.set(x, .85, -W.D - .1); sb.castShadow = sb.receiveShadow = true; hall.add(sb); });
   buildMechas();
   buildReticle();
