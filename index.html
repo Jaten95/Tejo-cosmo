@@ -102,7 +102,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 #gaugeLast::after{content:"último";position:absolute;right:calc(100% + 4px);top:-7px;font-size:10px;color:var(--muted);font-weight:600;}
 #gauge b{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:.12em;color:var(--muted);}
 #hint{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 22px);
-  width:min(86vw,420px);text-align:center;font-size:13px;font-weight:600;color:var(--paper);
+  width:max-content;max-width:min(86vw,420px);white-space:pre-line;text-align:center;font-size:13px;font-weight:600;color:var(--paper);
   background:rgba(22,16,11,.78);padding:9px 14px;border-radius:999px;transition:opacity .3s;}
 #hint.off{opacity:0;}
 #hintClose{display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;
@@ -370,7 +370,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.42</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.43</span></div>
   </div></div>
 </section>
 
@@ -467,7 +467,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.42";
+const GAME_VERSION = "1.43";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -1878,7 +1878,7 @@ function nextThrow() {
     planCpu(p);
   } else {
     phase = 'aim';
-    helpHint(game.thrown < 2 ? 'Arrastra hacia abajo para cargar · a los lados para apuntar · suelta' : 'Arrastra y suelta para lanzar');
+    helpHint(game.thrown < 2 ? 'Arrastra hacia abajo para cargar\na los lados para apuntar · suelta' : 'Arrastra y suelta para lanzar');
     if (settings.mode === 'local' && game.players.length > 1) toast(`Turno de ${p.name}`);
   }
 }
