@@ -2,7 +2,7 @@
    - La página se pide primero a la red (así llegan las versiones nuevas) y, sin internet, sale de la caché.
    - Three.js, el cargador de la mano, las fuentes y los íconos se guardan al instalar y se sirven desde la caché.
    - Las salas en línea necesitan internet: sus conexiones no pasan por aquí. */
-const VERSION = '1.25';
+const VERSION = '1.26';
 const CACHE = 'tejo-' + VERSION;
 const PRECACHE = [
   "./",
