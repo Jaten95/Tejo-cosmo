@@ -122,8 +122,8 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
   box-shadow:0 10px 30px rgba(0,0,0,.6);font:600 13px/1.2 var(--body);color:var(--paper);width:max-content;max-width:calc(100% - 32px);}
 #updBar button{background:var(--yellow);color:var(--ink);font:400 15px/1 var(--display);padding:9px 12px;border-radius:3px;white-space:nowrap;}
 #replayTag{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 20px);z-index:4;pointer-events:none;
-  display:flex;align-items:center;gap:8px;background:var(--ink);color:var(--paper);font:400 16px/1 var(--display);letter-spacing:.08em;padding:8px 12px 7px;border-bottom:4px solid var(--red);}
-#replayTag i{width:10px;height:10px;border-radius:50%;background:var(--red);animation:rec 1s steps(1) infinite;}
+  display:flex;align-items:center;gap:8px;width:max-content;max-width:calc(100vw - 32px);white-space:nowrap;background:var(--ink);color:var(--paper);font:400 16px/1 var(--display);letter-spacing:.08em;padding:8px 12px 7px;border-bottom:4px solid var(--red);}
+#replayTag i{flex:none;width:10px;height:10px;border-radius:50%;background:var(--red);animation:rec 1s steps(1) infinite;}
 #replayTag span{font:600 11px/1 var(--body);letter-spacing:.04em;color:var(--muted);}
 @keyframes rec{50%{opacity:0;}}
 #flash{position:fixed;inset:0;background:#ffd38a;opacity:0;pointer-events:none;mix-blend-mode:screen;}
