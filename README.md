@@ -129,6 +129,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.44.0 | Agregado | partida a otro valor (de 3 a 99) |
 | — | 1.45.0 | Agregado | el juego de la rana (en beta), contra Don Chepe, por turnos y en salas; modo beta con código |
 | — | 1.46.0 | Agregado | rana (beta): la argolla colgada del gancho vale 300, zoom en la rana y sin perros mientras se juega |
+| — | 1.46.1 | Arreglado | rana (beta): el gancho empieza vacío con su 300 pintado y las bocas de la rana y el sapito se ven abiertas |
 
 </details>
 

@@ -30,7 +30,7 @@ const FIGS = [
 ];
 const FROG = FIGS[0];
 // La argolla colgada del gancho en el tablero de atrás (altura desde la tabla); hay que pegarle en el centro
-const GANCHO = { y: .27, cap: .019, pts: 300 };
+const GANCHO = { y: .27, cap: .019, pts: 300, rod: .012 };
 RANA_SLOTS.push({ i: 12, r: -1, c: 1, pts: GANCHO.pts, kind: 'gancho', x: 0, z: -RANA.HD });
 
 let RANA_M = null;    // la mesa en la escena
@@ -175,10 +175,16 @@ function ranaTopTex() {   // la tabla de paño azul con sus diez huecos
   });
   return tex(c);
 }
-function ranaPanelTex() {   // tablero de atrás: el mismo paño azul
-  return fontTex(512, Math.round(512 * RANA.PANEL_H / (RANA.HW * 2)), (g, w, h) => {
+function ranaPanelTex() {   // tablero de atrás: el mismo paño azul, con el 300 pintado encima del gancho
+  const W = RANA.HW * 2 + .05, k = 512 / W;
+  return fontTex(512, Math.round(RANA.PANEL_H * k), (g, w, h) => {
     g.fillStyle = '#1d4c93'; g.fillRect(0, 0, w, h);
     for (let i = 0; i < 6000; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.06)'; g.fillRect(Math.random() * w, Math.random() * h, 1.5, 1.5); }
+    const hy = (RANA.PANEL_H - GANCHO.y) * k;   // altura del gancho en la textura
+    g.strokeStyle = 'rgba(244,211,94,.85)'; g.lineWidth = 4; g.setLineDash([9, 7]); g.beginPath(); g.arc(w / 2, hy, .03 * k, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '76px "Alfa Slab One"';
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.fillText('300', w / 2 + 3, hy - .085 * k + 3);
+    g.fillStyle = '#f4d35e'; g.fillText('300', w / 2, hy - .085 * k);
   });
 }
 function ranaSlatTex(row) {   // tablilla naranja con los puntos de la fila en esténcil, como el cajón de la foto
@@ -195,16 +201,27 @@ function ranaLabelTex() {
     g.fillStyle = '#2a211b'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '62px "Alfa Slab One"'; g.fillText('RANA', w / 2, h * .54);
   });
 }
+let MOUTH_MAT = null;
+function mouthMat() {   // garganta: negro al centro y café oscuro en el borde, para que se vea honda
+  if (!MOUTH_MAT) {
+    const [c, g] = cnv(128, 128), gr = g.createRadialGradient(64, 58, 4, 64, 64, 64);
+    gr.addColorStop(0, '#000'); gr.addColorStop(.55, '#070302'); gr.addColorStop(.85, '#24100a'); gr.addColorStop(1, '#4a2414');
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128); MOUTH_MAT = new THREE.MeshBasicMaterial({ map: tex(c) });
+  }
+  return MOUTH_MAT;
+}
 // Figura de metal plateado con la boca abierta hacia la raya (la rana grande atrás, el sapito adelante)
 function makeFigure(f, big) {
   const g = new THREE.Group(), m = std({ color: '#cfcfca', metalness: .55, roughness: .32 }), dark = new THREE.MeshBasicMaterial({ color: '#050403' });
   const body = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), m); body.scale.set(f.bodyR * 1.05, f.body.y * 1.1, f.bodyR); body.position.copy(f.body); g.add(body);
-  const hc = f.mouth.clone().addScaledVector(f.mouthN, -f.mouthR * .9);   // la cabeza alrededor de la boca
-  const head = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), m); head.scale.set(f.mouthR * 1.65, f.mouthR * 1.45, f.mouthR * 1.3); head.position.copy(hc); g.add(head);
-  if (big) { const neck = new THREE.Mesh(new THREE.CylinderGeometry(f.mouthR * 1.2, f.bodyR * .8, hc.y - f.body.y, 18), m); neck.position.set(0, (hc.y + f.body.y) / 2, (hc.z + f.body.z) / 2); g.add(neck); }
-  const lip = new THREE.Mesh(new THREE.TorusGeometry(f.mouthR + .004, .0055, 10, 28), m);
+  // la cabeza va abierta por delante: el corte queda justo en el plano de la boca, así no tapa el hueco
+  const th = Math.asin(Math.min(.95, (f.mouthR + .002) / (f.mouthR * 1.45))), hc = f.mouth.clone().addScaledVector(f.mouthN, -Math.cos(th) * f.mouthR * 1.3);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 18, 0, Math.PI * 2, th, Math.PI - th), m);
+  head.scale.set(f.mouthR * 1.65, f.mouthR * 1.3, f.mouthR * 1.45); head.position.copy(hc); head.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), f.mouthN); g.add(head);
+  if (big) { const nh = hc.y - f.mouthR * .6 - f.body.y, neck = new THREE.Mesh(new THREE.CylinderGeometry(f.mouthR * 1.2, f.bodyR * .8, nh, 18), m); neck.position.set(0, f.body.y + nh / 2, (hc.z + f.body.z) / 2); g.add(neck); }
+  const lip = new THREE.Mesh(new THREE.TorusGeometry(f.mouthR + .004, .0045, 10, 28), m);
   lip.position.copy(f.mouth); lip.lookAt(lip.position.clone().add(f.mouthN)); g.add(lip);
-  const hole = new THREE.Mesh(new THREE.CircleGeometry(f.mouthR + .001, 24), dark); hole.position.copy(f.mouth).addScaledVector(f.mouthN, .001); hole.lookAt(hole.position.clone().add(f.mouthN)); g.add(hole);
+  const hole = new THREE.Mesh(new THREE.CircleGeometry(f.mouthR + .002, 28), mouthMat()); hole.position.copy(f.mouth).addScaledVector(f.mouthN, .0005); hole.lookAt(hole.position.clone().add(f.mouthN)); g.add(hole);
   [-1, 1].forEach(sx => {
     const eye = new THREE.Mesh(new THREE.SphereGeometry(f.mouthR * .45, 12, 10), m); eye.position.set(sx * f.mouthR * .9, hc.y + f.mouthR * 1.2, hc.z + f.mouthR * .3); g.add(eye);
     const pup = new THREE.Mesh(new THREE.SphereGeometry(f.mouthR * .2, 10, 8), dark); pup.position.set(sx * f.mouthR * .95, hc.y + f.mouthR * 1.3, hc.z + f.mouthR * .68); g.add(pup);
@@ -270,12 +287,16 @@ function buildRana() {
   }
   box(HW * 2, rowH * 4, .01, 0, y0 - rowH * 2, front - .3, dark);   // fondo oscuro de los cajones
   box(HW * 2, y0 - rowH * 4, .02, 0, (y0 - rowH * 4) / 2, front, pine);   // zócalo
-  // tablero de atrás de paño azul, con el gancho y su argolla colgada (vale 300)
+  // tablero de atrás de paño azul, con el gancho (meter una argolla ahí vale 300)
   const panelM = std({ map: ranaPanelTex(), roughness: .95 });
   box(HW * 2 + .05, RANA.PANEL_H, .025, 0, T0 + RANA.PANEL_H / 2, -HD - .0125, [pine, pine, pine, pine, panelM, pine]);
-  const hook = new THREE.Mesh(new THREE.TorusGeometry(.008, .0018, 6, 16, Math.PI * 1.4), std({ color: '#b9b4a8', metalness: .6, roughness: .3 }));
-  hook.position.set(0, T0 + GANCHO.y + .03, -HD + .012); hook.rotation.set(0, Math.PI / 2, Math.PI * .8); g.add(hook);
-  const target = makeArgolla(); target.position.set(0, T0 + GANCHO.y, -HD + .008); g.add(target);   // la argolla colgada: meterle una vale 300
+  // el gancho: una varilla que sale del tablero con la punta doblada hacia arriba; empieza vacío
+  const steel = std({ color: '#c9c4b8', metalness: .7, roughness: .28 }), hy = T0 + GANCHO.y + GANCHO.rod, HL = .05;
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(.0024, .0024, HL, 10), steel); rod.rotation.x = Math.PI / 2; rod.position.set(0, hy, -HD + HL / 2); g.add(rod);
+  const tip = new THREE.Mesh(new THREE.CylinderGeometry(.0024, .0024, .014, 10), steel); tip.position.set(0, hy + .007, -HD + HL); g.add(tip);
+  const knee = new THREE.Mesh(new THREE.SphereGeometry(.0024, 10, 8), steel); knee.position.set(0, hy, -HD + HL); g.add(knee);
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(.008, .008, .003, 16), steel); plate.rotation.x = Math.PI / 2; plate.position.set(0, hy, -HD + .0015); g.add(plate);
+  [rod, tip, knee, plate].forEach(o => { o.castShadow = true; });
   // marcador de luces encima del tablero, con marco de madera
   const [bc, bg] = cnv(512, 224), bt = tex(bc);
   const boardY = T0 + RANA.PANEL_H + .14;
@@ -297,8 +318,8 @@ function ranaDrawerPos(slot, n) {
   return V(RANA_COLS[s.c] * (2 * RANA.HW / 3) / .17 + jx, floor + RANA.AT + n * .011, RANA.Z + RANA.HD - .09 + jz);
 }
 function ranaPlaceRing(mesh, slot, n) {
-  if (RANA_SLOTS[slot].kind === 'gancho') {   // queda colgada del gancho, delante de la que ya estaba
-    mesh.position.copy(ranaWorld(0, GANCHO.y - .004 * (n + 1), -RANA.HD + .012 + .005 * (n + 1))); mesh.rotation.set(0, 0, (n * 1.3) % 6.28); mesh.visible = true; return;
+  if (RANA_SLOTS[slot].kind === 'gancho') {   // queda colgada de la varilla, delante de la que ya estaba
+    mesh.position.copy(ranaWorld(0, GANCHO.y + GANCHO.rod - .0168, -RANA.HD + .008 + .0065 * Math.min(n, 6))); mesh.rotation.set(.05, 0, Math.PI / 4 + ((n * 7) % 5 - 2) * .05); mesh.visible = true; return;   // colgada por una ventana
   }
   mesh.position.copy(ranaDrawerPos(slot, n)); mesh.rotation.set(Math.PI / 2, 0, (slot * 1.7 + n * 2.3) % 6.28); mesh.visible = true;
 }
