@@ -294,10 +294,35 @@ function buildReticle() {
   reticleCore = mat; reticle.renderOrder = 5; reticle.visible = false; scene.add(reticle);
 }
 
+/* El tejo: base ancha, costado en cúpula con ranuras de torno y la cara de arriba más chica con el grabado.
+   El color del jugador va en el aro del grabado y en una franja pintada en la base. */
+const TEJO_TOP = .62;   // radio de la cara de arriba (fracción de RT)
+let TEJO_GEO = null;
+const tejoSideCache = {};
+function tejoProfile() {
+  const R = RT, h = TT / 2, pts = [[0, -h], [R * .97, -h], [R, -h + .0015], [R, -h + .006], [R * .985, -h + .0085]];
+  // tres ranuras: un escalón chiquito hacia adentro en cada una
+  [[.95, .011], [.875, .0165], [.79, .022]].forEach(([r, y]) => { pts.push([R * r, -h + y], [R * (r - .045), -h + y + .0004], [R * (r - .05), -h + y + .0016]); });
+  pts.push([R * .7, -h + .0262], [R * .655, h - .0012], [R * TEJO_TOP, h]);
+  return pts;
+}
+function tejoSideTex(color) {
+  if (tejoSideCache[color]) return tejoSideCache[color];
+  const pts = tejoProfile(), H = 256, [c, g] = cnv(16, H), vAt = i => i / (pts.length - 1);
+  g.fillStyle = '#9ea3a7'; g.fillRect(0, 0, 16, H);
+  for (let y = 0; y < H; y++) { g.fillStyle = `rgba(${Math.random() < .5 ? '255,255,255' : '30,32,35'},${rand(.04, .16)})`; g.fillRect(0, y, 16, 1); }   // marcas del torno
+  [5, 8, 11].forEach(i => { const y0 = (1 - vAt(i + 1)) * H, y1 = (1 - vAt(i)) * H; g.fillStyle = 'rgba(18,20,22,.75)'; g.fillRect(0, y0, 16, Math.max(2, y1 - y0)); });   // el fondo de cada ranura, oscuro
+  const band = [vAt(2), vAt(3)];   // la franja de la base
+  g.fillStyle = color; g.fillRect(0, (1 - band[1]) * H, 16, (band[1] - band[0]) * H);
+  const t = tex(c); t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.ClampToEdgeWrapping;
+  return (tejoSideCache[color] = t);
+}
 function makeTejo(color, design, name) {
-  const geo = new THREE.CylinderGeometry(RT * .92, RT, TT, 30, 1);
-  const steel = std({ color: '#6f7376', metalness: .85, roughness: .42 });
-  const paint = tejoTopMaterial(color, design, name);
-  const m = new THREE.Mesh(geo, [steel, paint, steel]);
-  m.castShadow = true; return m;
+  TEJO_GEO = TEJO_GEO || { side: new THREE.LatheGeometry(tejoProfile().map(([x, y]) => new THREE.Vector2(x, y)), 40),
+    top: new THREE.CircleGeometry(RT * TEJO_TOP, 40).rotateX(-Math.PI / 2).translate(0, TT / 2 + .0002, 0) };
+  const g = new THREE.Group();
+  const side = new THREE.Mesh(TEJO_GEO.side, std({ map: tejoSideTex(color), metalness: .55, roughness: .34 }));
+  const top = new THREE.Mesh(TEJO_GEO.top, tejoTopMaterial(color, design, name));
+  side.castShadow = top.castShadow = true; g.add(side, top);
+  return g;
 }
