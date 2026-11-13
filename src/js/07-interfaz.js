@@ -19,7 +19,7 @@ function loadSettings() {
 function records() { return store.get('tejo.record.v1', {}); }
 
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id); }
-function setHud(on) { $('hud').hidden = !on; $('gauge').hidden = !settings.power; keepAwake(on); $('btnRx').hidden = !(on && online()); if (!on || !online()) closeRxTray(); }
+function setHud(on) { $('hud').hidden = !on; $('gauge').hidden = !(game && game.mode === 'online' ? game.power !== false : settings.power); keepAwake(on); $('btnRx').hidden = !(on && online()); if (!on || !online()) closeRxTray(); }
 function hint(text, on, help = false) { const h = $('hint'); if (text) $('hintText').textContent = text; h.classList.toggle('off', !on); h.classList.toggle('help', !!help); }
 // ayudas de cómo lanzar: se pueden cerrar (vuelven a salir en la siguiente partida); los avisos de estado siempre salen
 function helpHint(text) { if (game && game.helpOff) hint('', false); else hint(text, true, true); }

@@ -396,7 +396,7 @@ const ZOOM_STEP = .25;
 function aimPose() {
   const asp = isFinite(cam.aspect) && cam.aspect > 0 ? cam.aspect : .5;
   const dist = W.D + 2.1, span = Math.max(2.7, 2.0 / asp);
-  const t = performance.now() / 1000, z = clamp(settings.zoom || 0, 0, 1);
+  const t = performance.now() / 1000, z = clamp(zoomNow(), 0, 1);
   const near = 2 * Math.atan(span / 2 / dist) * 180 / Math.PI, far = asp < 1 ? 44 : 30;
   const fov = near * Math.pow(far / near, z);   // en escala logarítmica, para que cada paso se sienta igual
   return { pos: V(Math.sin(t * .5) * .02, 1.78 + Math.sin(t * .8) * .01, 2.1), look: V(0, lerp(CY - .1, 1.15, z), -W.D), fov };
@@ -461,14 +461,14 @@ function updateGame(dt, now) {
   if (manoRing) { const s = 1 + Math.sin(now / 160) * .12; manoRing.scale.set(s, s, 1); }
   if (reticle.visible) reticle.rotation.z += dt * .8;
 }
-function lupaOn() { return aimHelpNow() && settings.lupa && !document.getElementById('hud').hidden && (phase === 'aim' || phase === 'cpu' || phase === 'wait' || (phase === 'flight' && flight && flight.t < flight.impactAt - .55)); }
+function lupaOn() { return lupaNow() && !document.getElementById('hud').hidden && (phase === 'aim' || phase === 'cpu' || phase === 'wait' || (phase === 'flight' && flight && flight.t < flight.impactAt - .55)); }
 function render() {
   const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
   renderer.setScissorTest(false); renderer.setViewport(0, 0, w, h); renderer.clear(); renderer.render(scene, cam); renderArm(w, h);
   const el = document.getElementById('lupa'); const show = lupaOn();
   el.style.visibility = show ? 'visible' : 'hidden';
   const zb = document.getElementById('zoomBtns');   // arriba a la derecha; si la lupa está, debajo de ella
-  zb.style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay ? 'visible' : 'hidden'; zb.classList.toggle('underLupa', show);
+  zb.style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay && !online() ? 'visible' : 'hidden';   // en salas el zoom lo pone el anfitrión zb.classList.toggle('underLupa', show);
   if (show) {
     const r = el.getBoundingClientRect(), b = 3;
     const x = r.left + b, y = h - (r.bottom - b), s = r.width - b * 2;
