@@ -309,7 +309,13 @@ function startReplay(s, done) {
   if (!game || phase === 'over' || replay) { done && done(); return; }
   const ghost = makeTejo(s.p.color, s.p.design, s.p.name); scene.add(ghost);
   s.mesh.visible = false;
-  replay = { s, ghost, done, t: Math.max(0, s.impactAt - 1.15), end: s.impactAt + .45, boom: false };
+  // lo que dejó el tiro se esconde hasta el golpe: las mechas vuelven a estar enteras y no se ven el quemado ni el hueco
+  const near = (u, v, u2, v2) => Math.hypot(u - u2, v - v2) < .005;
+  const mechas = mechaMeshes.filter(m => s.mechas.some(x => near(m.userData.u, m.userData.v, x.u, x.v)));
+  const marks = decals.filter(d => (d.material.map === T.scorch && s.mechas.some(x => near(d.position.x, d.position.y, x.u, x.v))) ||
+    (d.material.map === T.crater && near(d.position.x, d.position.y, s.u, s.v)));
+  mechas.forEach(m => m.visible = true); marks.forEach(d => d.visible = false);
+  replay = { s, ghost, done, t: Math.max(0, s.impactAt - 1.15), end: s.impactAt + .45, boom: false, mechas, marks };
   $('replayTag').hidden = false; $('turn').style.visibility = 'hidden'; A.whoosh();
 }
 function updateReplay(dt) {
@@ -322,7 +328,7 @@ function updateReplay(dt) {
   } else {
     r.ghost.position.copy(s.pos); r.ghost.quaternion.copy(s.q);
     if (!r.boom) {
-      r.boom = true; A.thud(1); A.boom(true); buzz([40, 30, 80]); flashScreen();
+      r.boom = true; A.thud(1); A.boom(true); buzz([40, 30, 80]); flashScreen(); replayRestore(r);
       dirt(fromUV(s.u, s.v, .02), W.n, 30);
       s.mechas.forEach(m => { const wp = fromUV(m.u, m.v, .01);
         burst(wp, W.n, { count: 90, speed: [1.2, 4.2], grav: 2.5, life: 1.2, size: .028 }); smoke(wp); flashLight(wp, 9); });
@@ -330,9 +336,10 @@ function updateReplay(dt) {
   }
   if (r.t >= r.end) endReplay();
 }
+function replayRestore(r) { r.mechas.forEach(m => m.visible = m.userData.alive); r.marks.forEach(d => d.visible = true); }
 function endReplay() {
   const r = replay; if (!r) return;
-  replay = null; scene.remove(r.ghost); r.s.mesh.visible = true; $('replayTag').hidden = true; $('turn').style.visibility = '';
+  replayRestore(r); replay = null; scene.remove(r.ghost); r.s.mesh.visible = true; $('replayTag').hidden = true; $('turn').style.visibility = '';
   if (r.done) r.done();
 }
 /* cámara de la repetición: persigue el tejo desde atrás y de lado; al final, encima del bocín */
