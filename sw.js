@@ -15,7 +15,7 @@ const PRECACHE = [
   "favicon.png",
   "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",
   "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js",
-  "https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap"
+  "https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Caveat:wght@700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap"
 ];
 
 self.addEventListener('install', e => {
