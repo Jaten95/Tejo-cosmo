@@ -349,7 +349,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.33</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.34</span></div>
   </div></div>
 </section>
 
@@ -446,7 +446,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.33";
+const GAME_VERSION = "1.34";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -778,7 +778,7 @@ function makeTejo(color, design, name) {
 /* ================= Greda y tablero pintado =================
    La greda es barro anaranjado: relieve de grumos, pasadas de la pala y huecos de tejos viejos, con la luz
    ya pintada y además un mapa de relieve para el reflejo. El tablero de atrás va pintado a mano como en las
-   canchas de barrio: tablas amarillas, rayos rojos, número de cancha y el letrero del club, gastado y con barro. */
+   canchas de barrio: tablas amarillas, rayos rojos, un águila en el medallón, número de cancha y el letrero del club, gastado y con barro. */
 
 /* La fuente del club (Alfa Slab One) puede llegar tarde, sobre todo en el celular la primera vez. Las texturas
    con letras se dibujan de una vez con la letra de respaldo y se vuelven a dibujar cuando la fuente llega. */
@@ -866,6 +866,40 @@ function makeGreda() {
   return { map, bump };
 }
 
+/* Cabeza de águila de perfil (mirando a la izquierda), en coordenadas de -1 a 1 */
+function drawEagle(g) {
+  const navy = '#16213d', white = '#fbf8f0', tan = '#c9a77a', beak = '#f2b52c', beakDark = '#c98712';
+  const head = () => {
+    g.beginPath(); g.moveTo(-.34, -.44);
+    g.bezierCurveTo(-.22, -.7, .2, -.8, .5, -.56);
+    g.lineTo(.8, -.36); g.lineTo(.6, -.26); g.lineTo(.86, -.08); g.lineTo(.63, -.02); g.lineTo(.84, .22); g.lineTo(.6, .24);
+    g.lineTo(.68, .6); g.lineTo(.44, .4); g.lineTo(.42, .84); g.lineTo(.22, .5); g.lineTo(.1, .9); g.lineTo(-.02, .52);
+    g.lineTo(-.2, .8); g.lineTo(-.22, .46); g.lineTo(-.44, .64); g.lineTo(-.34, .28);
+    g.quadraticCurveTo(-.42, .12, -.3, -.04); g.closePath();
+  };
+  // cabeza blanca con plumas tostadas por detrás
+  head(); g.fillStyle = white; g.fill();
+  g.save(); head(); g.clip(); g.fillStyle = tan;
+  [[.18, -.66, .78, -.34, .52, -.3], [.3, -.38, .86, -.06, .56, -.04], [.36, -.06, .84, .24, .52, .22], [.3, .2, .66, .6, .4, .44], [.12, .3, .4, .84, .22, .52]]
+    .forEach(([x0, y0, x1, y1, x2, y2]) => { g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo((x0 + x1) / 2 + .06, (y0 + y1) / 2 - .06, x1, y1); g.lineTo(x2, y2); g.quadraticCurveTo((x0 + x2) / 2, (y0 + y2) / 2, x0, y0); g.fill(); });
+  g.fillStyle = 'rgba(22,33,61,.18)'; g.beginPath(); g.moveTo(-.36, .02); g.quadraticCurveTo(-.1, .1, .1, .02); g.lineTo(.0, .3); g.quadraticCurveTo(-.2, .22, -.36, .26); g.fill();
+  g.restore();
+  head(); g.lineJoin = 'miter'; g.miterLimit = 6; g.lineWidth = .07; g.strokeStyle = navy; g.stroke();
+  // pico ganchudo
+  g.beginPath(); g.moveTo(-.3, -.46);
+  g.bezierCurveTo(-.62, -.52, -.9, -.32, -.86, .04); g.quadraticCurveTo(-.85, .16, -.78, .26);
+  g.quadraticCurveTo(-.72, .06, -.56, .0); g.lineTo(-.16, -.06); g.quadraticCurveTo(-.26, -.24, -.3, -.46); g.closePath();
+  g.fillStyle = beak; g.fill(); g.lineWidth = .06; g.lineJoin = 'round'; g.stroke();
+  g.beginPath(); g.moveTo(-.56, .0); g.quadraticCurveTo(-.42, .14, -.18, .04); g.lineTo(-.16, -.06); g.closePath();
+  g.fillStyle = beakDark; g.fill(); g.lineWidth = .045; g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.45)'; g.beginPath(); g.moveTo(-.36, -.38); g.quadraticCurveTo(-.66, -.4, -.76, -.14); g.quadraticCurveTo(-.6, -.32, -.36, -.32); g.fill();
+  // ojo con ceja brava
+  g.fillStyle = beak; g.beginPath(); g.arc(-.08, -.3, .11, 0, 7); g.fill(); g.lineWidth = .04; g.strokeStyle = navy; g.stroke();
+  g.fillStyle = navy; g.beginPath(); g.arc(-.07, -.3, .06, 0, 7); g.fill();
+  g.fillStyle = '#ffffff'; g.beginPath(); g.arc(-.05, -.33, .022, 0, 7); g.fill();
+  g.fillStyle = navy; g.beginPath(); g.moveTo(-.34, -.44); g.quadraticCurveTo(-.08, -.52, .22, -.36); g.quadraticCurveTo(-.04, -.4, -.26, -.36); g.closePath(); g.fill();
+}
+
 function makeBackboard() { return fontTex(1024, 776, drawBackboard); }
 function drawBackboard(g, Wd, Hd) {
   const cx = Wd / 2, cy = Hd * .27;
@@ -888,10 +922,11 @@ function drawBackboard(g, Wd, Hd) {
   const sun = g.createLinearGradient(0, Hd * .5, 0, Hd); sun.addColorStop(0, 'rgba(232,140,40,0)'); sun.addColorStop(.25, 'rgba(232,140,40,.9)'); sun.addColorStop(1, 'rgba(214,110,36,.95)');
   g.fillStyle = sun; g.fillRect(0, Hd * .5, Wd, Hd * .5);
   g.fillStyle = '#e9b520'; g.beginPath(); g.ellipse(cx, Hd * .64, Wd * .55, Hd * .07, 0, Math.PI, 0); g.fill();
-  // medallón con el sol muisca
-  g.fillStyle = '#f2e6c8'; g.beginPath(); g.arc(cx, cy, 96, 0, 7); g.fill();
+  // medallón con el águila
+  g.fillStyle = '#2b5fae'; g.beginPath(); g.arc(cx, cy, 96, 0, 7); g.fill();
   g.lineWidth = 14; g.strokeStyle = '#c4361f'; g.stroke();
-  g.save(); g.translate(cx, cy); g.scale(76, 76); g.__R = 76; g.fillStyle = '#7a3b14'; g.strokeStyle = '#7a3b14'; DRAW.sol(g); g.restore();
+  g.lineWidth = 4; g.strokeStyle = '#f2e6c8'; g.beginPath(); g.arc(cx, cy, 86, 0, 7); g.stroke();
+  g.save(); g.beginPath(); g.arc(cx, cy, 84, 0, 7); g.clip(); g.translate(cx + 4, cy + 2); g.scale(84, 84); drawEagle(g); g.restore();
   // letrero del club en una banda azul curva
   g.save();
   g.beginPath(); g.moveTo(Wd * .16, cy + 136); g.quadraticCurveTo(cx, cy + 84, Wd * .84, cy + 136); g.lineTo(Wd * .84, cy + 256); g.quadraticCurveTo(cx, cy + 204, Wd * .16, cy + 256); g.closePath();
