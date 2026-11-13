@@ -76,6 +76,7 @@ function endPet() {
 
 function updatePets(dt) {
   if (!PETS) return;
+  if (isRana()) { if (PETS.cur) endPet(); return; }   // en la rana no pasan perros
   const c = PETS.cur, inGame = phase !== 'menu' && phase !== 'boot';
   if (!c) {
     if (!inGame || !dt) return;

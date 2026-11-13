@@ -397,7 +397,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <h3>Modo beta</h3>
       <div class="joinRow"><input id="betaIn" placeholder="Código beta" aria-label="Código del modo beta" autocomplete="off" autocapitalize="off"><button class="btn ghost" id="btnBeta" type="button">Activar</button></div>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.45.0</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.46.0</span></div>
   </div></div>
 </section>
 
@@ -461,6 +461,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     <p class="prose"><b>Reto:</b> 10 tejos para hacer el mayor puntaje posible. La mano no cuenta.</p>
     <h3 class="rulesH">Rana</h3>
     <table class="rulesT">
+      <tr><td>Gancho<span>La argolla entra en la argolla que cuelga del gancho, en el tablero de atrás.</span></td><td>300</td></tr>
       <tr><td>Sapito<span>La argolla se mete por la boca chica del sapito de metal de adelante.</span></td><td>100</td></tr>
       <tr><td>Rana<span>Se mete en la boca grande de la rana de atrás.</span></td><td>80</td></tr>
       <tr><td>Huecos<span>Cada hueco da lo que dice su cajón: 50, 45, 40, 30, 20 o 10.</span></td><td>10–50</td></tr>
@@ -503,7 +504,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.45.0";
+const GAME_VERSION = "1.46.0";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -1552,6 +1553,7 @@ function endPet() {
 
 function updatePets(dt) {
   if (!PETS) return;
+  if (isRana()) { if (PETS.cur) endPet(); return; }   // en la rana no pasan perros
   const c = PETS.cur, inGame = phase !== 'menu' && phase !== 'boot';
   if (!c) {
     if (!inGame || !dt) return;
@@ -2736,7 +2738,7 @@ function render() {
   const el = document.getElementById('lupa'); const show = lupaOn();
   el.style.visibility = show ? 'visible' : 'hidden';
   const zb = document.getElementById('zoomBtns');   // arriba a la derecha; si la lupa está, debajo de ella
-  zb.style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay && !online() && !isRana() ? 'visible' : 'hidden';   // en salas el zoom lo pone el anfitrión
+  zb.style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay && !online() ? 'visible' : 'hidden';   // en salas el zoom lo pone el anfitrión
   zb.classList.toggle('underLupa', show);
   if (show) {
     const r = el.getBoundingClientRect(), b = 3;
@@ -2797,11 +2799,12 @@ function joinRebound(sim, rb) {
 /* ================= Rana =================
    El otro juego del salón, como la rana de la foto: tabla azul con diez huecos, la rana de metal atrás (boca grande, 80)
    y el sapito de adelante (boca chica, 100). Debajo, los cajones: 10 80 10 / 20 100 20 / 30 45 30 / 40 50 40.
+   En el tablero de atrás cuelga una argolla de un gancho: meterla ahí vale 300 y la argolla queda colgada.
    Cada jugador lanza 6 argollas por turno desde la raya (a 3,5 m de la mesa); cada hueco tiene su puntaje en
    el cajón de abajo y gana el primero que llegue a la meta. La física es propia y determinista (el aleatorio sale
    de una semilla), así en las salas todos ven caer la argolla en el mismo hueco.
    Estadísticas por jugador (van en los mismos campos del tejo para que las salas no cambien):
-   st.mon = ranas (80) · st.emb = sapitos (100) · st.mechas = argollas que entraron · st.nulos = afuera · st.tiros = lanzadas. */
+   st.mon = ranas (80) · st.emb = sapitos (100) · st.manos = ganchos (300) · st.mechas = argollas que entraron · st.nulos = afuera · st.tiros = lanzadas. */
 
 const RANA = {
   Z: -3.8, TOP: .8, HW: .3, HD: .3,   // centro de la mesa (el borde de adelante queda a 3,5 m de la raya), altura y media tabla
@@ -2823,6 +2826,9 @@ const FIGS = [
   { slot: 4, how: 'sapito', body: V(0, .024, -.085), bodyR: .034, mouth: V(0, .054, -.04), mouthN: V(0, .55, .83).normalize(), mouthR: .021, cap: .017 },
 ];
 const FROG = FIGS[0];
+// La argolla colgada del gancho en el tablero de atrás (altura desde la tabla); hay que pegarle en el centro
+const GANCHO = { y: .27, cap: .019, pts: 300 };
+RANA_SLOTS.push({ i: 12, r: -1, c: 1, pts: GANCHO.pts, kind: 'gancho', x: 0, z: -RANA.HD });
 
 let RANA_M = null;    // la mesa en la escena
 let rflight = null;   // argolla en el aire
@@ -2877,7 +2883,8 @@ function ranaSimulate(aim, k) {
           p.copy(ranaWorld(0, 0, 0).add(f.body).addScaledVector(n, f.bodyR + RANA.AR * .5 + .002)); ev('metal', p); hops++;
         }
       }
-      // 3) el tablero de atrás (y el marcador de encima): rebota hacia adelante
+      // 3) la argolla colgada del gancho (300) y, si no, el tablero de atrás (y el marcador de encima): rebota hacia adelante
+      if (a.z > -RANA.HD && b.z <= -RANA.HD && Math.hypot(b.x, b.y - GANCHO.y) < GANCHO.cap) { ev('gancho', p); end(12, 'gancho', { at: ranaWorld(0, GANCHO.y, -RANA.HD + .012) }); break; }
       if (a.z > -RANA.HD && b.z <= -RANA.HD && Math.abs(b.x) < RANA.HW && b.y > 0 && b.y < RANA.PANEL_H + .3) {
         v.z = Math.abs(v.z) * .45; v.x *= .7; v.y *= .6; jitter(.5); p.z = RANA.Z - RANA.HD + .002; ev('madera', p); hops++;
       }
@@ -2922,7 +2929,7 @@ function ranaSimulate(aim, k) {
   if (!res) end(-1, 'piso', { at: V(p.x, RANA.AT, p.z) });
   path.push({ t, p: p.clone() });
   // al entrar se ve cómo se mete por el hueco o por la boca
-  if (res.slot >= 0) {
+  if (res.slot >= 0 && res.how !== 'gancho') {
     const s = res.at.clone(), steps = 10;
     const fig = FIGS.find(f => f.how === res.how);
     const inside = fig ? s.clone().addScaledVector(fig.mouthN, -.04).add(V(0, -.05, 0)) : s.clone().add(V(0, -.07, 0));
@@ -2965,11 +2972,10 @@ function ranaTopTex() {   // la tabla de paño azul con sus diez huecos
   });
   return tex(c);
 }
-function ranaPanelTex() {   // tablero de atrás: el mismo paño azul con el nombre en esténcil
+function ranaPanelTex() {   // tablero de atrás: el mismo paño azul
   return fontTex(512, Math.round(512 * RANA.PANEL_H / (RANA.HW * 2)), (g, w, h) => {
     g.fillStyle = '#1d4c93'; g.fillRect(0, 0, w, h);
     for (let i = 0; i < 6000; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.06)'; g.fillRect(Math.random() * w, Math.random() * h, 1.5, 1.5); }
-    g.fillStyle = 'rgba(14,16,22,.85)'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '92px "Alfa Slab One"'; g.fillText('RANA', w / 2, h * .26);
   });
 }
 function ranaSlatTex(row) {   // tablilla naranja con los puntos de la fila en esténcil, como el cajón de la foto
@@ -3061,12 +3067,12 @@ function buildRana() {
   }
   box(HW * 2, rowH * 4, .01, 0, y0 - rowH * 2, front - .3, dark);   // fondo oscuro de los cajones
   box(HW * 2, y0 - rowH * 4, .02, 0, (y0 - rowH * 4) / 2, front, pine);   // zócalo
-  // tablero de atrás de paño azul, con un gancho y una argolla colgada (adorno, como en la foto)
+  // tablero de atrás de paño azul, con el gancho y su argolla colgada (vale 300)
   const panelM = std({ map: ranaPanelTex(), roughness: .95 });
   box(HW * 2 + .05, RANA.PANEL_H, .025, 0, T0 + RANA.PANEL_H / 2, -HD - .0125, [pine, pine, pine, pine, panelM, pine]);
   const hook = new THREE.Mesh(new THREE.TorusGeometry(.008, .0018, 6, 16, Math.PI * 1.4), std({ color: '#b9b4a8', metalness: .6, roughness: .3 }));
-  hook.position.set(0, T0 + RANA.PANEL_H * .66, -HD + .012); hook.rotation.set(0, Math.PI / 2, Math.PI * .8); g.add(hook);
-  const deco = makeArgolla(); deco.position.set(0, T0 + RANA.PANEL_H * .66 - .03, -HD + .008); g.add(deco);
+  hook.position.set(0, T0 + GANCHO.y + .03, -HD + .012); hook.rotation.set(0, Math.PI / 2, Math.PI * .8); g.add(hook);
+  const target = makeArgolla(); target.position.set(0, T0 + GANCHO.y, -HD + .008); g.add(target);   // la argolla colgada: meterle una vale 300
   // marcador de luces encima del tablero, con marco de madera
   const [bc, bg] = cnv(512, 224), bt = tex(bc);
   const boardY = T0 + RANA.PANEL_H + .14;
@@ -3088,6 +3094,9 @@ function ranaDrawerPos(slot, n) {
   return V(RANA_COLS[s.c] * (2 * RANA.HW / 3) / .17 + jx, floor + RANA.AT + n * .011, RANA.Z + RANA.HD - .09 + jz);
 }
 function ranaPlaceRing(mesh, slot, n) {
+  if (RANA_SLOTS[slot].kind === 'gancho') {   // queda colgada del gancho, delante de la que ya estaba
+    mesh.position.copy(ranaWorld(0, GANCHO.y - .004 * (n + 1), -RANA.HD + .012 + .005 * (n + 1))); mesh.rotation.set(0, 0, (n * 1.3) % 6.28); mesh.visible = true; return;
+  }
   mesh.position.copy(ranaDrawerPos(slot, n)); mesh.rotation.set(Math.PI / 2, 0, (slot * 1.7 + n * 2.3) % 6.28); mesh.visible = true;
 }
 function ranaClearRings() { if (game && game.rings) game.rings.forEach(r => scene.remove(r.mesh)); if (game) game.rings = []; }
@@ -3110,7 +3119,7 @@ function ranaUpdate(dt) {
   const sim = f.sim;
   while (f.ev < sim.events.length && sim.events[f.ev].t <= f.t) {
     const e = sim.events[f.ev++];
-    if (e.kind === 'metal' || e.kind === 'rana' || e.kind === 'sapito') { A.hit(); sparks(e.p, 10); }
+    if (e.kind === 'metal' || e.kind === 'rana' || e.kind === 'sapito' || e.kind === 'gancho') { A.hit(); sparks(e.p, 10); }
     else if (e.kind === 'piso') { A.floor(); }
     else { A.wood(); }
     if (e.kind === 'mesa' || e.kind === 'madera') f.landed = true;
@@ -3131,15 +3140,15 @@ function ranaFinish() {
   phase = 'result'; resultAt = performance.now();
   if (r.pts) {
     p.score += r.pts; game.turnPts += r.pts; p.st.mechas++;
-    if (r.how === 'rana' || r.how === 'sapito') {
-      if (r.how === 'rana') p.st.mon++; else p.st.emb++;
-      announce(r.how === 'rana' ? '¡RANA!' : '¡SAPITO!', `${p.name.toUpperCase()} +${r.pts}`, true); A.cheer(); A.clank(); flashScreen(); buzz([40, 30, 80]);
+    if (r.how === 'rana' || r.how === 'sapito' || r.how === 'gancho') {
+      if (r.how === 'rana') p.st.mon++; else if (r.how === 'sapito') p.st.emb++; else p.st.manos++;
+      announce({ rana: '¡RANA!', sapito: '¡SAPITO!', gancho: '¡GANCHO!' }[r.how], `${p.name.toUpperCase()} +${r.pts}`, true); A.cheer(); A.clank(); flashScreen(); buzz([40, 30, 80]);
     } else { toast(`+${r.pts}`); A.tick(); }
-    bumpChip(f.owner); feed(p, `${{ rana: 'RANA', sapito: 'SAPITO', hueco: 'Hueco' }[r.how]} +${r.pts}`);
+    bumpChip(f.owner); feed(p, `${{ rana: 'RANA', sapito: 'SAPITO', gancho: 'GANCHO', hueco: 'Hueco' }[r.how]} +${r.pts}`);
   } else if (r.how === 'mesa') { toast('Se quedó en la mesa'); feed(p, 'Quedó en la mesa'); }
   else { p.st.nulos++; toast(f.timeout ? 'Se acabó el tiempo' : 'Afuera'); feed(p, f.timeout ? 'Se le acabó el tiempo' : 'Afuera'); }
   renderBoard(); ranaBoardDraw();
-  later(r.how === 'rana' || r.how === 'sapito' ? 2.2 : 1.0, advance);
+  later(r.how === 'rana' || r.how === 'sapito' || r.how === 'gancho' ? 2.2 : 1.0, advance);
 }
 function ranaAdvance() {
   if (phase === 'over') return;
@@ -3165,7 +3174,7 @@ function ranaShowReticle(aim) {
   if (Math.abs(lx) <= RANA.HW && Math.abs(lz) <= RANA.HD) { pos = V(lx, RANA.TOP + .004, tg.z); good = true; }
   else if (lz < -RANA.HD) {
     const q = ranaAt(aim, RANA.Z - RANA.HD + .003), y = q.y - RANA.TOP;
-    if (y > 0 && y < RANA.PANEL_H && Math.abs(q.x) < RANA.HW) { pos = q; n = V(0, 0, 1); }
+    if (y > 0 && y < RANA.PANEL_H && Math.abs(q.x) < RANA.HW) { pos = q; n = V(0, 0, 1); good = Math.hypot(q.x, y - GANCHO.y) < GANCHO.cap; }
   }
   if (!pos) { const v = ranaVel(aim), t = (v.y + Math.sqrt(v.y * v.y + 2 * G * (REL.y - .004))) / G; pos = V(REL.x + v.x * t, .004, REL.z + v.z * t); }
   reticle.visible = true; reticle.position.copy(pos);
@@ -3175,10 +3184,10 @@ function ranaShowReticle(aim) {
   reticle.userData.uv = null;
 }
 function ranaCamPose() {
-  const asp = isFinite(cam.aspect) && cam.aspect > 0 ? cam.aspect : .5, D = 4.3, t = performance.now() / 1000;
-  // un poco más abierta y mirando más arriba para que el marcador quede debajo de los puntajes de arriba
-  const fov = Math.max(2 * Math.atan(.48 / (D * asp)), 2 * Math.atan(.86 / D)) * 180 / Math.PI * 1.25;
-  return { pos: V(Math.sin(t * .5) * .012, 1.74 + Math.sin(t * .8) * .006, RANA.Z + D), look: V(0, 1.1, RANA.Z), fov };
+  const asp = isFinite(cam.aspect) && cam.aspect > 0 ? cam.aspect : .5, D = 4.3, t = performance.now() / 1000, z = clamp(zoomNow(), 0, 1);
+  // zoom: cerca encuadra la mesa; lejos se ve también el marcador debajo de los puntajes de arriba
+  const deg = 180 / Math.PI, far = Math.max(2 * Math.atan(.48 / (D * asp)), 2 * Math.atan(.86 / D)) * deg * 1.25, near = Math.max(2 * Math.atan(.37 / (D * asp)), 2 * Math.atan(.5 / D)) * deg;
+  return { pos: V(Math.sin(t * .5) * .012, 1.74 + Math.sin(t * .8) * .006, RANA.Z + D), look: V(0, lerp(.98, 1.1, z), RANA.Z), fov: near * Math.pow(far / near, z) };
 }
 function ranaMenuPose(orbit) {
   const a = Math.sin(orbit * .8) * .9, r = 2.3;
@@ -3210,11 +3219,12 @@ function ranaAimLand(x, z) { return { L: x / RANA.LX, P: RANA.P0 - (z - RANA.Z) 
 function ranaPlanCpu(p) {
   const d = settings.diff, r = Math.random(), sd = [.075, .045, .03, .022][d];
   // los buenos le apuntan al sapito (100) y a la rana (80); los demás, a los huecos que más dan
-  const want = d === 3 ? (r < .4 ? 'sapito' : r < .75 ? 'rana' : 'hueco') : d === 2 ? (r < .2 ? 'sapito' : r < .5 ? 'rana' : 'hueco')
+  const want = d === 3 ? (r < .2 ? 'gancho' : r < .5 ? 'sapito' : r < .8 ? 'rana' : 'hueco') : d === 2 ? (r < .1 ? 'gancho' : r < .28 ? 'sapito' : r < .55 ? 'rana' : 'hueco')
     : d === 1 ? (r < .08 ? 'sapito' : r < .25 ? 'rana' : 'hueco') : (r < .05 ? 'rana' : 'hueco');
   let ideal;
   const fig = FIGS.find(f => f.how === want);
   if (fig) { const m = ranaWorld(fig.mouth.x, fig.mouth.y, fig.mouth.z); ideal = ranaAimThrough(m.x, m.y, m.z); }
+  else if (want === 'gancho') ideal = ranaAimThrough(0, RANA.TOP + GANCHO.y, RANA.Z - RANA.HD);
   else {
     const hs = RANA_SLOTS.filter(s => s.kind === 'hueco' && (d >= 2 ? s.pts >= 40 : true)), s = hs[Math.floor(Math.random() * hs.length)];
     ideal = ranaAimLand(s.x, RANA.Z + s.z + .015);
@@ -4304,9 +4314,9 @@ function renderOver(winner) {
   const ts = p => teamOf(p) ? teamScore(teamOf(p)) : 0;
   const rows = [...game.players].map((p, i) => ({ p, i })).sort((a, b) => (ts(b.p) - ts(a.p)) || (b.p.score - a.p.score));
   const won = p => game.mode !== 'reto' && (winner.team ? p.team === winner.idx : p === winner);
-  tbl.innerHTML = isRana()   // en la rana: st.mon = ranas, st.emb = sapitos, st.mechas = metidas, st.nulos = afuera
-    ? `<tr><th>Jugador</th><th>Pts</th><th>Rana</th><th>Sapito</th><th>Metidas</th><th>Afuera</th></tr>` +
-      rows.map(({ p }) => `<tr class="${won(p) ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.mon}</td><td>${p.st.emb}</td><td>${p.st.mechas}/${p.st.tiros}</td><td>${p.st.nulos}</td></tr>`).join('')
+  tbl.innerHTML = isRana()   // en la rana: st.manos = ganchos, st.mon = ranas, st.emb = sapitos, st.mechas = metidas, st.nulos = afuera
+    ? `<tr><th>Jugador</th><th>Pts</th><th>Gancho</th><th>Sapito</th><th>Rana</th><th>Metidas</th><th>Afuera</th></tr>` +
+      rows.map(({ p }) => `<tr class="${won(p) ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.manos}</td><td>${p.st.emb}</td><td>${p.st.mon}</td><td>${p.st.mechas}/${p.st.tiros}</td><td>${p.st.nulos}</td></tr>`).join('')
     : `<tr><th>Jugador</th><th>Pts</th><th>Mecha</th><th>Emboc.</th><th>Moñona</th><th>Mano</th><th>Nulo</th></tr>` +
     rows.map(({ p }) => `<tr class="${won(p) ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.mechas}</td><td>${p.st.emb}</td><td>${p.st.mon}</td><td>${p.st.manos}</td><td>${p.st.nulos}</td></tr>`).join('');
   [...tbl.querySelectorAll('tr')].slice(1).forEach((tr, k) => tr.firstChild.textContent = rows[k].p.name);

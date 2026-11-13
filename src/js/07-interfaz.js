@@ -100,9 +100,9 @@ function renderOver(winner) {
   const ts = p => teamOf(p) ? teamScore(teamOf(p)) : 0;
   const rows = [...game.players].map((p, i) => ({ p, i })).sort((a, b) => (ts(b.p) - ts(a.p)) || (b.p.score - a.p.score));
   const won = p => game.mode !== 'reto' && (winner.team ? p.team === winner.idx : p === winner);
-  tbl.innerHTML = isRana()   // en la rana: st.mon = ranas, st.emb = sapitos, st.mechas = metidas, st.nulos = afuera
-    ? `<tr><th>Jugador</th><th>Pts</th><th>Rana</th><th>Sapito</th><th>Metidas</th><th>Afuera</th></tr>` +
-      rows.map(({ p }) => `<tr class="${won(p) ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.mon}</td><td>${p.st.emb}</td><td>${p.st.mechas}/${p.st.tiros}</td><td>${p.st.nulos}</td></tr>`).join('')
+  tbl.innerHTML = isRana()   // en la rana: st.manos = ganchos, st.mon = ranas, st.emb = sapitos, st.mechas = metidas, st.nulos = afuera
+    ? `<tr><th>Jugador</th><th>Pts</th><th>Gancho</th><th>Sapito</th><th>Rana</th><th>Metidas</th><th>Afuera</th></tr>` +
+      rows.map(({ p }) => `<tr class="${won(p) ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.manos}</td><td>${p.st.emb}</td><td>${p.st.mon}</td><td>${p.st.mechas}/${p.st.tiros}</td><td>${p.st.nulos}</td></tr>`).join('')
     : `<tr><th>Jugador</th><th>Pts</th><th>Mecha</th><th>Emboc.</th><th>Moñona</th><th>Mano</th><th>Nulo</th></tr>` +
     rows.map(({ p }) => `<tr class="${won(p) ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.mechas}</td><td>${p.st.emb}</td><td>${p.st.mon}</td><td>${p.st.manos}</td><td>${p.st.nulos}</td></tr>`).join('');
   [...tbl.querySelectorAll('tr')].slice(1).forEach((tr, k) => tr.firstChild.textContent = rows[k].p.name);

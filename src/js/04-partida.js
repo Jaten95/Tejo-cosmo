@@ -500,7 +500,7 @@ function render() {
   const el = document.getElementById('lupa'); const show = lupaOn();
   el.style.visibility = show ? 'visible' : 'hidden';
   const zb = document.getElementById('zoomBtns');   // arriba a la derecha; si la lupa está, debajo de ella
-  zb.style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay && !online() && !isRana() ? 'visible' : 'hidden';   // en salas el zoom lo pone el anfitrión
+  zb.style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay && !online() ? 'visible' : 'hidden';   // en salas el zoom lo pone el anfitrión
   zb.classList.toggle('underLupa', show);
   if (show) {
     const r = el.getBoundingClientRect(), b = 3;
