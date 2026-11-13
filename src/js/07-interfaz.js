@@ -317,7 +317,7 @@ async function boot(data) {
   if (!window.THREE) { ld.textContent = 'No se pudo cargar el motor 3D. Revisa la conexión y vuelve a abrir la página.'; return; }
   loadSettings();
   if (data && data.settings) Object.assign(settings, data.settings);
-  try { await Promise.race([Promise.all([document.fonts.load(CLUB_FONT), document.fonts.load(CHALK_FONT)]), new Promise(r => setTimeout(r, 1800))]); } catch (e) { }
+  try { await Promise.race([document.fonts.load(CLUB_FONT), new Promise(r => setTimeout(r, 1800))]); } catch (e) { }
   buildRenderer(); buildTextures(); buildArm();
   setDistance(settings.dist); buildHall(); computeDvdP();
   resize(); addEventListener('resize', resize);

@@ -3,7 +3,7 @@
    - version.json nunca se guarda: la página lo consulta para avisar que hay una versión nueva.
    - Three.js, el cargador de la mano, las fuentes y los íconos se guardan al instalar y se sirven desde la caché.
    - Las salas en línea necesitan internet: sus conexiones no pasan por aquí. */
-const VERSION = '1.43';
+const VERSION = '1.44';
 const CACHE = 'tejo-' + VERSION;
 const PRECACHE = [
   "./",
@@ -15,7 +15,7 @@ const PRECACHE = [
   "favicon.png",
   "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",
   "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js",
-  "https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Caveat:wght@700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap"
+  "https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap"
 ];
 
 self.addEventListener('install', e => {

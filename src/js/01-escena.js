@@ -154,7 +154,6 @@ function buildTextures() {
   T.woodRed = makeWoodTex('#7d2a21', null);
   T.woodPlain = makeWoodTex('#5a4029', null);
   T.stripes = makeStripeTex(); T.soft = softTex(); T.crater = craterTex(); T.scorch = scorchTex();
-  T.sign = makeChalkboard();
   T.fia = signTex([
     { t: 'HOY NO SE FÍA', size: 84, y: .38, c: '#d8392d' },
     { t: 'MAÑANA SÍ', size: 84, y: .74, c: '#2565b3' }], '#f2ead8', '#d8392d', 'rgba(0,0,0,.25)');
@@ -180,8 +179,6 @@ function buildHall() {
   [-3.5, 3.5].forEach(x => {
     const w = new THREE.Mesh(new THREE.PlaneGeometry(len, 4.2), wallMat);
     w.position.set(x, 2.1, zMid); w.rotation.y = x < 0 ? Math.PI / 2 : -Math.PI / 2; w.receiveShadow = true; hall.add(w);
-    const band = new THREE.Mesh(new THREE.PlaneGeometry(len, .34), std({ map: T.stripes, roughness: .8 }));
-    band.position.set(x * .998, 1.05, zMid); band.rotation.y = w.rotation.y; hall.add(band);
     const zocalo = new THREE.Mesh(new THREE.PlaneGeometry(len, .5), std({ color: '#2b6b47', roughness: .9 }));
     zocalo.position.set(x * .998, .25, zMid); zocalo.rotation.y = w.rotation.y; hall.add(zocalo);
   });
@@ -193,8 +190,6 @@ function buildHall() {
   const beamMat = std({ map: T.woodPlain, roughness: .9 });
   for (let z = 1; z > -D - 1; z -= 4.2) { const b = new THREE.Mesh(new THREE.BoxGeometry(7, .22, .2), beamMat); b.position.set(0, 4.05, z); hall.add(b); }
   // letreros
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.4, .85), std({ map: T.sign, roughness: .8 }));
-  sign.position.set(0, 3.05, W.ZB - .88); hall.add(sign);
   const fia = new THREE.Mesh(new THREE.PlaneGeometry(1.8, .45), std({ map: T.fia, roughness: .9 }));
   fia.position.set(-3.48, 2.2, -D * .45); fia.rotation.y = Math.PI / 2; hall.add(fia);
   // bombillos colgantes

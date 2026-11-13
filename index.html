@@ -37,7 +37,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Caveat:wght@700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
 <style>
 /* Layout: one full-bleed 3D hall; HUD pinned to the safe edges; menus are painted-wood panels over the live scene. Single dark look (evening tejo hall). */
 :root{
@@ -370,7 +370,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.43</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.44</span></div>
   </div></div>
 </section>
 
@@ -467,7 +467,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.43";
+const GAME_VERSION = "1.44";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -650,7 +650,6 @@ function buildTextures() {
   T.woodRed = makeWoodTex('#7d2a21', null);
   T.woodPlain = makeWoodTex('#5a4029', null);
   T.stripes = makeStripeTex(); T.soft = softTex(); T.crater = craterTex(); T.scorch = scorchTex();
-  T.sign = makeChalkboard();
   T.fia = signTex([
     { t: 'HOY NO SE FÍA', size: 84, y: .38, c: '#d8392d' },
     { t: 'MAÑANA SÍ', size: 84, y: .74, c: '#2565b3' }], '#f2ead8', '#d8392d', 'rgba(0,0,0,.25)');
@@ -676,8 +675,6 @@ function buildHall() {
   [-3.5, 3.5].forEach(x => {
     const w = new THREE.Mesh(new THREE.PlaneGeometry(len, 4.2), wallMat);
     w.position.set(x, 2.1, zMid); w.rotation.y = x < 0 ? Math.PI / 2 : -Math.PI / 2; w.receiveShadow = true; hall.add(w);
-    const band = new THREE.Mesh(new THREE.PlaneGeometry(len, .34), std({ map: T.stripes, roughness: .8 }));
-    band.position.set(x * .998, 1.05, zMid); band.rotation.y = w.rotation.y; hall.add(band);
     const zocalo = new THREE.Mesh(new THREE.PlaneGeometry(len, .5), std({ color: '#2b6b47', roughness: .9 }));
     zocalo.position.set(x * .998, .25, zMid); zocalo.rotation.y = w.rotation.y; hall.add(zocalo);
   });
@@ -689,8 +686,6 @@ function buildHall() {
   const beamMat = std({ map: T.woodPlain, roughness: .9 });
   for (let z = 1; z > -D - 1; z -= 4.2) { const b = new THREE.Mesh(new THREE.BoxGeometry(7, .22, .2), beamMat); b.position.set(0, 4.05, z); hall.add(b); }
   // letreros
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.4, .85), std({ map: T.sign, roughness: .8 }));
-  sign.position.set(0, 3.05, W.ZB - .88); hall.add(sign);
   const fia = new THREE.Mesh(new THREE.PlaneGeometry(1.8, .45), std({ map: T.fia, roughness: .9 }));
   fia.position.set(-3.48, 2.2, -D * .45); fia.rotation.y = Math.PI / 2; hall.add(fia);
   // bombillos colgantes
@@ -806,11 +801,11 @@ function makeTejo(color, design, name) {
 /* ================= Greda y tablero pintado =================
    La greda es barro anaranjado: relieve de grumos, pasadas de la pala y huecos de tejos viejos, con la luz
    ya pintada y además un mapa de relieve para el reflejo. El tablero de atrás va pintado a mano como en las
-   canchas de barrio: tablas amarillas, rayos rojos, un águila en el medallón, número de cancha y el letrero del club, gastado y con barro. */
+   canchas de barrio: tablas amarillas, rayos rojos parejos, un águila en el medallón, número de cancha y el letrero del club, gastado y con barro. */
 
 /* La fuente del club (Alfa Slab One) puede llegar tarde, sobre todo en el celular la primera vez. Las texturas
    con letras se dibujan de una vez con la letra de respaldo y se vuelven a dibujar cuando la fuente llega. */
-const CLUB_FONT = '64px "Alfa Slab One"', CHALK_FONT = '700 64px "Caveat"';   // letra del club y letra de tiza
+const CLUB_FONT = '64px "Alfa Slab One"';   // letra del club
 // Safari a veces dice que una fuente está lista sin haberla bajado; por eso se mira el estado de la fuente misma
 function fontReady(f) {
   try {
@@ -973,37 +968,6 @@ function drawEagle(g) {
   g.fillStyle = navy; g.beginPath(); g.moveTo(-.34, -.44); g.quadraticCurveTo(-.08, -.52, .22, -.36); g.quadraticCurveTo(-.04, -.4, -.26, -.36); g.closePath(); g.fill();
 }
 
-/* Pizarra de tiza arriba de la cancha: cuánto vale cada cosa, escrito a mano */
-function makeChalkboard() { return fontTex(1024, 256, drawChalkboard, CHALK_FONT); }
-function drawChalkboard(g, Wd, Hd) {
-  const fr = 18;
-  // marco de madera
-  g.fillStyle = '#6b4a2b'; g.fillRect(0, 0, Wd, Hd);
-  g.globalAlpha = .25; for (let i = 0; i < 70; i++) { g.strokeStyle = Math.random() < .5 ? '#2e1d0e' : '#a07a4e'; g.lineWidth = rand(.6, 2); const y = rand(0, Hd); g.beginPath(); g.moveTo(0, y); g.lineTo(Wd, y + rand(-3, 3)); g.stroke(); }
-  g.globalAlpha = 1;
-  // pizarra con borrones de tiza vieja
-  g.fillStyle = '#1e2a23'; g.fillRect(fr, fr, Wd - fr * 2, Hd - fr * 2);
-  g.save(); g.beginPath(); g.rect(fr, fr, Wd - fr * 2, Hd - fr * 2); g.clip();
-  for (let i = 0; i < 26; i++) { const x = rand(fr, Wd - fr), y = rand(fr, Hd - fr), gr = g.createRadialGradient(x, y, 0, x, y, rand(40, 120)); gr.addColorStop(0, 'rgba(230,236,230,.08)'); gr.addColorStop(1, 'rgba(230,236,230,0)'); g.fillStyle = gr; g.fillRect(0, 0, Wd, Hd); }
-  g.lineCap = 'round'; for (let i = 0; i < 10; i++) { g.strokeStyle = 'rgba(230,236,230,.05)'; g.lineWidth = rand(18, 40); const x = rand(0, Wd), y = rand(fr, Hd - fr); g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + rand(40, 90), y + rand(-30, 30), x + rand(100, 200), y + rand(-20, 20)); g.stroke(); }
-  // lo escrito en tiza
-  const chalk = (t, x, y, size, color, rot = 0) => { g.save(); g.translate(x, y); g.rotate(rot); g.font = `700 ${size}px "Caveat", "Comic Sans MS", cursive`; g.fillStyle = color; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(t, 0, 0); g.restore(); };
-  chalk('Así se cuenta en El Cosmo', Wd / 2, 46, 40, '#f1efe6', -.01);
-  g.strokeStyle = 'rgba(241,239,230,.7)'; g.lineWidth = 3; g.beginPath(); g.moveTo(Wd / 2 - 190, 70); g.quadraticCurveTo(Wd / 2, 76, Wd / 2 + 190, 68); g.stroke();
-  [['Mano', '1', '#f1efe6'], ['Mecha', '3', '#f6d36b'], ['Embocinada', '6', '#9fd3f0'], ['Moñona', '9', '#f3a1b4']].forEach(([t, n, c], i) => {
-    const x = fr + (Wd - fr * 2) * (i + .5) / 4, rot = (i % 2 ? 1 : -1) * .03;
-    chalk(n, x, 128, 96, c, rot); chalk(t, x, 196, 44, '#f1efe6', -rot);
-    if (i) { g.strokeStyle = 'rgba(241,239,230,.35)'; g.lineWidth = 2; g.beginPath(); g.moveTo(fr + (Wd - fr * 2) * i / 4, 96); g.lineTo(fr + (Wd - fr * 2) * i / 4 + rand(-4, 4), 222); g.stroke(); }
-  });
-  // la tiza no pinta parejo: se le quitan granitos
-  g.globalCompositeOperation = 'destination-out';
-  for (let i = 0; i < 9000; i++) { g.globalAlpha = rand(.15, .6); g.fillRect(rand(fr, Wd - fr), rand(fr, Hd - fr), rand(1, 2.5), rand(1, 2)); }
-  g.globalCompositeOperation = 'destination-over'; g.globalAlpha = 1; g.fillStyle = '#1e2a23'; g.fillRect(fr, fr, Wd - fr * 2, Hd - fr * 2);
-  g.globalCompositeOperation = 'source-over'; g.restore();
-  // borradores y tiza en la repisa de abajo
-  g.fillStyle = '#4a3220'; g.fillRect(fr, Hd - fr, Wd - fr * 2, 6);
-}
-
 function makeBackboard() { return fontTex(1024, 776, drawBackboard); }
 function drawBackboard(g, Wd, Hd) {
   const cx = Wd / 2, cy = Hd * .27;
@@ -1016,9 +980,9 @@ function drawBackboard(g, Wd, Hd) {
   }
   // rayos rojos que salen del centro
   g.save(); g.translate(cx, cy);
-  for (let i = 0; i < 14; i++) {
-    if (i % 2) continue;
-    const a0 = i / 14 * Math.PI * 2 - Math.PI / 2 + .1, a1 = a0 + Math.PI * 2 / 14;
+  const sec = Math.PI * 2 / 16;   // 8 rayos parejos, uno derecho hacia arriba: queda simétrico
+  for (let i = 0; i < 16; i += 2) {
+    const a0 = -Math.PI / 2 - sec / 2 + i * sec, a1 = a0 + sec;
     g.fillStyle = '#d8432a'; g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, Wd, a0, a1); g.closePath(); g.fill();
   }
   g.restore();
@@ -1227,6 +1191,54 @@ function makeBottle(lying) {
   return propShadows(g);
 }
 
+/* Banderines de Colombia colgados en las cuatro paredes: cada uno es la bandera ('bandera')
+   o van intercalados amarillo, azul y rojo ('colores') */
+let BUNTING_STYLE = 'colores';
+function pennantTex(flag) {
+  const [c, g] = cnv(64, 96);
+  if (flag) { g.fillStyle = '#fcd116'; g.fillRect(0, 0, 64, 48); g.fillStyle = '#003893'; g.fillRect(0, 48, 64, 24); g.fillStyle = '#ce1126'; g.fillRect(0, 72, 64, 24); }
+  else { g.fillStyle = '#ffffff'; g.fillRect(0, 0, 64, 96); }
+  const sh = g.createLinearGradient(0, 0, 0, 96); sh.addColorStop(0, 'rgba(0,0,0,0)'); sh.addColorStop(1, 'rgba(0,0,0,.2)');
+  g.fillStyle = sh; g.fillRect(0, 0, 64, 96);
+  g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 3; g.beginPath(); g.moveTo(6, 8); g.quadraticCurveTo(32, 26, 58, 8); g.stroke();   // pliegue de arriba, como tela
+  g.lineWidth = 2; g.beginPath(); g.moveTo(10, 14); g.quadraticCurveTo(32, 30, 54, 14); g.stroke();
+  return tex(c);
+}
+function pennantGeo() {   // banderín con la punta en V
+  const w = .2, h = .28, n = .08, sh = new THREE.Shape();
+  sh.moveTo(-w / 2, 0); sh.lineTo(w / 2, 0); sh.lineTo(w / 2, -h); sh.lineTo(0, -h + n); sh.lineTo(-w / 2, -h); sh.closePath();
+  const geo = new THREE.ShapeGeometry(sh), uv = geo.attributes.uv, pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) uv.setXY(i, (pos.getX(i) + w / 2) / w, (pos.getY(i) + h) / h);
+  return geo;
+}
+function buildBunting() {
+  const D = W.D, flag = BUNTING_STYLE === 'bandera', spots = [];
+  const runs = [   // [desde, hasta, giro para mirar hacia adentro]
+    [V(-3.46, 0, 2.6), V(-3.46, 0, -D - 1.62), Math.PI / 2],
+    [V(3.46, 0, -D - 1.62), V(3.46, 0, 2.6), -Math.PI / 2],
+    [V(-3.4, 0, -D - 1.66), V(3.4, 0, -D - 1.66), 0],
+    [V(3.4, 0, 2.94), V(-3.4, 0, 2.94), Math.PI]];
+  const cord = new THREE.LineBasicMaterial({ color: '#2a2018' });
+  runs.forEach(([a, b, ry]) => {
+    const L = a.distanceTo(b), swags = Math.max(1, Math.round(L / 2.6)), n = Math.floor(L / .3);
+    const yAt = t => { const s = (t * swags) % 1; return 3.58 - .3 * 4 * s * (1 - s); };   // la cuerda se descuelga entre clavo y clavo
+    const pts = []; for (let i = 0; i <= swags * 12; i++) { const t = i / (swags * 12); pts.push(a.clone().lerp(b, t).setY(yAt(t))); }
+    hall.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), cord));
+    for (let i = 0; i < n; i++) {
+      const t = (i + .5) / n, p = a.clone().lerp(b, t); p.y = yAt(t);
+      const slope = (yAt(Math.min(1, t + .002)) - yAt(Math.max(0, t - .002))) / (.004 * L);
+      spots.push({ p, ry, rz: Math.atan(slope) * .6 + rand(-.05, .05), rx: rand(-.25, .25), k: spots.length });
+    }
+  });
+  const im = new THREE.InstancedMesh(pennantGeo(), std({ map: pennantTex(flag), roughness: .75, side: THREE.DoubleSide }), spots.length);
+  const m = new THREE.Matrix4(), cols = ['#fcd116', '#1f4fa8', '#ce1126'].map(c => new THREE.Color(c));
+  spots.forEach(({ p, ry, rz, rx }, i) => {
+    m.makeRotationY(ry).multiply(new THREE.Matrix4().makeRotationZ(rz)).multiply(new THREE.Matrix4().makeRotationX(rx)); m.setPosition(p);
+    im.setMatrixAt(i, m); if (!flag) im.setColorAt(i, cols[i % 3]);
+  });
+  hall.add(im);
+}
+
 function buildProps() {
   // todo en la esquina izquierda, entre la tabla del costado de la cancha y la pared (ahí no llega el tejo)
   const z0 = -W.D, sack = std({ map: burlapTex(), roughness: 1, side: THREE.DoubleSide });
@@ -1247,6 +1259,7 @@ function buildProps() {
     const c = makeCrate(fill); c.position.set(x, y, z); c.rotation.y = ry + dry; hall.add(c);
   });
   [[1.92, z0 + .95, 0], [2.02, z0 + 1.02, 0], [2.4, z0 + .85, 1]].forEach(([x, z, lying]) => { const b = makeBottle(lying); b.position.x = x; b.position.z = z; if (lying) b.rotation.y = .7; hall.add(b); });
+  buildBunting();
   // la pala recostada en la tabla, por fuera
   const shovel = makeShovel(); shovel.position.set(-1.95, 0, z0 + .85); shovel.rotation.set(0, -.25, -.17); hall.add(shovel);
 }
@@ -1878,7 +1891,7 @@ function nextThrow() {
     planCpu(p);
   } else {
     phase = 'aim';
-    helpHint(game.thrown < 2 ? 'Arrastra hacia abajo para cargar\na los lados para apuntar · suelta' : 'Arrastra y suelta para lanzar');
+    helpHint(game.thrown < 2 ? 'Arrastra hacia abajo para cargar,\na los lados para apuntar • suelta' : 'Arrastra y suelta para lanzar');
     if (settings.mode === 'local' && game.players.length > 1) toast(`Turno de ${p.name}`);
   }
 }
@@ -3535,7 +3548,7 @@ async function boot(data) {
   if (!window.THREE) { ld.textContent = 'No se pudo cargar el motor 3D. Revisa la conexión y vuelve a abrir la página.'; return; }
   loadSettings();
   if (data && data.settings) Object.assign(settings, data.settings);
-  try { await Promise.race([Promise.all([document.fonts.load(CLUB_FONT), document.fonts.load(CHALK_FONT)]), new Promise(r => setTimeout(r, 1800))]); } catch (e) { }
+  try { await Promise.race([document.fonts.load(CLUB_FONT), new Promise(r => setTimeout(r, 1800))]); } catch (e) { }
   buildRenderer(); buildTextures(); buildArm();
   setDistance(settings.dist); buildHall(); computeDvdP();
   resize(); addEventListener('resize', resize);

@@ -2,11 +2,11 @@
 /* ================= Greda y tablero pintado =================
    La greda es barro anaranjado: relieve de grumos, pasadas de la pala y huecos de tejos viejos, con la luz
    ya pintada y además un mapa de relieve para el reflejo. El tablero de atrás va pintado a mano como en las
-   canchas de barrio: tablas amarillas, rayos rojos, un águila en el medallón, número de cancha y el letrero del club, gastado y con barro. */
+   canchas de barrio: tablas amarillas, rayos rojos parejos, un águila en el medallón, número de cancha y el letrero del club, gastado y con barro. */
 
 /* La fuente del club (Alfa Slab One) puede llegar tarde, sobre todo en el celular la primera vez. Las texturas
    con letras se dibujan de una vez con la letra de respaldo y se vuelven a dibujar cuando la fuente llega. */
-const CLUB_FONT = '64px "Alfa Slab One"', CHALK_FONT = '700 64px "Caveat"';   // letra del club y letra de tiza
+const CLUB_FONT = '64px "Alfa Slab One"';   // letra del club
 // Safari a veces dice que una fuente está lista sin haberla bajado; por eso se mira el estado de la fuente misma
 function fontReady(f) {
   try {
@@ -169,37 +169,6 @@ function drawEagle(g) {
   g.fillStyle = navy; g.beginPath(); g.moveTo(-.34, -.44); g.quadraticCurveTo(-.08, -.52, .22, -.36); g.quadraticCurveTo(-.04, -.4, -.26, -.36); g.closePath(); g.fill();
 }
 
-/* Pizarra de tiza arriba de la cancha: cuánto vale cada cosa, escrito a mano */
-function makeChalkboard() { return fontTex(1024, 256, drawChalkboard, CHALK_FONT); }
-function drawChalkboard(g, Wd, Hd) {
-  const fr = 18;
-  // marco de madera
-  g.fillStyle = '#6b4a2b'; g.fillRect(0, 0, Wd, Hd);
-  g.globalAlpha = .25; for (let i = 0; i < 70; i++) { g.strokeStyle = Math.random() < .5 ? '#2e1d0e' : '#a07a4e'; g.lineWidth = rand(.6, 2); const y = rand(0, Hd); g.beginPath(); g.moveTo(0, y); g.lineTo(Wd, y + rand(-3, 3)); g.stroke(); }
-  g.globalAlpha = 1;
-  // pizarra con borrones de tiza vieja
-  g.fillStyle = '#1e2a23'; g.fillRect(fr, fr, Wd - fr * 2, Hd - fr * 2);
-  g.save(); g.beginPath(); g.rect(fr, fr, Wd - fr * 2, Hd - fr * 2); g.clip();
-  for (let i = 0; i < 26; i++) { const x = rand(fr, Wd - fr), y = rand(fr, Hd - fr), gr = g.createRadialGradient(x, y, 0, x, y, rand(40, 120)); gr.addColorStop(0, 'rgba(230,236,230,.08)'); gr.addColorStop(1, 'rgba(230,236,230,0)'); g.fillStyle = gr; g.fillRect(0, 0, Wd, Hd); }
-  g.lineCap = 'round'; for (let i = 0; i < 10; i++) { g.strokeStyle = 'rgba(230,236,230,.05)'; g.lineWidth = rand(18, 40); const x = rand(0, Wd), y = rand(fr, Hd - fr); g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + rand(40, 90), y + rand(-30, 30), x + rand(100, 200), y + rand(-20, 20)); g.stroke(); }
-  // lo escrito en tiza
-  const chalk = (t, x, y, size, color, rot = 0) => { g.save(); g.translate(x, y); g.rotate(rot); g.font = `700 ${size}px "Caveat", "Comic Sans MS", cursive`; g.fillStyle = color; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(t, 0, 0); g.restore(); };
-  chalk('Así se cuenta en El Cosmo', Wd / 2, 46, 40, '#f1efe6', -.01);
-  g.strokeStyle = 'rgba(241,239,230,.7)'; g.lineWidth = 3; g.beginPath(); g.moveTo(Wd / 2 - 190, 70); g.quadraticCurveTo(Wd / 2, 76, Wd / 2 + 190, 68); g.stroke();
-  [['Mano', '1', '#f1efe6'], ['Mecha', '3', '#f6d36b'], ['Embocinada', '6', '#9fd3f0'], ['Moñona', '9', '#f3a1b4']].forEach(([t, n, c], i) => {
-    const x = fr + (Wd - fr * 2) * (i + .5) / 4, rot = (i % 2 ? 1 : -1) * .03;
-    chalk(n, x, 128, 96, c, rot); chalk(t, x, 196, 44, '#f1efe6', -rot);
-    if (i) { g.strokeStyle = 'rgba(241,239,230,.35)'; g.lineWidth = 2; g.beginPath(); g.moveTo(fr + (Wd - fr * 2) * i / 4, 96); g.lineTo(fr + (Wd - fr * 2) * i / 4 + rand(-4, 4), 222); g.stroke(); }
-  });
-  // la tiza no pinta parejo: se le quitan granitos
-  g.globalCompositeOperation = 'destination-out';
-  for (let i = 0; i < 9000; i++) { g.globalAlpha = rand(.15, .6); g.fillRect(rand(fr, Wd - fr), rand(fr, Hd - fr), rand(1, 2.5), rand(1, 2)); }
-  g.globalCompositeOperation = 'destination-over'; g.globalAlpha = 1; g.fillStyle = '#1e2a23'; g.fillRect(fr, fr, Wd - fr * 2, Hd - fr * 2);
-  g.globalCompositeOperation = 'source-over'; g.restore();
-  // borradores y tiza en la repisa de abajo
-  g.fillStyle = '#4a3220'; g.fillRect(fr, Hd - fr, Wd - fr * 2, 6);
-}
-
 function makeBackboard() { return fontTex(1024, 776, drawBackboard); }
 function drawBackboard(g, Wd, Hd) {
   const cx = Wd / 2, cy = Hd * .27;
@@ -212,9 +181,9 @@ function drawBackboard(g, Wd, Hd) {
   }
   // rayos rojos que salen del centro
   g.save(); g.translate(cx, cy);
-  for (let i = 0; i < 14; i++) {
-    if (i % 2) continue;
-    const a0 = i / 14 * Math.PI * 2 - Math.PI / 2 + .1, a1 = a0 + Math.PI * 2 / 14;
+  const sec = Math.PI * 2 / 16;   // 8 rayos parejos, uno derecho hacia arriba: queda simétrico
+  for (let i = 0; i < 16; i += 2) {
+    const a0 = -Math.PI / 2 - sec / 2 + i * sec, a1 = a0 + sec;
     g.fillStyle = '#d8432a'; g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, Wd, a0, a1); g.closePath(); g.fill();
   }
   g.restore();

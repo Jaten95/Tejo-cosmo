@@ -166,6 +166,54 @@ function makeBottle(lying) {
   return propShadows(g);
 }
 
+/* Banderines de Colombia colgados en las cuatro paredes: cada uno es la bandera ('bandera')
+   o van intercalados amarillo, azul y rojo ('colores') */
+let BUNTING_STYLE = 'colores';
+function pennantTex(flag) {
+  const [c, g] = cnv(64, 96);
+  if (flag) { g.fillStyle = '#fcd116'; g.fillRect(0, 0, 64, 48); g.fillStyle = '#003893'; g.fillRect(0, 48, 64, 24); g.fillStyle = '#ce1126'; g.fillRect(0, 72, 64, 24); }
+  else { g.fillStyle = '#ffffff'; g.fillRect(0, 0, 64, 96); }
+  const sh = g.createLinearGradient(0, 0, 0, 96); sh.addColorStop(0, 'rgba(0,0,0,0)'); sh.addColorStop(1, 'rgba(0,0,0,.2)');
+  g.fillStyle = sh; g.fillRect(0, 0, 64, 96);
+  g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 3; g.beginPath(); g.moveTo(6, 8); g.quadraticCurveTo(32, 26, 58, 8); g.stroke();   // pliegue de arriba, como tela
+  g.lineWidth = 2; g.beginPath(); g.moveTo(10, 14); g.quadraticCurveTo(32, 30, 54, 14); g.stroke();
+  return tex(c);
+}
+function pennantGeo() {   // banderín con la punta en V
+  const w = .2, h = .28, n = .08, sh = new THREE.Shape();
+  sh.moveTo(-w / 2, 0); sh.lineTo(w / 2, 0); sh.lineTo(w / 2, -h); sh.lineTo(0, -h + n); sh.lineTo(-w / 2, -h); sh.closePath();
+  const geo = new THREE.ShapeGeometry(sh), uv = geo.attributes.uv, pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) uv.setXY(i, (pos.getX(i) + w / 2) / w, (pos.getY(i) + h) / h);
+  return geo;
+}
+function buildBunting() {
+  const D = W.D, flag = BUNTING_STYLE === 'bandera', spots = [];
+  const runs = [   // [desde, hasta, giro para mirar hacia adentro]
+    [V(-3.46, 0, 2.6), V(-3.46, 0, -D - 1.62), Math.PI / 2],
+    [V(3.46, 0, -D - 1.62), V(3.46, 0, 2.6), -Math.PI / 2],
+    [V(-3.4, 0, -D - 1.66), V(3.4, 0, -D - 1.66), 0],
+    [V(3.4, 0, 2.94), V(-3.4, 0, 2.94), Math.PI]];
+  const cord = new THREE.LineBasicMaterial({ color: '#2a2018' });
+  runs.forEach(([a, b, ry]) => {
+    const L = a.distanceTo(b), swags = Math.max(1, Math.round(L / 2.6)), n = Math.floor(L / .3);
+    const yAt = t => { const s = (t * swags) % 1; return 3.58 - .3 * 4 * s * (1 - s); };   // la cuerda se descuelga entre clavo y clavo
+    const pts = []; for (let i = 0; i <= swags * 12; i++) { const t = i / (swags * 12); pts.push(a.clone().lerp(b, t).setY(yAt(t))); }
+    hall.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), cord));
+    for (let i = 0; i < n; i++) {
+      const t = (i + .5) / n, p = a.clone().lerp(b, t); p.y = yAt(t);
+      const slope = (yAt(Math.min(1, t + .002)) - yAt(Math.max(0, t - .002))) / (.004 * L);
+      spots.push({ p, ry, rz: Math.atan(slope) * .6 + rand(-.05, .05), rx: rand(-.25, .25), k: spots.length });
+    }
+  });
+  const im = new THREE.InstancedMesh(pennantGeo(), std({ map: pennantTex(flag), roughness: .75, side: THREE.DoubleSide }), spots.length);
+  const m = new THREE.Matrix4(), cols = ['#fcd116', '#1f4fa8', '#ce1126'].map(c => new THREE.Color(c));
+  spots.forEach(({ p, ry, rz, rx }, i) => {
+    m.makeRotationY(ry).multiply(new THREE.Matrix4().makeRotationZ(rz)).multiply(new THREE.Matrix4().makeRotationX(rx)); m.setPosition(p);
+    im.setMatrixAt(i, m); if (!flag) im.setColorAt(i, cols[i % 3]);
+  });
+  hall.add(im);
+}
+
 function buildProps() {
   // todo en la esquina izquierda, entre la tabla del costado de la cancha y la pared (ahí no llega el tejo)
   const z0 = -W.D, sack = std({ map: burlapTex(), roughness: 1, side: THREE.DoubleSide });
@@ -186,6 +234,7 @@ function buildProps() {
     const c = makeCrate(fill); c.position.set(x, y, z); c.rotation.y = ry + dry; hall.add(c);
   });
   [[1.92, z0 + .95, 0], [2.02, z0 + 1.02, 0], [2.4, z0 + .85, 1]].forEach(([x, z, lying]) => { const b = makeBottle(lying); b.position.x = x; b.position.z = z; if (lying) b.rotation.y = .7; hall.add(b); });
+  buildBunting();
   // la pala recostada en la tabla, por fuera
   const shovel = makeShovel(); shovel.position.set(-1.95, 0, z0 + .85); shovel.rotation.set(0, -.25, -.17); hall.add(shovel);
 }
