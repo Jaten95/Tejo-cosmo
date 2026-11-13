@@ -14,8 +14,8 @@ src/
   body.html          HUD, menú, sala, selector de grabados y pantallas
   js/                el juego; se une en este orden
     01-escena.js     cancha, texturas, luces y el tejo
-    01b-greda-tablero.js  la greda de barro, el tablero pintado de atrás y la pizarra
-    01c-utileria.js  herramientas junto a la cancha: pala, costales, baldes y caja de mechas
+    01b-greda-tablero.js  la greda de barro y el tablero pintado de atrás
+    01c-utileria.js  herramientas, canastas de cerveza y banderines del salón
     02-grabados.js   los diseños grabados en la cara del tejo
     03-fisica.js     vuelo, choques, puntaje, efectos y sonido
     04-partida.js    turnos, rondas, Don Chepe, cámaras y bucle principal
