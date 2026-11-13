@@ -80,6 +80,21 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 #feed div{font-size:12px;font-weight:600;background:rgba(22,16,11,.72);padding:4px 8px;border-left:3px solid var(--c);
   border-radius:2px;animation:feedin .3s ease;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 @keyframes feedin{from{opacity:0;transform:translateX(-8px);}}
+#rxTray{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 70px);pointer-events:auto;z-index:3;
+  display:grid;grid-template-columns:repeat(3,auto);gap:6px;background:var(--ink);padding:8px;border-radius:6px;border:1px solid var(--wood-3);box-shadow:0 10px 30px rgba(0,0,0,.5);}
+#rxTray button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 6px;min-width:64px;border-radius:4px;background:var(--wood);}
+#rxTray button b{font-size:24px;line-height:1;}
+#rxTray button span{font:600 11px/1 var(--body);color:var(--muted);}
+#rxTray button:active{transform:scale(.94);}
+#rxLayer{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 120px);z-index:30;pointer-events:none;
+  display:flex;flex-direction:column-reverse;align-items:flex-end;gap:6px;}
+.rx{display:flex;align-items:center;gap:8px;background:rgba(18,13,8,.88);border-left:4px solid var(--c);padding:6px 10px 6px 8px;border-radius:3px;
+  animation:rxUp 3.2s ease-out forwards;max-width:70vw;}
+.rx b{font-size:28px;line-height:1;}
+.rx span{display:flex;flex-direction:column;gap:2px;font:600 12px/1.1 var(--body);color:var(--muted);min-width:0;}
+.rx span em{font:400 15px/1 var(--display);font-style:normal;color:var(--paper);}
+@keyframes rxUp{0%{opacity:0;transform:translateY(16px) scale(.8);}10%{opacity:1;transform:translateY(0) scale(1.06);}18%{transform:scale(1);}80%{opacity:1;}100%{opacity:0;transform:translateY(-40px);}}
+@media (prefers-reduced-motion:reduce){.rx{animation:rxFade 3.2s linear forwards;}@keyframes rxFade{0%,80%{opacity:1;}100%{opacity:0;}}}
 .hudBtns{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;gap:8px;pointer-events:auto;}
 .iconBtn{width:42px;height:42px;display:grid;place-items:center;background:rgba(22,16,11,.82);border:1px solid rgba(245,237,221,.18);border-radius:50%;}
 .iconBtn svg{width:18px;height:18px;fill:none;stroke:var(--paper);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}

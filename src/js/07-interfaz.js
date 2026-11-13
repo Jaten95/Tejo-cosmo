@@ -11,7 +11,7 @@ function loadSettings() { const s = store.get('tejo.settings.v1', null); if (s) 
 function records() { return store.get('tejo.record.v1', {}); }
 
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id); }
-function setHud(on) { $('hud').hidden = !on; keepAwake(on); }
+function setHud(on) { $('hud').hidden = !on; keepAwake(on); $('btnRx').hidden = !(on && online()); if (!on || !online()) closeRxTray(); }
 function hint(text, on) { const h = $('hint'); if (text) h.textContent = text; h.classList.toggle('off', !on); }
 let toastTimer;
 function toast(text) { const t = $('toast'); t.textContent = text; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1900); }

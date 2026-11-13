@@ -110,6 +110,21 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 #feed div{font-size:12px;font-weight:600;background:rgba(22,16,11,.72);padding:4px 8px;border-left:3px solid var(--c);
   border-radius:2px;animation:feedin .3s ease;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 @keyframes feedin{from{opacity:0;transform:translateX(-8px);}}
+#rxTray{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 70px);pointer-events:auto;z-index:3;
+  display:grid;grid-template-columns:repeat(3,auto);gap:6px;background:var(--ink);padding:8px;border-radius:6px;border:1px solid var(--wood-3);box-shadow:0 10px 30px rgba(0,0,0,.5);}
+#rxTray button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 6px;min-width:64px;border-radius:4px;background:var(--wood);}
+#rxTray button b{font-size:24px;line-height:1;}
+#rxTray button span{font:600 11px/1 var(--body);color:var(--muted);}
+#rxTray button:active{transform:scale(.94);}
+#rxLayer{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 120px);z-index:30;pointer-events:none;
+  display:flex;flex-direction:column-reverse;align-items:flex-end;gap:6px;}
+.rx{display:flex;align-items:center;gap:8px;background:rgba(18,13,8,.88);border-left:4px solid var(--c);padding:6px 10px 6px 8px;border-radius:3px;
+  animation:rxUp 3.2s ease-out forwards;max-width:70vw;}
+.rx b{font-size:28px;line-height:1;}
+.rx span{display:flex;flex-direction:column;gap:2px;font:600 12px/1.1 var(--body);color:var(--muted);min-width:0;}
+.rx span em{font:400 15px/1 var(--display);font-style:normal;color:var(--paper);}
+@keyframes rxUp{0%{opacity:0;transform:translateY(16px) scale(.8);}10%{opacity:1;transform:translateY(0) scale(1.06);}18%{transform:scale(1);}80%{opacity:1;}100%{opacity:0;transform:translateY(-40px);}}
+@media (prefers-reduced-motion:reduce){.rx{animation:rxFade 3.2s linear forwards;}@keyframes rxFade{0%,80%{opacity:1;}100%{opacity:0;}}}
 .hudBtns{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;gap:8px;pointer-events:auto;}
 .iconBtn{width:42px;height:42px;display:grid;place-items:center;background:rgba(22,16,11,.82);border:1px solid rgba(245,237,221,.18);border-radius:50%;}
 .iconBtn svg{width:18px;height:18px;fill:none;stroke:var(--paper);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
@@ -251,13 +266,16 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
   <div id="feed" aria-live="polite"></div>
   <div class="hudBtns">
     <button class="iconBtn" id="btnPause" aria-label="Pausa"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+    <button class="iconBtn" id="btnRx" aria-label="Reaccionar" aria-expanded="false" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg></button>
     <button class="iconBtn" id="btnSound" aria-label="Sonido"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M17 9l5 6M22 9l-5 6"/></svg></button>
   </div>
+  <div id="rxTray" hidden></div>
   <div id="hint">Arrastra hacia abajo para cargar · suelta para lanzar</div>
   <button class="skipBtn" id="btnSkip" hidden>Saltar turno</button>
 </div>
 <div id="announce" aria-live="assertive"><div class="t" id="annT"></div><div class="s"></div><div class="p" id="annP"></div></div>
 <div id="toast"></div>
+<div id="rxLayer" aria-live="polite"></div>
 <div id="replayTag" hidden><i></i>REPETICIÓN<span>Toca para saltar</span></div>
 <div id="flash"></div>
 
@@ -317,7 +335,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.22</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.23</span></div>
   </div></div>
 </section>
 
@@ -401,7 +419,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.22";
+const GAME_VERSION = "1.23";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -2292,6 +2310,7 @@ function netSync() {
   if (NET.myG && best && best.host !== NET.pid) { NET.myG = null; NET.sala.presence({ g: null }).catch(() => { }); }
   if (NET.g && amHost()) hostDuties(peers);
   applyG();
+  checkReactions(peers);
   if (online()) { const key = [...presentPids(peers).keys()].sort().join(','); if (key !== NET.hereKey) { NET.hereKey = key; renderBoard(); } }
   if (!$('sala').hidden) renderSala();
 }
@@ -2622,7 +2641,52 @@ function netPickDesign() {
   openPicker({ title: 'Escoge tu grabado', current: settings.designs[0], taken, color: COLORS[i] || COLORS[0], name: myName(),
     onPick: id => { settings.designs[0] = id; fixLocalDesigns(); saveSettings(); if (NET.sala) NET.sala.presence({ design: id }).catch(() => { }); renderSala(); } });
 }
+/* ---------- Reacciones: salen en la pantalla de todos los de la sala ---------- */
+const REACTIONS = [['😮', '¡Uy!'], ['🔥', '¡Qué tiro!'], ['🍺', '¡Salud!'], ['👏', '¡Bien!'], ['😂', 'Jajaja'], ['🙏', '¡Ayuda, Virgen!']];
+const RX_GAP = 1500;   // una reacción cada 1,5 s por jugador, para no saturar la sala
+function sendReaction(k) {
+  if (!NET.sala || !REACTIONS[k]) return;
+  const now = performance.now(); if (now - (NET.rxLast || 0) < RX_GAP) return;
+  NET.rxLast = now; NET.rxN = (NET.rxN || 0) + 1;
+  NET.sala.presence({ rx: { k, n: NET.rxN } }).catch(() => { });
+  showReaction(myName(), k, myColor());
+  closeRxTray();
+}
+function myColor() { const p = online() && game.players.find(q => q.pid === NET.pid); return p ? p.color : COLORS[0]; }
+function checkReactions(peers) {
+  NET.rxSeen = NET.rxSeen || {};
+  for (const peer of peers) {
+    const pr = peer.presence || {}, pid = pr.pid; if (typeof pid !== 'string' || pid === NET.pid) continue;
+    const rx = pr.rx, n = rx && Number.isInteger(rx.n) ? rx.n : 0, seen = NET.rxSeen[pid];
+    if (seen === undefined) { NET.rxSeen[pid] = n; continue; }         // al llegar a la sala no se muestran reacciones viejas
+    if (n > seen && REACTIONS[rx.k]) {
+      NET.rxSeen[pid] = n;
+      const p = online() && game.players.find(q => q.pid === pid);
+      showReaction(String(pr.name || 'Alguien').slice(0, 14), rx.k, p ? p.color : '#8e7d66');
+    }
+  }
+}
+function showReaction(name, k, color) {
+  const [emo, txt] = REACTIONS[k], layer = $('rxLayer');
+  const el = document.createElement('div'); el.className = 'rx'; el.style.setProperty('--c', color);
+  const b = document.createElement('b'); b.textContent = emo;
+  const s = document.createElement('span'); const em = document.createElement('em'); em.textContent = txt; s.append(name, em);
+  el.append(b, s); layer.appendChild(el);
+  while (layer.children.length > 5) layer.removeChild(layer.firstChild);
+  setTimeout(() => el.remove(), 3300);
+  A.tone(660, .08, { type: 'triangle', gain: .12 }); A.tone(990, .1, { type: 'triangle', gain: .1, delay: .06 });
+}
+function openRxTray() {
+  const t = $('rxTray'); t.innerHTML = '';
+  REACTIONS.forEach(([emo, txt], k) => { const b = document.createElement('button'); b.type = 'button';
+    const e = document.createElement('b'); e.textContent = emo; const s = document.createElement('span'); s.textContent = txt; b.append(e, s);
+    b.addEventListener('click', ev => { ev.stopPropagation(); sendReaction(k); }); t.appendChild(b); });
+  t.hidden = false; $('btnRx').setAttribute('aria-expanded', 'true');
+}
+function closeRxTray() { $('rxTray').hidden = true; $('btnRx').setAttribute('aria-expanded', 'false'); }
 function netBindUI() {
+  $('btnRx').addEventListener('click', e => { e.stopPropagation(); $('rxTray').hidden ? openRxTray() : closeRxTray(); });
+  document.addEventListener('pointerdown', e => { if (!$('rxTray').hidden && !e.target.closest('#rxTray, #btnRx')) closeRxTray(); });
   $('myDz').addEventListener('click', netPickDesign);
   $('btnJoin').addEventListener('click', netJoinClick);
   $('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') netJoinClick(); });
@@ -2653,7 +2717,7 @@ function loadSettings() { const s = store.get('tejo.settings.v1', null); if (s) 
 function records() { return store.get('tejo.record.v1', {}); }
 
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id); }
-function setHud(on) { $('hud').hidden = !on; keepAwake(on); }
+function setHud(on) { $('hud').hidden = !on; keepAwake(on); $('btnRx').hidden = !(on && online()); if (!on || !online()) closeRxTray(); }
 function hint(text, on) { const h = $('hint'); if (text) h.textContent = text; h.classList.toggle('off', !on); }
 let toastTimer;
 function toast(text) { const t = $('toast'); t.textContent = text; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1900); }

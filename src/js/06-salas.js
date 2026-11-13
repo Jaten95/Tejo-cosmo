@@ -220,6 +220,7 @@ function netSync() {
   if (NET.myG && best && best.host !== NET.pid) { NET.myG = null; NET.sala.presence({ g: null }).catch(() => { }); }
   if (NET.g && amHost()) hostDuties(peers);
   applyG();
+  checkReactions(peers);
   if (online()) { const key = [...presentPids(peers).keys()].sort().join(','); if (key !== NET.hereKey) { NET.hereKey = key; renderBoard(); } }
   if (!$('sala').hidden) renderSala();
 }
@@ -550,7 +551,52 @@ function netPickDesign() {
   openPicker({ title: 'Escoge tu grabado', current: settings.designs[0], taken, color: COLORS[i] || COLORS[0], name: myName(),
     onPick: id => { settings.designs[0] = id; fixLocalDesigns(); saveSettings(); if (NET.sala) NET.sala.presence({ design: id }).catch(() => { }); renderSala(); } });
 }
+/* ---------- Reacciones: salen en la pantalla de todos los de la sala ---------- */
+const REACTIONS = [['😮', '¡Uy!'], ['🔥', '¡Qué tiro!'], ['🍺', '¡Salud!'], ['👏', '¡Bien!'], ['😂', 'Jajaja'], ['🙏', '¡Ayuda, Virgen!']];
+const RX_GAP = 1500;   // una reacción cada 1,5 s por jugador, para no saturar la sala
+function sendReaction(k) {
+  if (!NET.sala || !REACTIONS[k]) return;
+  const now = performance.now(); if (now - (NET.rxLast || 0) < RX_GAP) return;
+  NET.rxLast = now; NET.rxN = (NET.rxN || 0) + 1;
+  NET.sala.presence({ rx: { k, n: NET.rxN } }).catch(() => { });
+  showReaction(myName(), k, myColor());
+  closeRxTray();
+}
+function myColor() { const p = online() && game.players.find(q => q.pid === NET.pid); return p ? p.color : COLORS[0]; }
+function checkReactions(peers) {
+  NET.rxSeen = NET.rxSeen || {};
+  for (const peer of peers) {
+    const pr = peer.presence || {}, pid = pr.pid; if (typeof pid !== 'string' || pid === NET.pid) continue;
+    const rx = pr.rx, n = rx && Number.isInteger(rx.n) ? rx.n : 0, seen = NET.rxSeen[pid];
+    if (seen === undefined) { NET.rxSeen[pid] = n; continue; }         // al llegar a la sala no se muestran reacciones viejas
+    if (n > seen && REACTIONS[rx.k]) {
+      NET.rxSeen[pid] = n;
+      const p = online() && game.players.find(q => q.pid === pid);
+      showReaction(String(pr.name || 'Alguien').slice(0, 14), rx.k, p ? p.color : '#8e7d66');
+    }
+  }
+}
+function showReaction(name, k, color) {
+  const [emo, txt] = REACTIONS[k], layer = $('rxLayer');
+  const el = document.createElement('div'); el.className = 'rx'; el.style.setProperty('--c', color);
+  const b = document.createElement('b'); b.textContent = emo;
+  const s = document.createElement('span'); const em = document.createElement('em'); em.textContent = txt; s.append(name, em);
+  el.append(b, s); layer.appendChild(el);
+  while (layer.children.length > 5) layer.removeChild(layer.firstChild);
+  setTimeout(() => el.remove(), 3300);
+  A.tone(660, .08, { type: 'triangle', gain: .12 }); A.tone(990, .1, { type: 'triangle', gain: .1, delay: .06 });
+}
+function openRxTray() {
+  const t = $('rxTray'); t.innerHTML = '';
+  REACTIONS.forEach(([emo, txt], k) => { const b = document.createElement('button'); b.type = 'button';
+    const e = document.createElement('b'); e.textContent = emo; const s = document.createElement('span'); s.textContent = txt; b.append(e, s);
+    b.addEventListener('click', ev => { ev.stopPropagation(); sendReaction(k); }); t.appendChild(b); });
+  t.hidden = false; $('btnRx').setAttribute('aria-expanded', 'true');
+}
+function closeRxTray() { $('rxTray').hidden = true; $('btnRx').setAttribute('aria-expanded', 'false'); }
 function netBindUI() {
+  $('btnRx').addEventListener('click', e => { e.stopPropagation(); $('rxTray').hidden ? openRxTray() : closeRxTray(); });
+  document.addEventListener('pointerdown', e => { if (!$('rxTray').hidden && !e.target.closest('#rxTray, #btnRx')) closeRxTray(); });
   $('myDz').addEventListener('click', netPickDesign);
   $('btnJoin').addEventListener('click', netJoinClick);
   $('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') netJoinClick(); });
