@@ -349,7 +349,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.31</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.32</span></div>
   </div></div>
 </section>
 
@@ -446,7 +446,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.31";
+const GAME_VERSION = "1.32";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -872,11 +872,12 @@ function makeBackboard() {
   g.save(); g.translate(cx, cy); g.scale(76, 76); g.__R = 76; g.fillStyle = '#7a3b14'; g.strokeStyle = '#7a3b14'; DRAW.sol(g); g.restore();
   // letrero del club en una banda azul curva
   g.save();
-  g.beginPath(); g.moveTo(Wd * .16, cy + 150); g.quadraticCurveTo(cx, cy + 92, Wd * .84, cy + 150); g.lineTo(Wd * .84, cy + 222); g.quadraticCurveTo(cx, cy + 166, Wd * .16, cy + 222); g.closePath();
+  g.beginPath(); g.moveTo(Wd * .16, cy + 136); g.quadraticCurveTo(cx, cy + 84, Wd * .84, cy + 136); g.lineTo(Wd * .84, cy + 256); g.quadraticCurveTo(cx, cy + 204, Wd * .16, cy + 256); g.closePath();
   g.fillStyle = '#2b5fae'; g.fill(); g.lineWidth = 8; g.strokeStyle = '#f2e6c8'; g.stroke(); g.restore();
   g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.font = '400 24px "Alfa Slab One", Georgia, serif'; g.fillStyle = '#f2e6c8'; g.fillText('CLUB DE TEJO', cx, cy + 136);
-  g.font = '400 66px "Alfa Slab One", Georgia, serif'; g.fillStyle = '#16110c'; g.fillText('EL COSMO', cx + 4, cy + 182); g.fillStyle = '#ffffff'; g.fillText('EL COSMO', cx, cy + 178);
+  g.font = '400 38px "Alfa Slab One", Georgia, serif'; g.lineJoin = 'round'; g.lineWidth = 7; g.strokeStyle = '#16110c';
+  g.strokeText('CLUB DE TEJO', cx, cy + 134); g.fillStyle = '#ffd23a'; g.fillText('CLUB DE TEJO', cx, cy + 134);
+  g.font = '400 66px "Alfa Slab One", Georgia, serif'; g.fillStyle = '#16110c'; g.fillText('EL COSMO', cx + 4, cy + 196); g.fillStyle = '#ffffff'; g.fillText('EL COSMO', cx, cy + 192);
   // número de cancha arriba
   g.fillStyle = '#ffffff'; g.beginPath(); g.arc(Wd * .86, 64, 42, 0, 7); g.fill(); g.lineWidth = 9; g.strokeStyle = '#c4361f'; g.stroke();
   g.font = '400 56px "Alfa Slab One", Georgia, serif'; g.fillStyle = '#c4361f'; g.fillText('3', Wd * .86, 68);
