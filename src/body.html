@@ -77,7 +77,12 @@
     </div>
     <div class="group" id="grpGoal">
       <h3>Partida a</h3>
-      <div class="seg" id="segGoal"><button data-v="15">15</button><button data-v="21">21</button><button data-v="27">27</button></div>
+      <div class="seg" id="segGoal"><button data-v="15">15</button><button data-v="21">21</button><button data-v="27">27</button><button data-v="otra" id="goalOther">Otra</button></div>
+      <div class="goalCustom" id="goalCustom" hidden>
+        <button class="step" id="goalMinus" type="button" aria-label="Menos puntos">−</button>
+        <label><input id="goalIn" type="number" inputmode="numeric" min="3" max="99" step="1" aria-label="Puntos para ganar" autocomplete="off"><span>puntos</span></label>
+        <button class="step" id="goalPlus" type="button" aria-label="Más puntos">+</button>
+      </div>
     </div>
     <div class="row">
       <div class="lbl"><b>Mira en la cancha</b><span>Muestra dónde cae el tejo mientras apuntas</span></div>

@@ -9,6 +9,7 @@ const store = {
 function saveSettings() { store.set('tejo.settings.v1', settings); }
 function loadSettings() {
   const s = store.get('tejo.settings.v1', null); if (s) Object.assign(settings, s);
+  settings.goal = clampGoal(settings.goal);
   // antes el juego traía nombres de ejemplo (Javi, Pacho…); se borran para que cada quien escriba el suyo
   if (!settings.namesV2) {
     const OLD = ['Javi', 'Pacho', 'Mafe', 'Leo', 'Caro', 'Nico'];
@@ -132,7 +133,14 @@ function renderOver(winner) {
 function setSeg(id, val) { $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(val)))); }
 function renderMenu() {
   fixLocalDesigns();
-  setSeg('segMode', settings.mode); setSeg('segCount', settings.count); setSeg('segDiff', settings.diff); setSeg('segDist', settings.dist); setSeg('segGoal', settings.goal);
+  setSeg('segMode', settings.mode); setSeg('segCount', settings.count); setSeg('segDiff', settings.diff); setSeg('segDist', settings.dist);
+  // partida a 15, 21, 27 u otro valor que uno escribe
+  const otherGoal = goalOpen || !GOAL_PRESETS.includes(settings.goal);
+  setSeg('segGoal', otherGoal ? 'otra' : settings.goal);
+  $('goalOther').innerHTML = otherGoal ? `${settings.goal}<small>otra</small>` : 'Otra';
+  $('goalCustom').hidden = !otherGoal;
+  if (document.activeElement !== $('goalIn')) $('goalIn').value = settings.goal;
+  $('goalMinus').disabled = settings.goal <= GOAL_MIN; $('goalPlus').disabled = settings.goal >= GOAL_MAX;
   $('swAim').setAttribute('aria-checked', String(settings.aimHelp));
   // la lupa solo se puede prender con la mira prendida; la barra de fuerza va aparte
   $('swLupa').setAttribute('aria-checked', String(settings.aimHelp && settings.lupa)); $('swLupa').disabled = !settings.aimHelp;
@@ -183,6 +191,23 @@ function showMenu() {
   if (flight) { scene.remove(flight.mesh); flight = null; }
   if (game) clearCancha(); game = null; reticle.visible = false;
   setHud(false); renderMenu(); showScreen('menu');
+}
+/* Partida a: tres valores de siempre o uno personalizado entre GOAL_MIN y GOAL_MAX */
+const GOAL_PRESETS = [15, 21, 27], GOAL_MIN = 3, GOAL_MAX = 99;
+let goalOpen = false;
+function clampGoal(v) { v = Math.round(+v); return isFinite(v) ? Math.min(GOAL_MAX, Math.max(GOAL_MIN, v)) : 27; }
+function setGoal(v) { settings.goal = clampGoal(v); if (!GOAL_PRESETS.includes(settings.goal)) settings.goalOther = settings.goal; saveSettings(); renderMenu(); }
+function bindGoal() {
+  $('segGoal').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.v === 'otra') { goalOpen = true; if (GOAL_PRESETS.includes(settings.goal)) settings.goal = clampGoal(settings.goalOther || 33); }
+    else { goalOpen = false; settings.goal = +b.dataset.v; }
+    saveSettings(); renderMenu(); A.init(); A.tick();
+  });
+  $('goalMinus').addEventListener('click', () => { setGoal(settings.goal - 1); A.init(); A.tick(); });
+  $('goalPlus').addEventListener('click', () => { setGoal(settings.goal + 1); A.init(); A.tick(); });
+  $('goalIn').addEventListener('change', () => setGoal($('goalIn').value));
+  $('goalIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('goalIn').blur(); });
 }
 function bindSeg(id, key, conv) {
   $(id).addEventListener('click', e => {
@@ -259,7 +284,7 @@ function bindInput() {
 
 function bindUI() {
   bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
-  bindSeg('segDist', 'dist', Number); bindSeg('segGoal', 'goal', Number); bindSeg('segTeams', 'teams', Number); bindSeg('segCpuSize', 'cpuSize', Number);
+  bindSeg('segDist', 'dist', Number); bindGoal(); bindSeg('segTeams', 'teams', Number); bindSeg('segCpuSize', 'cpuSize', Number);
   $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; if (!settings.aimHelp) settings.lupa = false; saveSettings(); renderMenu(); });
   $('swLupa').addEventListener('click', () => { if (!settings.aimHelp) return; settings.lupa = !settings.lupa; saveSettings(); renderMenu(); });
   $('swPower').addEventListener('click', () => { settings.power = !settings.power; saveSettings(); renderMenu(); });

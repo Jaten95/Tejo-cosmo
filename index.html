@@ -189,6 +189,13 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 .seg button small{display:block;font-size:10.5px;font-weight:600;color:var(--dim);margin-top:2px;}
 .seg button[aria-pressed="true"]{background:var(--paper);color:var(--ink);}
 .seg button[aria-pressed="true"] small{color:#5d4f3e;}
+.goalCustom{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.goalCustom label{flex:1;min-width:0;display:flex;align-items:baseline;justify-content:center;gap:6px;background:var(--ink);border-left:4px solid var(--flag-y);border-radius:3px;padding:6px 12px;}
+.goalCustom input{width:3.2ch;background:none;border:0;color:var(--paper);font:800 22px var(--body);text-align:center;padding:2px 0;user-select:text;-moz-appearance:textfield;}
+.goalCustom input::-webkit-outer-spin-button,.goalCustom input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.goalCustom label span{font-size:12px;color:var(--dim);}
+.goalCustom .step{width:44px;height:44px;flex:none;border-radius:4px;background:var(--ink);color:var(--paper);font:700 22px/1 var(--body);}
+.goalCustom .step:active{background:var(--wood-3);}
 .names{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
 .names label{display:flex;align-items:center;gap:6px;background:var(--ink);border-radius:3px;padding:0 8px;border-left:4px solid var(--c);min-width:0;}
 .names input{flex:1;min-width:0;background:none;border:0;color:var(--paper);font:600 14px var(--body);padding:10px 0;user-select:text;}
@@ -352,7 +359,12 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     </div>
     <div class="group" id="grpGoal">
       <h3>Partida a</h3>
-      <div class="seg" id="segGoal"><button data-v="15">15</button><button data-v="21">21</button><button data-v="27">27</button></div>
+      <div class="seg" id="segGoal"><button data-v="15">15</button><button data-v="21">21</button><button data-v="27">27</button><button data-v="otra" id="goalOther">Otra</button></div>
+      <div class="goalCustom" id="goalCustom" hidden>
+        <button class="step" id="goalMinus" type="button" aria-label="Menos puntos">−</button>
+        <label><input id="goalIn" type="number" inputmode="numeric" min="3" max="99" step="1" aria-label="Puntos para ganar" autocomplete="off"><span>puntos</span></label>
+        <button class="step" id="goalPlus" type="button" aria-label="Más puntos">+</button>
+      </div>
     </div>
     <div class="row">
       <div class="lbl"><b>Mira en la cancha</b><span>Muestra dónde cae el tejo mientras apuntas</span></div>
@@ -375,7 +387,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.43.0</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.44.0</span></div>
   </div></div>
 </section>
 
@@ -474,7 +486,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.43.0";
+const GAME_VERSION = "1.44.0";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -3407,7 +3419,7 @@ function buildOnlineGame(g) {
   computeDvdP();
   const nT = [2, 3].includes(st.teams) ? st.teams : 0;
   const players = st.players.slice(0, MAX_PLAYERS).map((s, i) => { const p = newPlayer(String(s.name).slice(0, 14), i, false, DESIGN_IDS.includes(s.design) ? s.design : null); p.pid = s.pid; if (nT && Number.isInteger(s.team) && s.team >= 0 && s.team < nT) p.team = s.team; return p; });
-  game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: st.goal, mode: 'online', gid: g.gid, ...pickRules(st), aimHelp: !!st.aimHelp, thrown: 0, over: false };
+  game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: clampGoal(st.goal), mode: 'online', gid: g.gid, ...pickRules(st), aimHelp: !!st.aimHelp, thrown: 0, over: false };
   game.teams = applyTeams(players, nT);
   NET.pending = {}; lastP = {}; clearFeed(); paused = false;
   showScreen(null); setHud(true);
@@ -3730,6 +3742,7 @@ const store = {
 function saveSettings() { store.set('tejo.settings.v1', settings); }
 function loadSettings() {
   const s = store.get('tejo.settings.v1', null); if (s) Object.assign(settings, s);
+  settings.goal = clampGoal(settings.goal);
   // antes el juego traía nombres de ejemplo (Javi, Pacho…); se borran para que cada quien escriba el suyo
   if (!settings.namesV2) {
     const OLD = ['Javi', 'Pacho', 'Mafe', 'Leo', 'Caro', 'Nico'];
@@ -3853,7 +3866,14 @@ function renderOver(winner) {
 function setSeg(id, val) { $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(val)))); }
 function renderMenu() {
   fixLocalDesigns();
-  setSeg('segMode', settings.mode); setSeg('segCount', settings.count); setSeg('segDiff', settings.diff); setSeg('segDist', settings.dist); setSeg('segGoal', settings.goal);
+  setSeg('segMode', settings.mode); setSeg('segCount', settings.count); setSeg('segDiff', settings.diff); setSeg('segDist', settings.dist);
+  // partida a 15, 21, 27 u otro valor que uno escribe
+  const otherGoal = goalOpen || !GOAL_PRESETS.includes(settings.goal);
+  setSeg('segGoal', otherGoal ? 'otra' : settings.goal);
+  $('goalOther').innerHTML = otherGoal ? `${settings.goal}<small>otra</small>` : 'Otra';
+  $('goalCustom').hidden = !otherGoal;
+  if (document.activeElement !== $('goalIn')) $('goalIn').value = settings.goal;
+  $('goalMinus').disabled = settings.goal <= GOAL_MIN; $('goalPlus').disabled = settings.goal >= GOAL_MAX;
   $('swAim').setAttribute('aria-checked', String(settings.aimHelp));
   // la lupa solo se puede prender con la mira prendida; la barra de fuerza va aparte
   $('swLupa').setAttribute('aria-checked', String(settings.aimHelp && settings.lupa)); $('swLupa').disabled = !settings.aimHelp;
@@ -3904,6 +3924,23 @@ function showMenu() {
   if (flight) { scene.remove(flight.mesh); flight = null; }
   if (game) clearCancha(); game = null; reticle.visible = false;
   setHud(false); renderMenu(); showScreen('menu');
+}
+/* Partida a: tres valores de siempre o uno personalizado entre GOAL_MIN y GOAL_MAX */
+const GOAL_PRESETS = [15, 21, 27], GOAL_MIN = 3, GOAL_MAX = 99;
+let goalOpen = false;
+function clampGoal(v) { v = Math.round(+v); return isFinite(v) ? Math.min(GOAL_MAX, Math.max(GOAL_MIN, v)) : 27; }
+function setGoal(v) { settings.goal = clampGoal(v); if (!GOAL_PRESETS.includes(settings.goal)) settings.goalOther = settings.goal; saveSettings(); renderMenu(); }
+function bindGoal() {
+  $('segGoal').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.v === 'otra') { goalOpen = true; if (GOAL_PRESETS.includes(settings.goal)) settings.goal = clampGoal(settings.goalOther || 33); }
+    else { goalOpen = false; settings.goal = +b.dataset.v; }
+    saveSettings(); renderMenu(); A.init(); A.tick();
+  });
+  $('goalMinus').addEventListener('click', () => { setGoal(settings.goal - 1); A.init(); A.tick(); });
+  $('goalPlus').addEventListener('click', () => { setGoal(settings.goal + 1); A.init(); A.tick(); });
+  $('goalIn').addEventListener('change', () => setGoal($('goalIn').value));
+  $('goalIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('goalIn').blur(); });
 }
 function bindSeg(id, key, conv) {
   $(id).addEventListener('click', e => {
@@ -3980,7 +4017,7 @@ function bindInput() {
 
 function bindUI() {
   bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
-  bindSeg('segDist', 'dist', Number); bindSeg('segGoal', 'goal', Number); bindSeg('segTeams', 'teams', Number); bindSeg('segCpuSize', 'cpuSize', Number);
+  bindSeg('segDist', 'dist', Number); bindGoal(); bindSeg('segTeams', 'teams', Number); bindSeg('segCpuSize', 'cpuSize', Number);
   $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; if (!settings.aimHelp) settings.lupa = false; saveSettings(); renderMenu(); });
   $('swLupa').addEventListener('click', () => { if (!settings.aimHelp) return; settings.lupa = !settings.lupa; saveSettings(); renderMenu(); });
   $('swPower').addEventListener('click', () => { settings.power = !settings.power; saveSettings(); renderMenu(); });

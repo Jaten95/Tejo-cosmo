@@ -57,7 +57,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 `build.py` solo acepta números así (`python3 build.py 1.43.0`).
 
 <details>
-<summary>Hasta la v1.63 el número subía de a uno en cada cambio. Así quedó cada versión con SemVer (la v1.63 equivale a la 1.42.0).</summary>
+<summary>Hasta la v1.63 el número subía de a uno en cada cambio. Así quedó cada versión con SemVer (la v1.63 equivale a la 1.42.0), y las que siguieron.</summary>
 
 | Antes | SemVer | Tipo | Qué trajo |
 |---|---|---|---|
@@ -123,6 +123,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | v1.62 | 1.41.1 | Arreglado | punto rojo de la repetición ovalado |
 | v1.63 | 1.42.0 | Cambiado | la repetición ya no se salta; títulos que caben en el celular |
 | — | 1.43.0 | Agregado | versiones con SemVer y aviso en salas si alguien tiene otra versión |
+| — | 1.44.0 | Agregado | partida a otro valor (de 3 a 99) |
 
 </details>
 
