@@ -28,7 +28,12 @@ function toast(text) { const t = $('toast'); t.textContent = text; t.classList.a
 function announce(title, pts, big, nulo) {
   const a = $('announce'); $('annT').textContent = title; $('annP').textContent = pts;
   a.classList.remove('show', 'big'); void a.offsetWidth;
-  a.classList.toggle('big', !!big); a.classList.add('show');
+  a.classList.toggle('big', !!big);
+  // que el título quepa en la pantalla del celular: si es muy largo (¡EMBOCINADA!) se achica la letra
+  const t = $('annT'); t.style.fontSize = '';
+  const room = innerWidth - 32 - (big ? 12 : 6), w = t.scrollWidth;
+  if (w > room) t.style.fontSize = (parseFloat(getComputedStyle(t).fontSize) * room / w).toFixed(1) + 'px';
+  a.classList.add('show');
   $('annT').style.textShadow = nulo ? '3px 3px 0 #4c3a29, 6px 6px 0 #120d08' : '';
 }
 function flashScreen() { if (reduceMotion) return; const f = $('flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
@@ -200,8 +205,8 @@ function resume() { paused = false; showScreen(null); }
 
 /* ---------- Entrada ---------- */
 let resultAt = 0;
-/* Tocar la pantalla adelanta la espera entre tiros (y salta la repetición) */
-function skipWait() { if (replay) { endReplay(); return; } timers.forEach(t => t.t = Math.min(t.t, .05)); }
+/* Tocar la pantalla adelanta la espera entre tiros; la repetición no se puede saltar */
+function skipWait() { if (replay) return; timers.forEach(t => t.t = Math.min(t.t, .05)); }
 function bindInput() {
   const cv = renderer.domElement;
   cv.addEventListener('pointerdown', e => {

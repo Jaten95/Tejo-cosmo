@@ -143,7 +143,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 /* ---------- announcements ---------- */
 #announce{position:fixed;left:0;right:0;top:38%;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;opacity:0;}
 #announce.show{animation:ann 1.9s cubic-bezier(.2,.9,.2,1) forwards;}
-#announce .t{font-family:var(--display);font-size:clamp(40px,12vw,92px);line-height:.95;letter-spacing:.01em;color:var(--paper);
+#announce .t{font-family:var(--display);font-size:clamp(40px,12vw,92px);line-height:.95;white-space:nowrap;letter-spacing:.01em;color:var(--paper);
   text-shadow:3px 3px 0 var(--red),6px 6px 0 var(--ink);padding:0 16px;text-align:center;}
 #announce.big .t{font-size:clamp(52px,16vw,128px);text-shadow:3px 3px 0 var(--flag-y),6px 6px 0 var(--flag-b),9px 9px 0 var(--flag-r),12px 12px 0 var(--ink);}
 #announce .p{font:800 16px/1 var(--body);letter-spacing:.08em;background:var(--ink);padding:7px 12px;border-top:4px solid var(--yellow);}
@@ -159,7 +159,6 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 #replayTag{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 20px);z-index:4;pointer-events:none;
   display:flex;align-items:center;gap:8px;width:max-content;max-width:calc(100vw - 32px);white-space:nowrap;background:var(--ink);color:var(--paper);font:400 16px/1 var(--display);letter-spacing:.08em;padding:8px 12px 7px;border-bottom:4px solid var(--red);}
 #replayTag i{flex:none;width:10px;height:10px;border-radius:50%;background:var(--red);animation:rec 1s steps(1) infinite;}
-#replayTag span{font:600 11px/1 var(--body);letter-spacing:.04em;color:var(--muted);}
 @keyframes rec{50%{opacity:0;}}
 #flash{position:fixed;inset:0;background:#ffd38a;opacity:0;pointer-events:none;mix-blend-mode:screen;}
 #flash.go{animation:flash .45s ease-out;}
@@ -300,7 +299,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <div id="toast"></div>
 <div id="updBar" hidden><span id="updText">Hay una versión nueva</span><button id="updBtn" type="button">Actualizar</button></div>
 <div id="rxLayer" aria-live="polite"></div>
-<div id="replayTag" hidden><i></i>REPETICIÓN<span>Toca para saltar</span></div>
+<div id="replayTag" hidden><i></i>REPETICIÓN</div>
 <div id="flash"></div>
 
 <section class="screen" id="menu" hidden>
@@ -376,7 +375,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.62</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.63</span></div>
   </div></div>
 </section>
 
@@ -475,7 +474,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.62";
+const GAME_VERSION = "1.63";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -3738,7 +3737,12 @@ function toast(text) { const t = $('toast'); t.textContent = text; t.classList.a
 function announce(title, pts, big, nulo) {
   const a = $('announce'); $('annT').textContent = title; $('annP').textContent = pts;
   a.classList.remove('show', 'big'); void a.offsetWidth;
-  a.classList.toggle('big', !!big); a.classList.add('show');
+  a.classList.toggle('big', !!big);
+  // que el título quepa en la pantalla del celular: si es muy largo (¡EMBOCINADA!) se achica la letra
+  const t = $('annT'); t.style.fontSize = '';
+  const room = innerWidth - 32 - (big ? 12 : 6), w = t.scrollWidth;
+  if (w > room) t.style.fontSize = (parseFloat(getComputedStyle(t).fontSize) * room / w).toFixed(1) + 'px';
+  a.classList.add('show');
   $('annT').style.textShadow = nulo ? '3px 3px 0 #4c3a29, 6px 6px 0 #120d08' : '';
 }
 function flashScreen() { if (reduceMotion) return; const f = $('flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
@@ -3910,8 +3914,8 @@ function resume() { paused = false; showScreen(null); }
 
 /* ---------- Entrada ---------- */
 let resultAt = 0;
-/* Tocar la pantalla adelanta la espera entre tiros (y salta la repetición) */
-function skipWait() { if (replay) { endReplay(); return; } timers.forEach(t => t.t = Math.min(t.t, .05)); }
+/* Tocar la pantalla adelanta la espera entre tiros; la repetición no se puede saltar */
+function skipWait() { if (replay) return; timers.forEach(t => t.t = Math.min(t.t, .05)); }
 function bindInput() {
   const cv = renderer.domElement;
   cv.addEventListener('pointerdown', e => {
