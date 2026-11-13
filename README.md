@@ -20,7 +20,6 @@ src/
     05-brazo.js      brazo en primera persona, mano 3D y manilla
     06-salas.js      salas en línea (salas de Claude o Supabase Realtime)
     07-interfaz.js   menú, marcador, controles y arranque
-    08-ambiente.js   ambiente de cancha y música, sintetizados en el navegador
     09-instalar.js   botón para instalar el juego en el celular
   sw.js              service worker: instalar y jugar sin internet
   assets/
