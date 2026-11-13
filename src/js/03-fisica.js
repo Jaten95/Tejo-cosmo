@@ -80,9 +80,54 @@ function predict(aim) {
   return sim.first ? { kind: sim.first, p: sim.firstP, n: sim.firstN } : null;
 }
 
-function evaluate(sim) {
-  if (sim.first !== 'clay') return { valid: false, kind: 'nulo', why: sim.first, pts: 0 };
-  const { u, v } = sim.clay; const d = Math.hypot(u, v);
+/* ---------- Choques entre tejos sobre la greda ----------
+   Se calcula igual en todos los celulares: las posiciones se redondean a 0,1 mm y no hay azar.
+   El tejo que llega empuja a los que toque (y esos a los siguientes); queda donde termina el choque. */
+const R4 = x => Math.round(x * 1e4) / 1e4;
+function resolveHits(u, v, vEnd, others) {
+  const vu = vEnd ? vEnd.dot(W.a) : 0, vv = vEnd ? vEnd.dot(W.s) : 1, vs = Math.hypot(vu, vv) || 1;
+  const P = [{ u, v, i: -1 }].concat(others.map(o => ({ u: o.u, v: o.v, i: o.i })));
+  const active = new Set([0]), hits = [];
+  let contact = null;
+  for (let it = 0; it < 8; it++) {
+    let any = false;
+    for (let a = 0; a < P.length; a++) {
+      if (!active.has(a)) continue;
+      for (let b = 0; b < P.length; b++) {
+        if (a === b) continue;
+        const pa = P[a], pb = P[b];
+        let du = pb.u - pa.u, dv = pb.v - pa.v, d = Math.hypot(du, dv);
+        if (d >= 2 * RT - 1e-6) continue;
+        let nu, nv;
+        if (d < 1e-5) { nu = vu / vs; nv = vv / vs; d = 0; } else { nu = du / d; nv = dv / d; }
+        if (a === 0) {   // si cae casi encima, el empujón sigue la dirección en que venía el tejo
+          const w = 1 - d / (2 * RT); let bu = nu * (1 - w) + (vu / vs) * w, bv = nv * (1 - w) + (vv / vs) * w; const bl = Math.hypot(bu, bv);
+          if (bl > 1e-4) { nu = bu / bl; nv = bv / bl; }
+        }
+        const over = 2 * RT - d;
+        const head = a === 0 ? Math.max(0, (vu * nu + vv * nv) / vs) : .5;   // 1 = de frente, 0 = de refilón
+        const kb = .55 + .35 * head;                                           // cuánto del choque se lleva el golpeado
+        const kick = (a === 0 ? .016 : .006) * head;
+        if (a === 0 && !contact) contact = { u: pa.u + nu * RT, v: pa.v + nv * RT };
+        pb.u += nu * (over * kb + kick); pb.v += nv * (over * kb + kick);
+        pa.u -= nu * over * (1 - kb); pa.v -= nv * over * (1 - kb);
+        active.add(b); any = true;
+        if (a === 0 && pb.i >= 0 && !hits.includes(pb.i)) hits.push(pb.i);
+      }
+    }
+    if (!any) break;
+  }
+  const lim = (x, h) => R4(clamp(x, -h + RT * .6, h - RT * .6));
+  P.forEach(p => { p.u = lim(p.u, HU); p.v = lim(p.v, HV); });
+  const moved = P.slice(1).filter((p, k) => p.u !== others[k].u || p.v !== others[k].v).map(p => ({ i: p.i, u: p.u, v: p.v }));
+  return { u: P[0].u, v: P[0].v, moved, hits, contact };
+}
+
+function evaluate(sim, others) {
+  if (sim.first !== 'clay') return { valid: false, kind: 'nulo', why: sim.first, pts: 0, moved: [], hits: [] };
+  const landU = R4(sim.clay.u), landV = R4(sim.clay.v);
+  const col = resolveHits(landU, landV, sim.vEnd, others || []);
+  const u = col.u, v = col.v, d = Math.hypot(u, v);
   const mechas = mechaMeshes.filter(m => m.userData.alive && Math.hypot(m.userData.u - u, m.userData.v - v) < MECHA_HIT);
   const emb = d <= R_EMB;
   const ring = !emb && Math.abs(d - RB) < RT * .95;
@@ -90,7 +135,7 @@ function evaluate(sim) {
   if (emb && mechas.length) { kind = 'monona'; pts = 9; }
   else if (emb) { kind = 'embocinada'; pts = 6; }
   else if (mechas.length) { kind = 'mecha'; pts = 3; }
-  return { valid: true, kind, pts, d, u, v, mechas, ring, emb };
+  return { valid: true, kind, pts, d, u, v, mechas, ring, emb, landU, landV, moved: col.moved, hits: col.hits, contact: col.contact };
 }
 
 /* Pose final de un tejo clavado en la greda */
@@ -200,6 +245,7 @@ const A = {
   whoosh() { this.nz(.55, { type: 'bandpass', f0: 380, f1: 1900, q: 1.4, gain: .22, attack: .2 }); },
   thud(k = 1) { this.tone(105, .28, { f1: 42, gain: .9 * k }); this.nz(.2, { f0: 900, f1: 160, gain: .55 * k }); },
   clank() { [523, 1187, 1964, 2875, 3920].forEach((f, i) => this.tone(f, .5 + .25 * Math.random(), { gain: .1 / (1 + i * .3), f1: f * .995 })); },
+  hit() { [1480, 2210, 3170].forEach((f, i) => this.tone(f, .12 + i * .03, { gain: .16 / (1 + i * .5), f1: f * .97 })); this.nz(.05, { type: 'highpass', f0: 2800, gain: .45 }); this.tone(320, .09, { f1: 180, type: 'triangle', gain: .35 }); },
   wood() { this.tone(230, .14, { f1: 150, type: 'triangle', gain: .45 }); this.nz(.09, { type: 'bandpass', f0: 1400, gain: .3 }); },
   floor() { this.nz(.14, { f0: 700, f1: 200, gain: .4 }); this.tone(150, .12, { f1: 80, gain: .3 }); },
   boom(big) {

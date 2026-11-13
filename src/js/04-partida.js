@@ -136,7 +136,8 @@ function launch(a, opts) {
   lastP[p.name] = a.P;
   const v0 = aimToVel(a);
   const sim = simulate(V(REL.x, REL.y, REL.z), v0, false);
-  const res = evaluate(sim);
+  const others = game.tejos.map((t, i) => ({ i, u: t.u, v: t.v, valid: t.valid })).filter(o => o.valid);
+  const res = evaluate(sim, others);
   const mesh = makeTejo(p.color, p.design, p.name); mesh.position.copy(sim.path[0].p); scene.add(mesh);
   flight = { timeout: !!(opts && opts.timeout), sim, res, mesh, t: 0, owner: game.order[game.idx], ev: 0, done: false, impactAt: sim.first === 'clay' ? sim.firstT : sim.duration, spin: rand(12, 18) * (Math.random() < .5 ? -1 : 1), tilt: V(rand(-.25, .25), 0, rand(-.25, .25)) };
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
@@ -172,12 +173,23 @@ function updateFlight(dt) {
 function impactEvent(e, f) {
   const strong = clamp(e.speed / 12, .3, 1);
   if (e.kind === 'clay') {
-    const { u, v } = f.sim.clay;
-    const pose = embedPose(u, v, f.sim.vEnd, f.res.emb);
-    f.mesh.position.copy(pose.pos); f.mesh.quaternion.copy(pose.q); f.landed = true;
+    const r = f.res, u = r.u, v = r.v;
+    const pose = embedPose(u, v, f.sim.vEnd, r.emb);
+    f.mesh.quaternion.copy(pose.q); f.landed = true;
     A.thud(strong); buzz(30);
-    dirt(fromUV(u, v, .02), W.n, f.res.valid ? 30 : 16);
-    decal(u, v, T.crater, f.res.emb ? .1 : .14);
+    dirt(fromUV(u, v, .02), W.n, r.valid ? 30 : 16);
+    decal(u, v, T.crater, r.emb ? .1 : .14);
+    if (r.hits.length) {
+      // cae donde apuntó, choca y se corre; los golpeados se deslizan en la greda
+      f.mesh.position.copy(fromUV(r.landU, r.landV, TT * .12));
+      slideTo(f.mesh, pose.pos, .16);
+      r.moved.forEach(m => { const t = game.tejos[m.i]; if (!t) return;
+        const to = t.mesh.position.clone().addScaledVector(W.a, m.u - t.u).addScaledVector(W.s, m.v - t.v);
+        slideTo(t.mesh, to, .24); decal(m.u, m.v, T.crater, .12); });
+      const c = fromUV(r.contact.u, r.contact.v, .025);
+      burst(c, W.n, { count: 26, colors: ['#ffffff', '#ffe9b0', '#ffd27a'], speed: [.8, 2.4], grav: 4, life: .35, size: .022 });
+      A.hit(); buzz([20, 20, 40]);
+    } else f.mesh.position.copy(pose.pos);
     if (f.res.valid && (f.res.ring || f.res.emb)) A.clank();
     if (f.res.valid) f.res.mechas.forEach((m, i) => later(i * .06, () => { explodeMecha(m); A.boom(f.res.kind === 'monona'); buzz([40, 30, 80]); }));
     if (f.res.mechas && f.res.mechas.length) flashScreen();
@@ -199,7 +211,11 @@ function nuloWhy(sim) {
 function finishFlight() {
   const f = flight; if (f.done) return; f.done = true;
   const p = game.players[f.owner], r = f.res;
+  (r.moved || []).forEach(m => { const t = game.tejos[m.i]; if (t) { t.u = m.u; t.v = m.v; t.d = Math.hypot(m.u, m.v); } });
   game.tejos.push({ owner: f.owner, mesh: f.mesh, valid: r.valid, d: r.valid ? r.d : Infinity, u: r.u, v: r.v });
+  const hitNames = (r.hits || []).map(i => game.tejos[i] && game.tejos[i].owner).filter(o => o !== undefined)
+    .map(o => o === f.owner ? 'a su propio tejo' : `al tejo de ${game.players[o].name}`).filter((x, k, a) => a.indexOf(x) === k);
+  const hitText = hitNames.length ? `Le pegó ${hitNames.join(' y ')}` : '';
   p.st.tiros++;
   phase = 'result'; resultAt = performance.now();
   const cm = r.valid ? Math.max(0, Math.round((r.d - RT) * 100)) : 0;
@@ -213,11 +229,12 @@ function finishFlight() {
       if (r.kind !== 'mecha') A.cheer();
       bumpChip(f.owner); feed(p, `${label.replace(/[¡!]/g, '')} +${r.pts}`);
     } else if (r.valid) {
-      toast(cm <= 1 ? 'Pegadito al bocín' : `En la greda, a ${cm} cm del bocín`); feed(p, `Greda · ${cm} cm`);
+      toast((hitText ? `¡${hitText}! ` : '') + (cm <= 1 ? 'Quedó pegadito al bocín' : `Quedó a ${cm} cm del bocín`)); feed(p, `Greda · ${cm} cm`);
     } else {
       const why = f.timeout ? 'Se le acabó el tiempo' : nuloWhy(f.sim);
       p.st.nulos++; announce('NULO', why.toUpperCase(), false, true); A.aww(); feed(p, `Nulo · ${why.toLowerCase()}`);
     }
+    if (hitText) feed(p, hitText);
     renderBoard();
   });
   flight = null;
@@ -342,4 +359,11 @@ function frame(now) {
   updateCamera(paused ? 0 : dt);
   render();
   requestAnimationFrame(frame);
+}
+
+/* Desliza un tejo hasta su nuevo lugar en la greda (solo se ve; la posición ya quedó calculada) */
+function slideTo(mesh, to, dur) {
+  const from = mesh.position.clone(); let t = 0;
+  if (reduceMotion) { mesh.position.copy(to); return; }
+  addFx({ update(dt) { t += dt; const k = Math.min(1, t / dur), e = 1 - Math.pow(1 - k, 3); mesh.position.lerpVectors(from, to, e); return k < 1; } });
 }
