@@ -281,7 +281,7 @@ function finishFlight() {
       p.score += r.pts; game.scored = true;
       if (r.kind === 'mecha') p.st.mechas++; else if (r.kind === 'embocinada') p.st.emb++; else p.st.mon++;
       const label = { mecha: '¡MECHA!', embocinada: '¡EMBOCINADA!', monona: '¡MOÑONA!' }[r.kind];
-      announce(label, `${p.name.toUpperCase()} +${r.pts}`, r.kind === 'monona');
+      announce(label, `${p.name.toUpperCase()} +${r.pts}`, r.kind === 'monona'); crowdCheer();
       if (r.kind !== 'mecha') A.cheer();
       bumpChip(f.owner); feed(p, `${label.replace(/[¡!]/g, '')} +${r.pts}`);
     } else if (r.valid) {
@@ -469,7 +469,8 @@ function render() {
   const el = document.getElementById('lupa'); const show = lupaOn();
   el.style.visibility = show ? 'visible' : 'hidden';
   const zb = document.getElementById('zoomBtns');   // arriba a la derecha; si la lupa está, debajo de ella
-  zb.style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay && !online() ? 'visible' : 'hidden';   // en salas el zoom lo pone el anfitrión zb.classList.toggle('underLupa', show);
+  zb.style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay && !online() ? 'visible' : 'hidden';   // en salas el zoom lo pone el anfitrión
+  zb.classList.toggle('underLupa', show);
   if (show) {
     const r = el.getBoundingClientRect(), b = 3;
     const x = r.left + b, y = h - (r.bottom - b), s = r.width - b * 2;
@@ -482,6 +483,7 @@ function frame(now) {
   const dt = clamp((now - lastT) / 1000, 0, .05); lastT = now;
   try {
     if (!paused) { tickTimers(dt); updateGame(dt, now); updateFx(dt); }
+    updateCrowd(paused ? 0 : dt);
     updateArm(paused ? 0 : dt, now);
     updateCamera(paused ? 0 : dt);
     camSafe();
