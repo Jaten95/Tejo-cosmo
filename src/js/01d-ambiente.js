@@ -76,6 +76,7 @@ function makeBarrel() {
 function buildAmbience() {
   const D = W.D, glowMat = new THREE.SpriteMaterial({ map: glowTex(), color: '#ffd9a0', transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
   AMB = { bulbs: [], t: 0, flick: 0 };
+  loadPets();
   // bombillos a lo largo del salón (los dos primeros y el de la cancha dan luz)
   const spots = [[1.35, -2], [-1.35, -D * .3], [1.35, -D * .55], [-1.35, -D * .8], [1.35, -D + 1.2]];
   spots.forEach(([x, z], i) => {

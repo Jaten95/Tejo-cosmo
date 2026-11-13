@@ -34,6 +34,7 @@ js = ''.join(p.read_text() for p in sorted((SRC / 'js').glob('*.js')))
 (OUT / 'juego.js').write_text(js)
 
 hand = base64.b64encode((SRC / 'assets' / 'mano-derecha.glb').read_bytes()).decode()
+pets = ', '.join(f'{n}: "' + base64.b64encode((SRC / 'assets' / f'{n}.glb').read_bytes()).decode() + '"' for n in ('perro', 'husky'))
 license_note = (ROOT / 'LICENSES' / 'webxr-input-profiles-hand.md').read_text().replace('*/', '')
 
 body = (SRC / 'body.html').read_text().replace('{{VERSION}}', VERSION)
@@ -44,6 +45,7 @@ page = (
     + '\n<script>\nconst GAME_VERSION = "' + VERSION + '";\n'
     + '/* ' + license_note + ' */\n'
     + 'const HAND_GLB = "' + hand + '";\n'
+    + 'const PET_GLB = { ' + pets + ' };   /* Quaternius, CC0 */\n'
     + js + '\n</script>\n'
 )
 (OUT / 'tejo-claude.html').write_text(page)

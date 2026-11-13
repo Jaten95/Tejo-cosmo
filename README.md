@@ -17,6 +17,7 @@ src/
     01b-greda-tablero.js  la greda de barro y el tablero pintado de atrás
     01c-utileria.js  herramientas, canastas de cerveza y banderines del salón
     01d-ambiente.js  bombillos encendidos, polvo en la luz, mesa, sillas plásticas y caneca
+    01e-mascotas.js  de vez en cuando pasa un perro criollo o un husky
     02-grabados.js   los diseños grabados en la cara del tejo
     03-fisica.js     vuelo, choques, puntaje, efectos y sonido
     04-partida.js    turnos, rondas, Don Chepe, cámaras y bucle principal
@@ -27,6 +28,7 @@ src/
   sw.js              service worker: instalar y jugar sin internet
   assets/
     mano-derecha.glb modelo de la mano (ver LICENSES/)
+    perro.glb, husky.glb  los perros que pasan (Quaternius, CC0)
 build.py             une todo y genera index.html y sw.js
 manifest.webmanifest e icon-*.png: datos para instalar el juego como app
 ```
@@ -52,3 +54,5 @@ En GitHub Pages el juego se puede instalar: en Android sale el botón **Instalar
 ## Licencias de terceros
 
 El modelo de la mano es `generic-hand` de [WebXR Input Profiles](https://github.com/immersive-web/webxr-input-profiles), con licencia MIT. El aviso está en `LICENSES/` y dentro del juego.
+
+Los perros (Shiba Inu y Husky) son de [Quaternius](https://quaternius.com), con licencia CC0 (dominio público). La nota está en `LICENSES/quaternius-animales.md`.
