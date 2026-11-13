@@ -40,6 +40,41 @@ function noiseLayers(S, layers) {
   g.globalAlpha = 1; return [c, g];
 }
 
+/* Hierro negro con óxido para el marco de la cancha: manchas de óxido, chorreones y rayones */
+function makeRust() {
+  const S = 512;
+  const [, ng] = noiseLayers(S, [[8, .55], [20, .45], [56, .32]]);
+  const [, fg] = noiseLayers(S, [[64, .5], [160, .4]]);
+  ng.lineCap = 'round'; ng.strokeStyle = '#ffffff';
+  for (let i = 0; i < 18; i++) { const x = rand(0, S), y = rand(0, S * .7); ng.globalAlpha = rand(.1, .22); ng.lineWidth = rand(2, 5); ng.beginPath(); ng.moveTo(x, y); ng.lineTo(x + rand(-4, 4), y + rand(40, 140)); ng.stroke(); }
+  ng.globalAlpha = 1;
+  const N = ng.getImageData(0, 0, S, S).data, F = fg.getImageData(0, 0, S, S).data;
+  const [cc, cg] = cnv(S, S), [bc, bg] = cnv(S, S), out = cg.createImageData(S, S), bout = bg.createImageData(S, S), o = out.data, ob = bout.data;
+  for (let i = 0; i < S * S; i++) {
+    const k = i * 4, n = N[k] / 255, f = F[k] / 255;
+    const r = clamp((n - .53) / .16, 0, 1) * clamp(.45 + (f - .5) * 2, 0, .85);   // cuánto óxido hay aquí
+    const sp = (Math.random() - .5) * 14, base = 26 + (f - .5) * 18 + sp;
+    const rr = 72 + f * 64, rg = 38 + f * 32, rb = 20 + f * 12;
+    o[k] = clamp(base + (rr - base) * r, 0, 255); o[k + 1] = clamp(base + (rg - base) * r, 0, 255); o[k + 2] = clamp(base + 1 + (rb - base) * r, 0, 255); o[k + 3] = 255;
+    const b = clamp(128 + r * 70 + (Math.random() - .5) * (20 + r * 60), 0, 255); ob[k] = ob[k + 1] = ob[k + 2] = b; ob[k + 3] = 255;
+  }
+  cg.putImageData(out, 0, 0); bg.putImageData(bout, 0, 0);
+  cg.lineCap = 'round'; cg.strokeStyle = '#6d6a66';
+  for (let i = 0; i < 60; i++) { const x = rand(0, S), y = rand(0, S), a = rand(-.3, .3), L = rand(10, 60); cg.globalAlpha = rand(.15, .4); cg.lineWidth = rand(.6, 1.6); cg.beginPath(); cg.moveTo(x, y); cg.lineTo(x + Math.cos(a) * L, y + Math.sin(a) * L); cg.stroke(); }
+  cg.globalAlpha = 1;
+  return { map: tex(cc), bump: tex(bc, 1, 1, false) };
+}
+function rustMat() { return std({ map: T.rust, bumpMap: T.rustBump, bumpScale: .0025, metalness: .35, roughness: .68 }); }
+/* Ajusta las coordenadas de textura de una caja para que el óxido tenga el mismo tamaño en todas las caras */
+function tileUV(geo, w, h, d, tile = .6) {
+  const uv = geo.attributes.uv, dims = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
+  for (let f = 0; f < 6; f++) {
+    const [a, b] = dims[f], ou = rand(0, 1), ov = rand(0, 1);
+    for (let v = 0; v < 4; v++) { const i = f * 4 + v; uv.setXY(i, uv.getX(i) * a / tile + ou, uv.getY(i) * b / tile + ov); }
+  }
+  uv.needsUpdate = true; return geo;
+}
+
 function makeGreda() {
   const S = 1024;
   const [hc, hg] = noiseLayers(S, [[6, .55], [18, .4], [60, .3], [200, .22]]);

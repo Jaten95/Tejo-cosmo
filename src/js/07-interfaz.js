@@ -19,7 +19,7 @@ function loadSettings() {
 function records() { return store.get('tejo.record.v1', {}); }
 
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id); }
-function setHud(on) { $('hud').hidden = !on; keepAwake(on); $('btnRx').hidden = !(on && online()); if (!on || !online()) closeRxTray(); }
+function setHud(on) { $('hud').hidden = !on; $('gauge').hidden = !settings.power; keepAwake(on); $('btnRx').hidden = !(on && online()); if (!on || !online()) closeRxTray(); }
 function hint(text, on) { const h = $('hint'); if (text) h.textContent = text; h.classList.toggle('off', !on); }
 let toastTimer;
 function toast(text) { const t = $('toast'); t.textContent = text; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1900); }
@@ -127,6 +127,11 @@ function renderMenu() {
   fixLocalDesigns();
   setSeg('segMode', settings.mode); setSeg('segCount', settings.count); setSeg('segDiff', settings.diff); setSeg('segDist', settings.dist); setSeg('segGoal', settings.goal);
   $('swAim').setAttribute('aria-checked', String(settings.aimHelp));
+  // la lupa solo se puede prender con la mira prendida; la barra de fuerza va aparte
+  $('swLupa').setAttribute('aria-checked', String(settings.aimHelp && settings.lupa)); $('swLupa').disabled = !settings.aimHelp;
+  $('rowLupa').classList.toggle('off', !settings.aimHelp);
+  $('lupaHint').textContent = settings.aimHelp ? 'Acerca la greda donde va la mira' : 'Necesita la mira activada';
+  $('swPower').setAttribute('aria-checked', String(settings.power)); $('gauge').hidden = !settings.power;
   $('grpDiff').hidden = settings.mode !== 'cpu';
   $('grpGoal').hidden = settings.mode === 'reto';
   $('segCount').hidden = settings.mode !== 'local';
@@ -245,7 +250,9 @@ function bindInput() {
 function bindUI() {
   bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
   bindSeg('segDist', 'dist', Number); bindSeg('segGoal', 'goal', Number); bindSeg('segTeams', 'teams', Number);
-  $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; saveSettings(); renderMenu(); });
+  $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; if (!settings.aimHelp) settings.lupa = false; saveSettings(); renderMenu(); });
+  $('swLupa').addEventListener('click', () => { if (!settings.aimHelp) return; settings.lupa = !settings.lupa; saveSettings(); renderMenu(); });
+  $('swPower').addEventListener('click', () => { settings.power = !settings.power; saveSettings(); renderMenu(); });
   $('btnPlay').addEventListener('click', () => { A.init(); A.tick(); if (settings.mode === 'online') netCreate(); else startGame(); });
   $('btnRules').addEventListener('click', () => showScreen('rules'));
   $('btnRulesBack').addEventListener('click', () => { showScreen('menu'); });

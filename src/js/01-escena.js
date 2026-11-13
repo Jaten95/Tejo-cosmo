@@ -2,9 +2,9 @@
 /* ================= Constantes del mundo (metros) ================= */
 const G = 9.81;
 const S2 = Math.SQRT1_2;
-const CY = 0.62;            // altura del centro de la cara de greda
+const CY = 0.38;            // altura del centro de la cara de greda (la cancha va sobre el piso: el borde de abajo queda al ras)
 const HU = 0.45, HV = 0.5;  // medias dimensiones de la greda (ancho / a lo largo de la pendiente)
-const FW = 0.10;            // ancho del marco
+const FW = 0.05;            // ancho del marco
 const RB = 0.075;           // radio del bocín (aro)
 const R_EMB = 0.056;        // centro del tejo dentro de este radio = embocinada
 const RT = 0.045, TT = 0.03;// radio y grosor del tejo
@@ -148,6 +148,7 @@ function buildRenderer() {
 
 function buildTextures() {
   const greda = makeGreda(); T.clay = greda.map; T.clayBump = greda.bump; T.backboard = makeBackboard();
+  const rust = makeRust(); T.rust = rust.map; T.rustBump = rust.bump;
   T.floor = makeFloorTex(); T.wall = makeWallTex();
   T.woodGreen = makeWoodTex('#2b6b47', '#f3c22f');
   T.woodRed = makeWoodTex('#7d2a21', null);
@@ -234,22 +235,29 @@ function buildCancha() {
   hall.add(cancha);
   clayMat = std({ map: T.clay, bumpMap: T.clayBump, bumpScale: .0035, roughness: .86, metalness: 0, color: '#ffffff' });
   const clay = new THREE.Mesh(new THREE.PlaneGeometry(HU * 2, HV * 2, 1, 1), clayMat); clay.receiveShadow = true; cancha.add(clay);
-  const frameMat = std({ map: T.woodGreen, roughness: .8 });
+  const frameMat = rustMat();
   const fw = FW, depth = .2;
   const parts = [
     [HU * 2 + fw * 2, fw, 0, HV + fw / 2], [HU * 2 + fw * 2, fw, 0, -HV - fw / 2],
     [fw, HV * 2, HU + fw / 2, 0], [fw, HV * 2, -HU - fw / 2, 0]];
-  parts.forEach(([w, h, x, y]) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, depth), frameMat); b.position.set(x, y, -depth / 2 + .018); b.castShadow = b.receiveShadow = true; cancha.add(b); });
-  const body = new THREE.Mesh(new THREE.BoxGeometry(HU * 2 + fw * 2, HV * 2 + fw * 2, .35), std({ map: T.woodRed, roughness: .9 }));
-  body.position.z = -.35 / 2 - .17; body.castShadow = true; cancha.add(body);
+  parts.forEach(([w, h, x, y]) => { const b = new THREE.Mesh(tileUV(new THREE.BoxGeometry(w, h, depth), w, h, depth), frameMat); b.position.set(x, y, -depth / 2 + .018); b.castShadow = b.receiveShadow = true; cancha.add(b); });
   // bocín
   const ring = new THREE.Mesh(new THREE.TorusGeometry(RB, .0075, 12, 56), std({ color: '#9aa0a4', metalness: .9, roughness: .32 }));
   ring.position.z = .001; ring.castShadow = true; cancha.add(ring);
   const inner = new THREE.Mesh(new THREE.CircleGeometry(RB - .006, 40), std({ color: '#5e2f17', roughness: 1 }));
   inner.position.z = -.004; cancha.add(inner);
-  // soporte y tablero
-  const sup = new THREE.Mesh(new THREE.BoxGeometry(HU * 2 + fw * 2, .34, .75), std({ map: T.woodRed, roughness: .9 }));
-  sup.position.set(0, .17, -W.D - .4); sup.castShadow = true; hall.add(sup); cancha.userData.sup = sup;
+  // paredes del cajón: la greda va inclinada sobre el piso, con un lado a cada costado y una pared atrás
+  const S2v = Math.SQRT1_2, top = HV + fw, zTop = -W.D - top * S2v, yTop = CY + top * S2v;   // borde de arriba del marco
+  const zFront = -W.D + CY, zBack = zTop - .2 * S2v, yBack = yTop - .2 * S2v;                  // donde la pendiente toca el piso / detrás del marco
+  const side = new THREE.Shape([[zFront, 0], [zTop, yTop], [zBack, yBack], [zBack, 0]].map(([z, y]) => new THREE.Vector2(-z, y)));   // perfil (z, y); al girarlo queda de lado
+  const wallMat = rustMat();
+  [HU, -HU - fw].forEach(x => {
+    const w = new THREE.Mesh(new THREE.ExtrudeGeometry(side, { depth: fw, bevelEnabled: false }), wallMat);
+    w.rotation.y = Math.PI / 2; w.position.x = x; w.castShadow = w.receiveShadow = true; hall.add(w);
+  });
+  const backW = new THREE.Mesh(tileUV(new THREE.BoxGeometry(HU * 2 + fw * 2, yBack, .04), HU * 2 + fw * 2, yBack, .04), wallMat);
+  backW.position.set(0, yBack / 2, zBack + .02); backW.castShadow = backW.receiveShadow = true; hall.add(backW);
+  // tablero
   const board = new THREE.Mesh(new THREE.BoxGeometry(3.3, 2.5, .08), [std({ map: T.woodPlain, roughness: .85 }), std({ map: T.woodPlain, roughness: .85 }), std({ map: T.woodPlain, roughness: .85 }), std({ map: T.woodPlain, roughness: .85 }), std({ map: T.backboard, roughness: .82 }), std({ map: T.woodPlain, roughness: .85 })]);
   board.position.set(0, 1.25, W.ZB - .04); board.receiveShadow = true; hall.add(board);
   [-1.65, 1.65].forEach(x => { const sb = new THREE.Mesh(new THREE.BoxGeometry(.06, 1.7, 2.4), std({ map: T.woodPlain, roughness: .85 })); sb.position.set(x, .85, -W.D - .1); sb.castShadow = sb.receiveShadow = true; hall.add(sb); });

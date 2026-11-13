@@ -1,7 +1,7 @@
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, muted: false };
+const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, muted: false };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
@@ -433,7 +433,7 @@ function updateGame(dt, now) {
   if (manoRing) { const s = 1 + Math.sin(now / 160) * .12; manoRing.scale.set(s, s, 1); }
   if (reticle.visible) reticle.rotation.z += dt * .8;
 }
-function lupaOn() { return aimHelpNow() && !document.getElementById('hud').hidden && (phase === 'aim' || phase === 'cpu' || phase === 'wait' || (phase === 'flight' && flight && flight.t < flight.impactAt - .55)); }
+function lupaOn() { return aimHelpNow() && settings.lupa && !document.getElementById('hud').hidden && (phase === 'aim' || phase === 'cpu' || phase === 'wait' || (phase === 'flight' && flight && flight.t < flight.impactAt - .55)); }
 function render() {
   const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
   renderer.setScissorTest(false); renderer.setViewport(0, 0, w, h); renderer.clear(); renderer.render(scene, cam); renderArm(w, h);
