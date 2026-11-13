@@ -33,7 +33,6 @@ function detect(a, b) {
   }
   if (b.x > 3.44) return { kind: 'wall', p: V(3.44, b.y, b.z), n: V(-1, 0, 0) };
   if (b.x < -3.44) return { kind: 'wall', p: V(-3.44, b.y, b.z), n: V(1, 0, 0) };
-  if (Math.abs(b.x) < .56 && b.y < .34 && a.z >= -W.D - .025 && b.z < -W.D - .025) return { kind: 'board', p: V(b.x, b.y, -W.D - .023), n: V(0, 0, 1) };
   if (b.y <= TT / 2) return { kind: 'floor', p: V(b.x, TT / 2, b.z), n: V(0, 1, 0) };
   return null;
 }
