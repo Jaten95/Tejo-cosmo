@@ -1,0 +1,146 @@
+
+<canvas id="gl" aria-label="Cancha de tejo en 3D"></canvas>
+<div class="loading" id="loading">Echándole greda a la cancha…</div>
+
+<div id="hud" hidden>
+  <header id="board"></header>
+  <div id="turn"><div class="who" id="turnWho"></div><div class="meta" id="turnMeta"></div><div class="clock" id="clock" hidden></div></div>
+  <div id="lupa"><span>LUPA</span></div>
+  <div id="gauge" aria-hidden="true"><div id="gaugeFill"></div><div id="gaugeLast"></div><b>FUERZA</b></div>
+  <div id="feed" aria-live="polite"></div>
+  <div class="hudBtns">
+    <button class="iconBtn" id="btnPause" aria-label="Pausa"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+    <button class="iconBtn" id="btnSound" aria-label="Sonido"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M17 9l5 6M22 9l-5 6"/></svg></button>
+  </div>
+  <div id="hint">Arrastra hacia abajo para cargar · suelta para lanzar</div>
+  <button class="skipBtn" id="btnSkip" hidden>Saltar turno</button>
+</div>
+<div id="announce" aria-live="assertive"><div class="t" id="annT"></div><div class="s"></div><div class="p" id="annP"></div></div>
+<div id="toast"></div>
+<div id="flash"></div>
+
+<section class="screen" id="menu" hidden>
+  <div class="panel"><div class="pin">
+    <div class="brand">
+      <span class="eyebrow">Club de Tejo El Cosmo · Bucaramanga</span>
+      <h1>TEJO</h1>
+      <p>Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.</p>
+    </div>
+    <div class="group">
+      <h3>Modo</h3>
+      <div class="seg" id="segMode">
+        <button data-v="cpu">Contra<small>Don Chepe</small></button>
+        <button data-v="online">Salas<small>en línea</small></button>
+        <button data-v="local">Turnos<small>mismo cel</small></button>
+        <button data-v="reto">Reto<small>10 tejos</small></button>
+      </div>
+    </div>
+    <div class="group" id="grpNames">
+      <h3 id="lblNames">Jugadores</h3>
+      <div class="seg" id="segCount"><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button></div>
+      <div class="names" id="names"></div>
+    </div>
+    <div class="group" id="grpOnline" hidden>
+      <h3>Unirme a una sala</h3>
+      <div class="joinRow"><input id="codeIn" inputmode="numeric" maxlength="4" placeholder="Código de 4 números" aria-label="Código de la sala" autocomplete="off"><button class="btn ghost" id="btnJoin">Unirme</button></div>
+      <p class="prose" id="onlineMsg"></p>
+    </div>
+    <div class="group" id="grpDiff">
+      <h3>Pulso de Don Chepe</h3>
+      <div class="seg" id="segDiff">
+        <button data-v="0">Fácil</button><button data-v="1">Normal</button><button data-v="2">Difícil</button><button data-v="3">Maestro</button>
+      </div>
+    </div>
+    <div class="group">
+      <h3>Distancia</h3>
+      <div class="seg" id="segDist">
+        <button data-v="10">10 m<small>arrimada</small></button>
+        <button data-v="14">14 m<small>de barrio</small></button>
+        <button data-v="18.5">18,5 m<small>larga</small></button>
+      </div>
+    </div>
+    <div class="group" id="grpGoal">
+      <h3>Partida a</h3>
+      <div class="seg" id="segGoal"><button data-v="15">15</button><button data-v="21">21</button><button data-v="27">27</button></div>
+    </div>
+    <div class="row">
+      <div class="lbl"><b>Mira en la cancha</b><span>Muestra dónde cae el tejo mientras apuntas</span></div>
+      <button class="switch" id="swAim" role="switch" aria-checked="true" aria-label="Mira en la cancha"></button>
+    </div>
+    <div class="cta">
+      <button class="btn" id="btnPlay">A jugar</button>
+      <button class="btn ghost" id="btnRules">Cómo se juega</button>
+    </div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v{{VERSION}}</span></div>
+  </div></div>
+</section>
+
+<div id="picker" hidden>
+  <div class="pkPanel" role="dialog" aria-labelledby="pickTitle">
+    <div class="pkHead"><h2 id="pickTitle">Escoge tu grabado</h2><button class="mini" id="pickClose" type="button">Cerrar</button></div>
+    <div class="pkGrid" id="pickGrid"></div>
+  </div>
+</div>
+
+<section class="screen" id="sala" hidden>
+  <div class="panel"><div class="pin">
+    <h2>Sala en línea</h2>
+    <div class="code"><div><small>CÓDIGO</small><b id="salaCode">—</b></div><button id="btnCopy">Copiar</button></div>
+    <p class="prose" id="salaInfo"></p>
+    <button class="myDz" id="myDz" type="button"><img id="myDzImg" alt=""><span><small>TU GRABADO</small><b id="myDzName"></b></span><em>Cambiar</em></button>
+    <div class="row"><h3>En la sala</h3><button class="mini" id="btnRefresh">Actualizar</button></div>
+    <ul class="seats" id="salaList"></ul>
+    <p class="prose" id="salaRules"></p>
+    <div class="cta">
+      <button class="btn" id="btnStart" hidden>Empezar partida</button>
+      <button class="btn" id="btnWatch" hidden>Mirar la partida</button>
+      <button class="btn ghost" id="btnLeave">Salir de la sala</button>
+    </div>
+  </div></div>
+</section>
+
+<section class="screen" id="rules" hidden>
+  <div class="panel"><div class="pin">
+    <h2>Cómo se juega</h2>
+    <table class="rulesT">
+      <tr><td>Mano<span>El tejo que quede más cerca del bocín al final de la ronda, si nadie sumó con mecha, embocinada o moñona.</span></td><td>1</td></tr>
+      <tr><td>Mecha<span>Revientas una de las mechas de pólvora que están sobre el bocín.</span></td><td>3</td></tr>
+      <tr><td>Embocinada<span>El tejo queda dentro del bocín.</span></td><td>6</td></tr>
+      <tr><td>Moñona<span>Embocinada y mecha en el mismo lanzamiento.</span></td><td>9</td></tr>
+    </table>
+    <p class="prose"><b>Lanzar:</b> pon el dedo en cualquier parte y arrástralo hacia abajo para cargar fuerza; muévelo a los lados para apuntar. Suelta para lanzar. Si te quedas mucho rato apuntando, el pulso empieza a temblar.</p>
+    <p class="prose"><b>Nulo:</b> si el tejo pega primero en el marco, el tablero o el piso, no cuenta. Solo vale lo que cae en la greda.</p>
+    <p class="prose"><b>Ronda:</b> cada jugador lanza un tejo por ronda. Una mecha reventada queda reventada hasta que empiece la siguiente ronda. Gana quien llegue primero a la meta.</p>
+    <p class="prose"><b>Reto:</b> 10 tejos para hacer el mayor puntaje posible. La mano no cuenta.</p>
+    <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
+    <p class="prose"><b>Tiempo en salas:</b> tienes 15 segundos para lanzar. Si no lanzas, tu tiro es nulo y pasa el turno.</p>
+    <p class="prose"><b>Salas:</b> uno crea la sala y pasa el código de 4 números; hasta 4 jugadores, cada uno en su celular. Si alguien no está cuando le toca, pierde el turno.</p>
+    <div class="cta"><button class="btn" id="btnRulesBack">Entendido</button></div>
+  </div></div>
+</section>
+
+<section class="screen" id="pause" hidden>
+  <div class="panel"><div class="pin">
+    <h2>Pausa</h2>
+    <p class="prose" id="pauseInfo"></p>
+    <div class="cta">
+      <button class="btn" id="btnResume">Seguir</button>
+      <button class="btn ghost" id="btnRestart">Reiniciar</button>
+      <button class="btn ghost" id="btnReconnect" hidden>Reconectar</button>
+      <button class="btn ghost" id="btnMenu">Menú</button>
+    </div>
+  </div></div>
+</section>
+
+<section class="screen" id="over" hidden>
+  <div class="panel"><div class="pin">
+    <h3 id="overEyebrow">Fin de la partida</h3>
+    <div class="winner" id="overWinner"></div>
+    <p class="prose" id="overLine"></p>
+    <div style="overflow-x:auto"><table class="stats" id="overStats"></table></div>
+    <div class="cta">
+      <button class="btn" id="btnAgain">Revancha</button>
+      <button class="btn ghost" id="btnOverMenu">Menú</button>
+    </div>
+  </div></div>
+</section>
