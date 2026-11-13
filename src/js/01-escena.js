@@ -88,7 +88,7 @@ function makeStripeTex() {
   return tex(c, 1, 1);
 }
 function signTex(lines, bg, fg, shadow, w = 1024, h = 256) {
-  const [c, g] = cnv(w, h);
+  return fontTex(w, h, g => {
   g.fillStyle = bg; g.fillRect(0, 0, w, h);
   g.globalAlpha = .12; for (let i = 0; i < 2500; i++) { g.fillStyle = Math.random() < .5 ? '#000' : '#fff'; g.fillRect(rand(0, w), rand(0, h), rand(1, 3), rand(1, 2)); }
   g.globalAlpha = 1;
@@ -100,7 +100,7 @@ function signTex(lines, bg, fg, shadow, w = 1024, h = 256) {
     g.fillStyle = shadow; g.fillText(ln.t, w / 2 + size * .06, y + size * .06);
     g.fillStyle = ln.c || fg; g.fillText(ln.t, w / 2, y);
   });
-  return tex(c);
+  });
 }
 function softTex() {
   const [c, g] = cnv(64, 64);

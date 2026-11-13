@@ -4,6 +4,28 @@
    ya pintada y además un mapa de relieve para el reflejo. El tablero de atrás va pintado a mano como en las
    canchas de barrio: tablas amarillas, rayos rojos, número de cancha y el letrero del club, gastado y con barro. */
 
+/* La fuente del club (Alfa Slab One) puede llegar tarde, sobre todo en el celular la primera vez. Las texturas
+   con letras se dibujan de una vez con la letra de respaldo y se vuelven a dibujar cuando la fuente llega. */
+const CLUB_FONT = '64px "Alfa Slab One"';
+function clubFontReady() { try { return document.fonts.check(CLUB_FONT); } catch (e) { return true; } }
+const fontWaiters = [];
+function onClubFont(fn) {
+  if (clubFontReady()) return;
+  fontWaiters.push(fn);
+  if (fontWaiters.length > 1) return;
+  const run = () => { if (!fontWaiters.length || !clubFontReady()) return; fontWaiters.splice(0).forEach(f => { try { f(); } catch (e) { } }); };
+  try { document.fonts.load(CLUB_FONT).then(run, () => { }); document.fonts.addEventListener('loadingdone', run); } catch (e) { }
+  let n = 0; const iv = setInterval(() => { run(); if (!fontWaiters.length || ++n > 90) clearInterval(iv); }, 1000);   // por si el navegador no avisa
+}
+function fontTex(w, h, draw) {
+  const [c, g] = cnv(w, h); draw(g, w, h); const t = tex(c);
+  onClubFont(() => {
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+    g.clearRect(0, 0, w, h); draw(g, w, h); t.needsUpdate = true;
+  });
+  return t;
+}
+
 /* Ruido suave por capas: cuadrículas de valores al azar agrandadas con suavizado */
 function noiseLayers(S, layers) {
   const [c, g] = cnv(S, S);
@@ -68,8 +90,8 @@ function makeGreda() {
   return { map, bump };
 }
 
-function makeBackboard() {
-  const Wd = 1024, Hd = 776, [c, g] = cnv(Wd, Hd);
+function makeBackboard() { return fontTex(1024, 776, drawBackboard); }
+function drawBackboard(g, Wd, Hd) {
   const cx = Wd / 2, cy = Hd * .27;
   // tablas amarillas
   const planks = 8, ph = Hd / planks;
@@ -122,5 +144,4 @@ function makeBackboard() {
   // desgaste general
   g.globalAlpha = .1; for (let i = 0; i < 4000; i++) { g.fillStyle = Math.random() < .5 ? '#000' : '#fff'; g.fillRect(rand(0, Wd), rand(0, Hd), rand(1, 3), rand(1, 2)); }
   g.globalAlpha = 1;
-  return tex(c);
 }

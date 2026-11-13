@@ -182,11 +182,16 @@ function bumpCanvas(id, name, S) {
   g.drawImage(l, 0, 0); return c;
 }
 const topMatCache = {};
+const TEXT_DESIGNS = ['nueve', 'ini', 'none'];   // los que llevan letras: se redibujan cuando llega la fuente
 function tejoTopMaterial(color, id, name) {
   const key = [color, id || 'none', id === 'ini' ? initials(name) : ''].join('|');
   if (topMatCache[key]) return topMatCache[key];
   const map = new THREE.CanvasTexture(engraveCanvas(id, color, name, 256)); map.encoding = THREE.sRGBEncoding; map.anisotropy = 4;
   const bump = new THREE.CanvasTexture(bumpCanvas(id, name, 256));
+  if (TEXT_DESIGNS.includes(id || 'none')) onClubFont(() => {
+    map.image = engraveCanvas(id, color, name, 256); map.needsUpdate = true;
+    bump.image = bumpCanvas(id, name, 256); bump.needsUpdate = true;
+  });
   return (topMatCache[key] = new THREE.MeshStandardMaterial({ color: '#b4b4b4', map, bumpMap: bump, bumpScale: .006, metalness: .6, roughness: .45 }));
 }
 const iconCache = {};
@@ -196,6 +201,7 @@ function designIcon(id, color, name) {
   const S = 96, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d');
   g.beginPath(); g.arc(S / 2, S / 2, S / 2 - 1, 0, 7); g.clip();
   g.drawImage(engraveCanvas(id, color, name, S), 0, 0);
+  if (TEXT_DESIGNS.includes(id || 'none') && !clubFontReady()) return c.toDataURL();   // sin la fuente todavía: no se guarda
   return (iconCache[key] = c.toDataURL());
 }
 

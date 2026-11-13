@@ -349,7 +349,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.32</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.33</span></div>
   </div></div>
 </section>
 
@@ -446,7 +446,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.32";
+const GAME_VERSION = "1.33";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -563,7 +563,7 @@ function makeStripeTex() {
   return tex(c, 1, 1);
 }
 function signTex(lines, bg, fg, shadow, w = 1024, h = 256) {
-  const [c, g] = cnv(w, h);
+  return fontTex(w, h, g => {
   g.fillStyle = bg; g.fillRect(0, 0, w, h);
   g.globalAlpha = .12; for (let i = 0; i < 2500; i++) { g.fillStyle = Math.random() < .5 ? '#000' : '#fff'; g.fillRect(rand(0, w), rand(0, h), rand(1, 3), rand(1, 2)); }
   g.globalAlpha = 1;
@@ -575,7 +575,7 @@ function signTex(lines, bg, fg, shadow, w = 1024, h = 256) {
     g.fillStyle = shadow; g.fillText(ln.t, w / 2 + size * .06, y + size * .06);
     g.fillStyle = ln.c || fg; g.fillText(ln.t, w / 2, y);
   });
-  return tex(c);
+  });
 }
 function softTex() {
   const [c, g] = cnv(64, 64);
@@ -780,6 +780,28 @@ function makeTejo(color, design, name) {
    ya pintada y además un mapa de relieve para el reflejo. El tablero de atrás va pintado a mano como en las
    canchas de barrio: tablas amarillas, rayos rojos, número de cancha y el letrero del club, gastado y con barro. */
 
+/* La fuente del club (Alfa Slab One) puede llegar tarde, sobre todo en el celular la primera vez. Las texturas
+   con letras se dibujan de una vez con la letra de respaldo y se vuelven a dibujar cuando la fuente llega. */
+const CLUB_FONT = '64px "Alfa Slab One"';
+function clubFontReady() { try { return document.fonts.check(CLUB_FONT); } catch (e) { return true; } }
+const fontWaiters = [];
+function onClubFont(fn) {
+  if (clubFontReady()) return;
+  fontWaiters.push(fn);
+  if (fontWaiters.length > 1) return;
+  const run = () => { if (!fontWaiters.length || !clubFontReady()) return; fontWaiters.splice(0).forEach(f => { try { f(); } catch (e) { } }); };
+  try { document.fonts.load(CLUB_FONT).then(run, () => { }); document.fonts.addEventListener('loadingdone', run); } catch (e) { }
+  let n = 0; const iv = setInterval(() => { run(); if (!fontWaiters.length || ++n > 90) clearInterval(iv); }, 1000);   // por si el navegador no avisa
+}
+function fontTex(w, h, draw) {
+  const [c, g] = cnv(w, h); draw(g, w, h); const t = tex(c);
+  onClubFont(() => {
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+    g.clearRect(0, 0, w, h); draw(g, w, h); t.needsUpdate = true;
+  });
+  return t;
+}
+
 /* Ruido suave por capas: cuadrículas de valores al azar agrandadas con suavizado */
 function noiseLayers(S, layers) {
   const [c, g] = cnv(S, S);
@@ -844,8 +866,8 @@ function makeGreda() {
   return { map, bump };
 }
 
-function makeBackboard() {
-  const Wd = 1024, Hd = 776, [c, g] = cnv(Wd, Hd);
+function makeBackboard() { return fontTex(1024, 776, drawBackboard); }
+function drawBackboard(g, Wd, Hd) {
   const cx = Wd / 2, cy = Hd * .27;
   // tablas amarillas
   const planks = 8, ph = Hd / planks;
@@ -898,7 +920,6 @@ function makeBackboard() {
   // desgaste general
   g.globalAlpha = .1; for (let i = 0; i < 4000; i++) { g.fillStyle = Math.random() < .5 ? '#000' : '#fff'; g.fillRect(rand(0, Wd), rand(0, Hd), rand(1, 3), rand(1, 2)); }
   g.globalAlpha = 1;
-  return tex(c);
 }
 
 /* ================= Diseños grabados en el tejo ================= */
@@ -1084,11 +1105,16 @@ function bumpCanvas(id, name, S) {
   g.drawImage(l, 0, 0); return c;
 }
 const topMatCache = {};
+const TEXT_DESIGNS = ['nueve', 'ini', 'none'];   // los que llevan letras: se redibujan cuando llega la fuente
 function tejoTopMaterial(color, id, name) {
   const key = [color, id || 'none', id === 'ini' ? initials(name) : ''].join('|');
   if (topMatCache[key]) return topMatCache[key];
   const map = new THREE.CanvasTexture(engraveCanvas(id, color, name, 256)); map.encoding = THREE.sRGBEncoding; map.anisotropy = 4;
   const bump = new THREE.CanvasTexture(bumpCanvas(id, name, 256));
+  if (TEXT_DESIGNS.includes(id || 'none')) onClubFont(() => {
+    map.image = engraveCanvas(id, color, name, 256); map.needsUpdate = true;
+    bump.image = bumpCanvas(id, name, 256); bump.needsUpdate = true;
+  });
   return (topMatCache[key] = new THREE.MeshStandardMaterial({ color: '#b4b4b4', map, bumpMap: bump, bumpScale: .006, metalness: .6, roughness: .45 }));
 }
 const iconCache = {};
@@ -1098,6 +1124,7 @@ function designIcon(id, color, name) {
   const S = 96, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d');
   g.beginPath(); g.arc(S / 2, S / 2, S / 2 - 1, 0, 7); g.clip();
   g.drawImage(engraveCanvas(id, color, name, S), 0, 0);
+  if (TEXT_DESIGNS.includes(id || 'none') && !clubFontReady()) return c.toDataURL();   // sin la fuente todavía: no se guarda
   return (iconCache[key] = c.toDataURL());
 }
 
