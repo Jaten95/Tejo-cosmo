@@ -259,18 +259,18 @@ const A = {
   },
   setMuted(m) { this.muted = m; if (this.out) this.out.gain.setTargetAtTime(m ? 0 : .85, this.ctx.currentTime, .02); },
   ok() { return this.ctx && !this.muted; },
-  nz(dur, { type = 'lowpass', f0 = 1000, f1 = f0, q = .7, gain = .5, attack = .005, delay = 0 } = {}) {
-    if (!this.ok()) return; const c = this.ctx, t = c.currentTime + delay;
+  nz(dur, { type = 'lowpass', f0 = 1000, f1 = f0, q = .7, gain = .5, attack = .005, delay = 0, dest = null, at = null } = {}) {
+    if (!this.ok()) return; const c = this.ctx, t = (at === null ? c.currentTime : at) + delay;
     const s = c.createBufferSource(); s.buffer = this.noise; s.loop = true;
     const f = c.createBiquadFilter(); f.type = type; f.Q.value = q; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
     const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    s.connect(f); f.connect(g); g.connect(this.out); s.start(t, Math.random()); s.stop(t + dur + .05);
+    s.connect(f); f.connect(g); g.connect(dest || this.out); s.start(t, Math.random()); s.stop(t + dur + .05);
   },
-  tone(f0, dur, { f1 = f0, type = 'sine', gain = .4, attack = .004, delay = 0 } = {}) {
-    if (!this.ok()) return; const c = this.ctx, t = c.currentTime + delay;
+  tone(f0, dur, { f1 = f0, type = 'sine', gain = .4, attack = .004, delay = 0, dest = null, at = null } = {}) {
+    if (!this.ok()) return; const c = this.ctx, t = (at === null ? c.currentTime : at) + delay;
     const o = c.createOscillator(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
     const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(this.out); o.start(t); o.stop(t + dur + .05);
+    o.connect(g); g.connect(dest || this.out); o.start(t); o.stop(t + dur + .05);
   },
   whoosh() { this.nz(.55, { type: 'bandpass', f0: 380, f1: 1900, q: 1.4, gain: .22, attack: .2 }); },
   thud(k = 1) { this.tone(105, .28, { f1: 42, gain: .9 * k }); this.nz(.2, { f0: 900, f1: 160, gain: .55 * k }); },
