@@ -89,9 +89,10 @@ function clearCancha() {
   resetMechas(false);
 }
 
-function startRound() {
+// first: quien sale en esta ronda. Si no se dice, sale el siguiente al que salió en la ronda anterior
+function startRound(first) {
   game.round++; game.scored = false; clearCancha();
-  const n = game.players.length, k = (game.round - 1) % n;
+  const n = game.players.length, k = typeof first === 'number' ? first : (game.order.length ? (game.order[0] + 1) % n : 0);
   game.order = game.players.map((_, i) => (i + k) % n); game.idx = 0;
   nextThrow();
 }
@@ -355,9 +356,9 @@ function endRound() {
   p.score += 1; p.st.manos++;
   manoRing = new THREE.Mesh(new THREE.RingGeometry(RT * 1.25, RT * 1.6, 40), new THREE.MeshBasicMaterial({ color: p.color, transparent: true, depthWrite: false }));
   manoRing.position.set(best.u, best.v, .006); manoRing.renderOrder = 6; cancha.add(manoRing);
-  toast(`Mano para ${p.name}${teamOf(p) ? ' (' + teamOf(p).name + ')' : ''} +1`); feed(p, 'Mano +1'); bumpChip(best.owner); renderBoard(); A.tick();
+  toast(`Mano para ${p.name}${teamOf(p) ? ' (' + teamOf(p).name + ')' : ''} +1 · lanza primero`); feed(p, 'Mano +1'); bumpChip(best.owner); renderBoard(); A.tick();
   closeup = { u: best.u, v: best.v };
-  later(1.9, () => { closeup = null; const leader = winnerNow(); if (leader) gameOver(leader); else startRound(); });
+  later(1.9, () => { closeup = null; const leader = winnerNow(); if (leader) gameOver(leader); else startRound(best.owner); });   // sin puntos: sale el que quedó más cerca
 }
 
 function gameOver(winner) {
