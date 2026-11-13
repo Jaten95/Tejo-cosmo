@@ -168,15 +168,53 @@ function scoreAt(landU, landV, vEnd, others) {
 }
 
 /* Pose final de un tejo clavado en la greda */
+// número entre 0 y 1 que sale igual en todos los celulares para el mismo punto de la greda
+function seeded(u, v, k) { const x = Math.sin(u * 127.1 + v * 311.7 + k * 74.7) * 43758.5453; return x - Math.floor(x); }
+/* Cómo queda clavado el tejo: acostado, inclinado o de canto, siempre medio hundido y con la cara hacia el que lanza */
 function embedPose(u, v, vEnd, emb) {
-  const pos = fromUV(u, v, emb ? -.004 : TT * .12);
-  const back = vEnd ? vEnd.clone().normalize().negate() : W.n.clone();
-  const axis = emb ? W.n.clone() : W.n.clone().multiplyScalar(.7).addScaledVector(back, .3).normalize();
+  const r1 = seeded(u, v, 1), r2 = seeded(u, v, 2), r3 = seeded(u, v, 3);
+  const tilt = r1 < .35 ? lerp(.06, .28, r2) : r1 < .75 ? lerp(.34, .58, r2) : lerp(.64, .86, r2);   // fracción de 90°
+  const th = tilt * Math.PI / 2;
+  const toward = W.s.clone().negate().applyAxisAngle(W.n, (r3 - .5) * .9);   // hacia abajo de la pendiente, un poco de lado
+  const axis = W.n.clone().multiplyScalar(Math.cos(th)).addScaledVector(toward, Math.sin(th)).normalize();
+  const half = RT * Math.sin(th) + TT / 2 * Math.cos(th), bury = emb ? .6 : lerp(.42, .55, r3);
+  const pos = fromUV(u, v, half * (1 - 2 * bury));
   const q = new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), axis);
-  q.multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), rand(0, 6.28)));
-  return { pos, q };
+  q.multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), r2 * 6.28));
+  return { pos, q, th, toward };
 }
-
+/* Barro levantado alrededor del tejo clavado: un borde pintado con luz y sombra que sigue la huella
+   (angosta si quedó de canto) y unas boronas sueltas */
+let MUD = null;
+function mudRimTex() {
+  const S = 128, [c, g] = cnv(S, S), id = g.createImageData(S, S), d = id.data;
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const dx = (x - 63.5) / 64, dy = (y - 63.5) / 64, r = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
+    const rr = .6 + .05 * Math.sin(a * 5 + 1.3) + .035 * Math.sin(a * 11 + .7), t = (r - rr) / .22, k = (y * S + x) * 4;
+    let col = [150, 82, 46], al = 0;
+    if (t > -1 && t < 1) { const bell = 1 - t * t; al = bell * .95; const lit = .55 + .45 * (1 - (t + 1) / 2); col = [130 + 90 * lit, 70 + 70 * lit, 38 + 52 * lit]; }   // borde: claro arriba, se va oscureciendo hacia afuera
+    else if (t <= -1) { al = clamp(.55 + (rr - .22 - r) * 1.2, 0, .8); col = [62, 30, 14]; }   // adentro, la sombra del hueco
+    const gr = (Math.random() - .5) * 26;
+    d[k] = clamp(col[0] + gr, 0, 255); d[k + 1] = clamp(col[1] + gr * .7, 0, 255); d[k + 2] = clamp(col[2] + gr * .5, 0, 255); d[k + 3] = clamp(al * 255, 0, 255);
+  }
+  g.putImageData(id, 0, 0); return tex(c, 1, 1);
+}
+function mudMound(u, v, pose) {
+  MUD = MUD || { rim: mudRimTex(), geo: new THREE.SphereGeometry(1, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), mat: std({ map: T.clay, color: '#eadbcd', roughness: 1 }) };
+  const across = RT * 1.02, along = Math.max(TT / 2 + .004, RT * Math.cos(pose.th) + TT / 2 * Math.sin(pose.th));
+  const ang = Math.atan2(pose.toward.dot(W.s), pose.toward.dot(W.a));
+  const rim = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshStandardMaterial({ map: MUD.rim, transparent: true, depthWrite: false, roughness: 1 }));
+  rim.scale.set(along * 3.5, across * 3.5, 1); rim.rotation.z = ang; rim.position.set(u, v, .0018); rim.renderOrder = 3; rim.userData.mound = true;
+  cancha.add(rim); decals.push(rim);
+  for (let i = 0; i < 7; i++) {   // boronas de barro
+    const r = k => seeded(u + i * .017, v, 20 + k), a = r(0) * Math.PI * 2, dist = 1.35 + r(1) * .9;
+    const ex = Math.cos(a) * along * dist, ey = Math.sin(a) * across * dist;
+    const m = new THREE.Mesh(MUD.geo, MUD.mat), sz = .004 + r(2) * .005;
+    m.scale.set(sz * (1 + r(3) * .6), sz * .45, sz); m.rotation.x = Math.PI / 2; m.rotation.y = r(4) * 6.28;
+    m.position.set(u + ex * Math.cos(ang) - ey * Math.sin(ang), v + ex * Math.sin(ang) + ey * Math.cos(ang), 0);
+    m.userData = { mound: true, shared: true }; cancha.add(m); decals.push(m);
+  }
+}
 /* ================= Efectos ================= */
 const fx = [];
 let shake = 0;
@@ -230,7 +268,7 @@ function decal(u, v, texture, size, lift = .0015) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false }));
   m.position.set(u, v, lift); m.rotation.z = rand(0, 6.28); m.renderOrder = 2; cancha.add(m); decals.push(m); return m;
 }
-function clearDecals() { decals.forEach(d => { d.parent && d.parent.remove(d); d.geometry.dispose(); d.material.dispose(); }); decals.length = 0; }
+function clearDecals() { decals.forEach(d => { d.parent && d.parent.remove(d); if (!d.userData.shared) { d.geometry.dispose(); d.material.dispose(); } }); decals.length = 0; }
 function explodeMecha(m) {
   m.userData.alive = false; m.visible = false;
   const wp = fromUV(m.userData.u, m.userData.v, .01);

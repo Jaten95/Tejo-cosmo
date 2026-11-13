@@ -229,7 +229,7 @@ function impactEvent(e, f) {
     f.mesh.quaternion.copy(pose.q); f.landed = true;
     A.thud(strong); buzz(30);
     dirt(fromUV(u, v, .02), W.n, r.valid ? 30 : 16);
-    decal(u, v, T.crater, r.emb ? .1 : .14);
+    if (r.emb) decal(u, v, T.crater, .1); else mudMound(u, v, pose);
     if (r.landMoved.length) {
       // cae donde apuntó, choca y se corre; los golpeados se deslizan en la greda
       f.mesh.position.copy(fromUV(r.landU, r.landV, TT * .12));
@@ -313,7 +313,7 @@ function startReplay(s, done) {
   const near = (u, v, u2, v2) => Math.hypot(u - u2, v - v2) < .005;
   const mechas = mechaMeshes.filter(m => s.mechas.some(x => near(m.userData.u, m.userData.v, x.u, x.v)));
   const marks = decals.filter(d => (d.material.map === T.scorch && s.mechas.some(x => near(d.position.x, d.position.y, x.u, x.v))) ||
-    (d.material.map === T.crater && near(d.position.x, d.position.y, s.u, s.v)));
+    ((d.material.map === T.crater || d.userData.mound) && near(d.position.x, d.position.y, s.u, s.v)));
   mechas.forEach(m => m.visible = true); marks.forEach(d => d.visible = false);
   replay = { s, ghost, done, t: Math.max(0, s.impactAt - 1.15), end: s.impactAt + .45, boom: false, mechas, marks };
   $('replayTag').hidden = false; $('turn').style.visibility = 'hidden'; A.whoosh();
