@@ -259,6 +259,7 @@ function buildCancha() {
   const board = new THREE.Mesh(new THREE.BoxGeometry(3.3, 2.5, .08), [std({ map: T.woodPlain, roughness: .85 }), std({ map: T.woodPlain, roughness: .85 }), std({ map: T.woodPlain, roughness: .85 }), std({ map: T.woodPlain, roughness: .85 }), std({ map: T.backboard, roughness: .82 }), std({ map: T.woodPlain, roughness: .85 })]);
   board.position.set(0, 1.25, W.ZB - .04); board.receiveShadow = true; hall.add(board);
   [-1.65, 1.65].forEach(x => { const sb = new THREE.Mesh(new THREE.BoxGeometry(.06, 1.7, 2.4), std({ map: T.woodPlain, roughness: .85 })); sb.position.set(x, .85, -W.D - .1); sb.castShadow = sb.receiveShadow = true; hall.add(sb); });
+  buildProps();
   buildMechas();
   buildReticle();
 }
