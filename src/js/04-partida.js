@@ -1,7 +1,7 @@
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, muted: false };
+const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, muted: false };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
@@ -65,16 +65,30 @@ function startGame() {
   let players;
   fixLocalDesigns();
   const D = settings.designs;
-  if (settings.mode === 'cpu') players = [newPlayer(settings.names[0] || 'Tú', 0, false, D[0]), newPlayer('Don Chepe', 1, true, freeDesign(['sombrero', 'condor', 'sol'], [D[0]]))];
+  let nT = 0;
+  if (settings.mode === 'cpu') {
+    // contra Don Chepe: mano a mano, parejas o tríos; los compañeros y los rivales son bots
+    const n = clamp(Math.round(settings.cpuSize || 1), 1, 3), mates = ['Doña Rosa', 'El Mono'], rivals = ['Don Chepe', 'Rigo', 'Chava'];
+    const taken = [D[0]], pick = pref => { const d = freeDesign(pref, taken); taken.push(d); return d; };
+    players = [];
+    for (let k = 0; k < n; k++) {   // intercalados (uno de cada equipo) para que los turnos se alternen
+      const mine = k ? newPlayer(mates[k - 1], players.length, true, pick(['colibri', 'cafe', 'orquidea'])) : newPlayer(settings.names[0] || 'Tú', 0, false, D[0]);
+      players.push(mine);
+      const riv = newPlayer(rivals[k], players.length, true, pick(k ? ['palma', 'condor', 'sol'] : ['sombrero', 'condor', 'sol']));
+      players.push(riv);
+      if (n > 1) { mine.team = 0; riv.team = 1; }
+    }
+    if (n > 1) nT = 2;
+  }
   else if (settings.mode === 'local') {
-    const nT = teamsAllowed(settings.count).includes(settings.teams) ? settings.teams : 0;
+    nT = teamsAllowed(settings.count).includes(settings.teams) ? settings.teams : 0;
     const idx = Array.from({ length: settings.count }, (_, i) => i);
     const plan = nT ? makeTeams(idx, nT) : idx.map(i => ({ item: i }));
     players = plan.map(x => { const i = x.item, p = newPlayer(settings.names[i] || `Jugador ${i + 1}`, i, false, D[i]); if (nT) p.team = x.team; return p; });
   }
   else players = [newPlayer(settings.names[0] || 'Tú', 0, false, D[0])];
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: settings.goal, mode: settings.mode, thrown: 0, over: false };
-  game.teams = applyTeams(players, settings.mode === 'local' && players[0].team !== undefined ? settings.teams : 0);
+  game.teams = applyTeams(players, players[0].team !== undefined ? nT : 0);
   lastP = {};
   clearFeed();
   showScreen(null); setHud(true);
@@ -105,7 +119,7 @@ function nextThrow() {
   reticle.visible = false; setGauge(0, lastP[p.name]);
   if (online()) return netTurn(p);
   if (p.cpu) {
-    phase = 'cpu'; hint('Don Chepe está midiendo…', true);
+    phase = 'cpu'; hint(`${p.name} está midiendo…`, true);
     planCpu(p);
   } else {
     phase = 'aim';

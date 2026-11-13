@@ -330,6 +330,10 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <h3>Forma de juego</h3>
       <div class="seg" id="segTeams"><button data-v="0">Individual</button><button data-v="2">2 equipos<small>al azar</small></button><button data-v="3">3 equipos<small>al azar</small></button></div>
     </div>
+    <div class="group" id="grpCpuSize" hidden>
+      <h3>Forma de juego</h3>
+      <div class="seg" id="segCpuSize"><button data-v="1">Mano a mano</button><button data-v="2">Parejas<small>2 contra 2</small></button><button data-v="3">Tríos<small>3 contra 3</small></button></div>
+    </div>
     <div class="group" id="grpOnline" hidden>
       <h3>Unirme a una sala</h3>
       <div class="joinRow"><input id="codeIn" inputmode="numeric" maxlength="4" placeholder="Código de 4 números" aria-label="Código de la sala" autocomplete="off"><button class="btn ghost" id="btnJoin">Unirme</button></div>
@@ -370,7 +374,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.45</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.46</span></div>
   </div></div>
 </section>
 
@@ -411,7 +415,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <li>Baja y toca <b>Agregar a inicio</b>.</li>
       <li>Toca <b>Agregar</b>. El Tejo queda en tu pantalla como una app.</li>
     </ol>
-    <p class="prose">Ya instalado se abre en pantalla completa, y contra Don Chepe, por turnos y en el reto se puede jugar sin internet. Las salas sí necesitan conexión.</p>
+    <p class="prose">Ya instalado se abre en pantalla completa, y contra Don Chepe (solo, en parejas o en tríos), por turnos y en el reto se puede jugar sin internet. Las salas sí necesitan conexión.</p>
     <div class="cta"><button class="btn" id="btnInstallBack" type="button">Entendido</button></div>
   </div></div>
 </section>
@@ -467,7 +471,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.45";
+const GAME_VERSION = "1.46";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -1784,7 +1788,7 @@ function buzz(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, muted: false };
+const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, muted: false };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
@@ -1848,16 +1852,30 @@ function startGame() {
   let players;
   fixLocalDesigns();
   const D = settings.designs;
-  if (settings.mode === 'cpu') players = [newPlayer(settings.names[0] || 'Tú', 0, false, D[0]), newPlayer('Don Chepe', 1, true, freeDesign(['sombrero', 'condor', 'sol'], [D[0]]))];
+  let nT = 0;
+  if (settings.mode === 'cpu') {
+    // contra Don Chepe: mano a mano, parejas o tríos; los compañeros y los rivales son bots
+    const n = clamp(Math.round(settings.cpuSize || 1), 1, 3), mates = ['Doña Rosa', 'El Mono'], rivals = ['Don Chepe', 'Rigo', 'Chava'];
+    const taken = [D[0]], pick = pref => { const d = freeDesign(pref, taken); taken.push(d); return d; };
+    players = [];
+    for (let k = 0; k < n; k++) {   // intercalados (uno de cada equipo) para que los turnos se alternen
+      const mine = k ? newPlayer(mates[k - 1], players.length, true, pick(['colibri', 'cafe', 'orquidea'])) : newPlayer(settings.names[0] || 'Tú', 0, false, D[0]);
+      players.push(mine);
+      const riv = newPlayer(rivals[k], players.length, true, pick(k ? ['palma', 'condor', 'sol'] : ['sombrero', 'condor', 'sol']));
+      players.push(riv);
+      if (n > 1) { mine.team = 0; riv.team = 1; }
+    }
+    if (n > 1) nT = 2;
+  }
   else if (settings.mode === 'local') {
-    const nT = teamsAllowed(settings.count).includes(settings.teams) ? settings.teams : 0;
+    nT = teamsAllowed(settings.count).includes(settings.teams) ? settings.teams : 0;
     const idx = Array.from({ length: settings.count }, (_, i) => i);
     const plan = nT ? makeTeams(idx, nT) : idx.map(i => ({ item: i }));
     players = plan.map(x => { const i = x.item, p = newPlayer(settings.names[i] || `Jugador ${i + 1}`, i, false, D[i]); if (nT) p.team = x.team; return p; });
   }
   else players = [newPlayer(settings.names[0] || 'Tú', 0, false, D[0])];
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: settings.goal, mode: settings.mode, thrown: 0, over: false };
-  game.teams = applyTeams(players, settings.mode === 'local' && players[0].team !== undefined ? settings.teams : 0);
+  game.teams = applyTeams(players, players[0].team !== undefined ? nT : 0);
   lastP = {};
   clearFeed();
   showScreen(null); setHud(true);
@@ -1888,7 +1906,7 @@ function nextThrow() {
   reticle.visible = false; setGauge(0, lastP[p.name]);
   if (online()) return netTurn(p);
   if (p.cpu) {
-    phase = 'cpu'; hint('Don Chepe está midiendo…', true);
+    phase = 'cpu'; hint(`${p.name} está midiendo…`, true);
     planCpu(p);
   } else {
     phase = 'aim';
@@ -3314,7 +3332,7 @@ function renderTeamBoard(b, cur) {
 function boardHeight() { try { document.documentElement.style.setProperty('--bh', $('board').offsetHeight + 'px'); } catch (e) { } }
 function renderTurn() {
   const p = current();
-  $('turnWho').textContent = game.mode === 'reto' ? `Tejo ${game.thrown + 1} de ${RETO_THROWS}` : (p.cpu ? 'Lanza Don Chepe' : (online() && p.pid === NET.pid) ? 'Te toca' : `Lanza ${p.name}`);
+  $('turnWho').textContent = game.mode === 'reto' ? `Tejo ${game.thrown + 1} de ${RETO_THROWS}` : (p.cpu ? `Lanza ${p.name}` : (online() && p.pid === NET.pid) ? 'Te toca' : `Lanza ${p.name}`);
   $('turnWho').style.color = p.color === COLORS[3] ? 'var(--yellow)' : '';
   const tm = teamOf(p);
   $('turnMeta').textContent = game.mode === 'reto' ? `${fmtD(W.D)} · mecha 3 · embocinada 6 · moñona 9` : `${tm ? 'Equipo ' + tm.name + ' · ' : ''}${online() ? 'Sala ' + NET.code + ' · ' : ''}Ronda ${game.round} · ${fmtD(W.D)} · partida a ${game.goal}`;
@@ -3367,6 +3385,8 @@ function renderMenu() {
   $('lupaHint').textContent = settings.aimHelp ? 'Acerca la greda donde va la mira' : 'Necesita la mira activada';
   $('swPower').setAttribute('aria-checked', String(settings.power)); $('gauge').hidden = !settings.power;
   $('grpDiff').hidden = settings.mode !== 'cpu';
+  $('grpCpuSize').hidden = settings.mode !== 'cpu'; setSeg('segCpuSize', settings.cpuSize || 1);
+  $('grpDiff').querySelector('h3').textContent = (settings.cpuSize || 1) > 1 ? 'Pulso de los bots' : 'Pulso de Don Chepe';
   $('grpGoal').hidden = settings.mode === 'reto';
   $('segCount').hidden = settings.mode !== 'local';
   const allowed = teamsAllowed(settings.count);
@@ -3483,7 +3503,7 @@ function bindInput() {
 
 function bindUI() {
   bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
-  bindSeg('segDist', 'dist', Number); bindSeg('segGoal', 'goal', Number); bindSeg('segTeams', 'teams', Number);
+  bindSeg('segDist', 'dist', Number); bindSeg('segGoal', 'goal', Number); bindSeg('segTeams', 'teams', Number); bindSeg('segCpuSize', 'cpuSize', Number);
   $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; if (!settings.aimHelp) settings.lupa = false; saveSettings(); renderMenu(); });
   $('swLupa').addEventListener('click', () => { if (!settings.aimHelp) return; settings.lupa = !settings.lupa; saveSettings(); renderMenu(); });
   $('swPower').addEventListener('click', () => { settings.power = !settings.power; saveSettings(); renderMenu(); });
