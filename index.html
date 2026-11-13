@@ -375,7 +375,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.63</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.43.0</span></div>
   </div></div>
 </section>
 
@@ -474,7 +474,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.63";
+const GAME_VERSION = "1.43.0";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -3229,6 +3229,9 @@ function renderMenuOnline() {
   $('btnJoin').disabled = !NET.room; $('codeIn').disabled = !NET.room;
 }
 
+/* Versiones: para jugar en una sala todos deben tener la misma MAYOR.MENOR (las reglas y la física iguales).
+   Con distinto PARCHE sí se puede: los parches no cambian cómo se juega (ver README, «Versiones»). */
+function sameGameVersion(v) { const mm = s => String(s || '').split('.').slice(0, 2).join('.'); return !!v && mm(v) === mm(GAME_VERSION); }
 function presentPids(peers) { const m = new Map(); peers.forEach(p => { const pr = p.presence || {}; if (typeof pr.pid === 'string') m.set(pr.pid, pr); }); return m; }
 function publishG(g) {
   NET.g = g; NET.lastG = g; NET.myG = g;
@@ -3246,8 +3249,8 @@ async function netEnter(code, create) {
     Object.assign(NET, { sala, code, g: null, lastG: null, myG: null, pending: {}, lostAt: 0, absent: {}, creator: create, watching: false, joinedAt: performance.now() });
     NET.unsub = sala.onPeers(netSync, netError);
     fixLocalDesigns();
-    const me = { v: 1, pid: NET.pid, name: myName(), design: settings.designs[0] };
-    if (create) me.g = { code, ver: 1, host: NET.pid, phase: 'lobby', seats: [{ pid: NET.pid, name: myName() }], dist: settings.dist, goal: settings.goal, ...hostRules() };
+    const me = { v: 1, pid: NET.pid, name: myName(), design: settings.designs[0], gv: GAME_VERSION };
+    if (create) me.g = { code, ver: 1, host: NET.pid, gv: GAME_VERSION, phase: 'lobby', seats: [{ pid: NET.pid, name: myName() }], dist: settings.dist, goal: settings.goal, ...hostRules() };
     if (me.g) { NET.g = NET.lastG = NET.myG = me.g; }
     await sala.presence(me);
     showSala(); netSync();
@@ -3278,7 +3281,7 @@ async function netRejoin() {
     const sala = await NET.room.join('tejo-' + code);
     if (NET.code !== code) { try { await sala.leave(); } catch (e) { } return; }
     NET.sala = sala; NET.unsub = sala.onPeers(netSync, netError); NET.joinedAt = performance.now();
-    const me = { v: 1, pid: NET.pid, name: myName(), design: settings.designs[0] };
+    const me = { v: 1, pid: NET.pid, name: myName(), design: settings.designs[0], gv: GAME_VERSION };
     if (NET.lastT) me.t = NET.lastT;
     if (keepG && NET.lastG && NET.lastG.host === NET.pid) { me.g = NET.lastG; NET.myG = NET.g = me.g; }
     await sala.presence(me);
@@ -3308,6 +3311,7 @@ function netSync() {
     if (g && typeof g === 'object' && g.code === NET.code && typeof g.ver === 'number' && typeof g.host === 'string')
       if (!best || g.ver > best.ver || (g.ver === best.ver && g.host < best.host)) best = g;
   }
+  if (best && best.host !== NET.pid && !sameGameVersion(best.gv)) { versionMismatch(best.gv); return; }
   if (best) { NET.g = best; NET.lastG = best; NET.lostAt = 0; }
   else { NET.g = null; if (NET.lastG && !NET.lostAt) NET.lostAt = performance.now(); }
   if (NET.myG && best && best.host !== NET.pid) { NET.myG = null; NET.sala.presence({ g: null }).catch(() => { }); }
@@ -3317,8 +3321,16 @@ function netSync() {
   if (online()) { const key = [...presentPids(peers).keys()].sort().join(','); if (key !== NET.hereKey) { NET.hereKey = key; renderBoard(); } }
   if (!$('sala').hidden) renderSala();
 }
+// La sala es de otra versión: se sale y se explica quién tiene que actualizar
+function versionMismatch(hv) {
+  const mine = GAME_VERSION; netLeave(); showMenu();
+  $('onlineMsg').textContent = !hv ? `Esta sala es de una versión anterior del juego y tú tienes la v${mine}. Para jugar juntos, quien creó la sala debe cerrar el juego y volver a abrirlo.`
+    : versionNewer(hv, mine) ? `La sala es de la v${hv} y tú tienes la v${mine}. Actualiza tu juego (ciérralo y vuelve a abrirlo) para entrar.`
+    : `La sala es de la v${hv} y tú tienes la v${mine}. Para jugar juntos, quien creó la sala debe cerrar el juego y volver a abrirlo.`;
+}
 function hostDuties(peers) {
   const g = NET.g, here = presentPids(peers);
+  here.forEach((pr, pid) => { if (pid !== NET.pid && !sameGameVersion(pr.gv)) here.delete(pid); });   // con otra versión no se sienta a jugar
   if (g.phase === 'lobby') {
     let seats = g.seats.filter(s => here.has(s.pid)).map(s => ({ pid: s.pid, name: String(here.get(s.pid).name || s.name).slice(0, 14) }));
     here.forEach((pr, pid) => { if (seats.length < MAX_PLAYERS && !seats.some(s => s.pid === pid) && pr.name) seats.push({ pid, name: String(pr.name).slice(0, 14) }); });
@@ -3593,7 +3605,7 @@ function renderSala() {
     const s = document.createElement('span'); s.textContent = tags; li.appendChild(s); list.appendChild(li);
   };
   seats.forEach((s, i) => add(s.name, g && g.setup && g.phase !== 'lobby' && Number.isInteger(s.team) ? TEAM_COLORS[s.team] : COLORS[i], [s.pid === NET.pid ? 'tú' : '', g && g.host === s.pid ? 'anfitrión' : '', here.has(s.pid) ? '' : 'fuera'].filter(Boolean).join(' · '), !here.has(s.pid), s.design));
-  here.forEach((pr, pid) => { if (!seats.some(s => s.pid === pid)) add(String(pr.name || 'Alguien').slice(0, 14), '#8e7d66', (pid === NET.pid ? 'tú · ' : '') + 'mirando', false, pr.design); });
+  here.forEach((pr, pid) => { if (!seats.some(s => s.pid === pid)) add(String(pr.name || 'Alguien').slice(0, 14), '#8e7d66', (pid === NET.pid ? 'tú · ' : '') + (pid === NET.pid || sameGameVersion(pr.gv) ? 'mirando' : 'tiene otra versión: debe actualizar'), false, pr.design); });
   renderMyDesign(g, seats);
   const info = $('salaInfo'), host = amHost();
   if (!g) info.textContent = NET.creator ? 'Abriendo la sala…' : 'Buscando la sala…';

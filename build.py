@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Arma el juego a partir de src/.
 
-Uso:  python3 build.py 1.19
+Uso:  python3 build.py 1.43.0   (MAYOR.MENOR.PARCHE, ver «Versiones» en el README)
 
 Genera:
   index.html              la página de GitHub Pages (con metadatos para compartir)
@@ -15,9 +15,12 @@ import pathlib
 import sys
 
 if len(sys.argv) != 2:
-    sys.exit('Uso: python3 build.py <versión>   (por ejemplo: python3 build.py 1.19)')
+    sys.exit('Uso: python3 build.py <versión>   (por ejemplo: python3 build.py 1.43.0)')
 
 VERSION = sys.argv[1]
+import re as _re
+if not _re.fullmatch(r'(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)', VERSION):
+    sys.exit(f'La versión debe ser MAYOR.MENOR.PARCHE, por ejemplo 1.43.0 (llegó "{VERSION}"). Ver «Versiones» en el README.')
 ROOT = pathlib.Path(__file__).resolve().parent
 SRC = ROOT / 'src'
 OUT = ROOT / 'build'

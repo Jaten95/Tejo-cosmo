@@ -38,11 +38,93 @@ musica-vallenato.mp3 la música de fondo; el juego la baja al empezar a jugar (v
 ## Generar una versión nueva
 
 ```
-python3 build.py 1.19
+python3 build.py 1.43.0
 node --check build/juego.js   # revisa que el JavaScript no tenga errores de sintaxis
 ```
 
 El número de versión sale en la esquina inferior derecha del menú; así se sabe si el celular ya tiene la última. `build/` no se sube al repo: ahí queda también `tejo-claude.html`, la versión que se publica dentro de Claude.
+
+## Versiones
+
+El juego usa [versionado semántico (SemVer)](https://semver.org/lang/es/): **MAYOR.MENOR.PARCHE**, por ejemplo 1.43.0. El número nunca baja.
+
+- **MAYOR** sube cuando el cambio rompe lo anterior: se pierden los récords, la partida guardada o los ajustes, o el juego cambia por completo. MENOR y PARCHE vuelven a 0.
+- **MENOR** sube con algo nuevo, algo que se quita o un cambio en cómo se juega: una regla, la física del tejo, una opción, un objeto en el salón. PARCHE vuelve a 0.
+- **PARCHE** sube con arreglos y ajustes de lo que ya existe que no cambian cómo se juega: textos, posiciones, colores, sonido, volumen, tiempos de la decoración.
+
+En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la física son iguales para todos); con distinto PARCHE sí se puede jugar junto. Si alguien tiene otra versión, el juego le dice quién debe actualizar.
+
+`build.py` solo acepta números así (`python3 build.py 1.43.0`).
+
+<details>
+<summary>Hasta la v1.63 el número subía de a uno en cada cambio. Así quedó cada versión con SemVer (la v1.63 equivale a la 1.42.0).</summary>
+
+| Antes | SemVer | Tipo | Qué trajo |
+|---|---|---|---|
+| — | 1.0.0 | Agregado | el juego: contra Don Chepe, por turnos y el reto |
+| — | 1.1.0 | Agregado | salas en línea con Supabase en GitHub Pages |
+| — | 1.2.0 | Agregado | salas: botón Actualizar y anfitrión automático |
+| — | 1.3.0 | Agregado | salas: tiros directos entre jugadores y reconexión automática |
+| — | 1.4.0 | Agregado | imagen, título y descripción al compartir el enlace |
+| — | 1.4.1 | Arreglado | salas: el puntaje ya no retrocede al reconectarse |
+| — | 1.4.2 | Arreglado | salas: desconexiones constantes |
+| v1.11 | 1.5.0 | Agregado | la versión en el menú |
+| v1.12 | 1.6.0 | Cambiado | una mecha reventada no se repone hasta la siguiente ronda |
+| v1.13 | 1.7.0 | Agregado | grabados en la cara del tejo |
+| v1.14 | 1.8.0 | Cambiado | no se entra a una partida empezada; aviso de sala llena |
+| v1.15 | 1.9.0 | Agregado | salas: 15 s para lanzar |
+| v1.16 | 1.10.0 | Agregado | grabado de la bandera del orgullo |
+| v1.17 | 1.10.1 | Arreglado | grabado del orgullo sin asta |
+| v1.18 | 1.11.0 | Agregado | brazo en primera persona con mano y manilla |
+| v1.19 | 1.12.0 | Agregado | choques entre tejos |
+| v1.20 | 1.13.0 | Agregado | rebote en otro tejo y salida de la greda |
+| v1.21 | 1.14.0 | Agregado | equipos al azar y hasta 6 jugadores |
+| v1.22 | 1.15.0 | Agregado | repetición de la moñona |
+| v1.23 | 1.16.0 | Agregado | reacciones en sala |
+| v1.24 | 1.17.0 | Agregado | ambiente de cancha y música carranguera |
+| v1.25 | 1.18.0 | Agregado | instalable en el celular |
+| v1.26 | 1.18.1 | Cambiado | ambiente con gente hablando |
+| v1.27 | 1.19.0 | Quitado | ambiente de cancha y música |
+| v1.28 | 1.20.0 | Agregado | aviso de versión nueva en la app instalada |
+| v1.29 | 1.20.1 | Arreglado | pantalla negra al volver a la app |
+| v1.30 | 1.20.2 | Cambiado | modo «Turnos local» y sin nombres de ejemplo |
+| v1.31 | 1.21.0 | Agregado | greda de barro y tablero pintado |
+| v1.32 | 1.21.1 | Cambiado | «CLUB DE TEJO» más grande en el tablero |
+| v1.33 | 1.21.2 | Arreglado | letras que salían con otra fuente en el celular |
+| v1.34 | 1.21.3 | Cambiado | águila en el medallón del tablero |
+| v1.35 | 1.21.4 | Cambiado | medallón sin fondo azul |
+| v1.36 | 1.22.0 | Agregado | cancha sobre el piso con marco oxidado; opciones de lupa y barra de fuerza |
+| v1.36 | 1.23.0 | Agregado | pizarra de tiza arriba de la cancha |
+| v1.37 | 1.24.0 | Agregado | botones para acercar y alejar la cámara |
+| v1.38 | 1.25.0 | Cambiado | ayuda que se puede cerrar, turnos de 20 s; arreglo de letra en Safari |
+| v1.39 | 1.26.0 | Agregado | herramientas en la esquina izquierda |
+| v1.40 | 1.27.0 | Agregado | canastas de cerveza y botellas |
+| v1.41 | 1.27.1 | Cambiado | botones de zoom arriba a la derecha |
+| v1.42 | 1.27.2 | Cambiado | canastas negras y botellas retornables |
+| v1.43 | 1.27.3 | Cambiado | ayuda de cómo lanzar en dos líneas |
+| v1.44 | 1.28.0 | Agregado | banderines en las cuatro paredes (se quitan la bandera y la pizarra) |
+| v1.45 | 1.29.0 | Cambiado | sin puntos, la mano sale primero |
+| v1.46 | 1.30.0 | Agregado | Don Chepe en parejas o tríos con bots |
+| v1.47 | 1.30.1 | Arreglado | la mecha salía reventada en la repetición |
+| v1.48 | 1.31.0 | Cambiado | en salas todos usan la configuración del anfitrión |
+| v1.49 | 1.32.0 | Cambiado | los tejos caen acostados, inclinados o de canto |
+| v1.50 | 1.33.0 | Agregado | el tejo se puede resbalar en el aro del bocín |
+| v1.51 | 1.33.1 | Cambiado | tejo nuevo, como los de verdad |
+| v1.52 | 1.33.2 | Arreglado | el sonido no volvía al regresar al juego |
+| v1.53 | 1.34.0 | Agregado | gente mirando la partida |
+| v1.54 | 1.35.0 | Quitado | la gente del salón |
+| v1.55 | 1.36.0 | Agregado | bombillos, polvo, mesa, sillas plásticas y caneca |
+| v1.56 | 1.37.0 | Agregado | perros que pasan por el salón |
+| v1.57 | 1.38.0 | Agregado | música de fondo |
+| v1.58 | 1.39.0 | Agregado | parlantes que prenden o apagan la música |
+| v1.59 | 1.40.0 | Quitado | botón de silenciar |
+| v1.60 | 1.40.1 | Cambiado | el perro sale más seguido |
+| v1.61 | 1.41.0 | Cambiado | si hubo puntos, lanza primero el que más hizo |
+| v1.62 | 1.41.1 | Arreglado | punto rojo de la repetición ovalado |
+| v1.63 | 1.42.0 | Cambiado | la repetición ya no se salta; títulos que caben en el celular |
+| — | 1.43.0 | Agregado | versiones con SemVer y aviso en salas si alguien tiene otra versión |
+
+</details>
 
 ## Instalar en el celular
 
