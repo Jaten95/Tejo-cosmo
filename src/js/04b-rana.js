@@ -222,9 +222,13 @@ function makeFigure(f, big) {
   const lip = new THREE.Mesh(new THREE.TorusGeometry(f.mouthR + .004, .0045, 10, 28), m);
   lip.position.copy(f.mouth); lip.lookAt(lip.position.clone().add(f.mouthN)); g.add(lip);
   const hole = new THREE.Mesh(new THREE.CircleGeometry(f.mouthR + .002, 28), mouthMat()); hole.position.copy(f.mouth).addScaledVector(f.mouthN, .0005); hole.lookAt(hole.position.clone().add(f.mouthN)); g.add(hole);
+  // ojos encima de la cabeza, medidos desde el borde del labio y con la inclinación de la rana grande:
+  // así el sapito (boca más pequeña y mirando más hacia arriba) los tiene igual y no le quedan pegados al labio
+  const Ro = f.mouthR + .0085, eR = Ro * .356, eq = new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), FROG.mouthN);
   [-1, 1].forEach(sx => {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(f.mouthR * .45, 12, 10), m); eye.position.set(sx * f.mouthR * .9, hc.y + f.mouthR * 1.2, hc.z + f.mouthR * .3); g.add(eye);
-    const pup = new THREE.Mesh(new THREE.SphereGeometry(f.mouthR * .2, 10, 8), dark); pup.position.set(sx * f.mouthR * .95, hc.y + f.mouthR * 1.3, hc.z + f.mouthR * .68); g.add(pup);
+    const ep = f.mouth.clone().add(V(sx * .711, -.184, -.829).multiplyScalar(Ro).applyQuaternion(eq)).add(V(0, f.eyeUp || 0, 0));
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(eR, 12, 10), m); eye.position.copy(ep); g.add(eye);
+    const pup = new THREE.Mesh(new THREE.SphereGeometry(eR * .444, 10, 8), dark); pup.position.copy(ep).addScaledVector(V(sx * .126, .253, .96).normalize(), eR * .88); g.add(pup);
     const foot = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), m); foot.scale.set(f.bodyR * .32, f.bodyR * .18, f.bodyR * .45); foot.position.set(sx * f.bodyR * .65, f.bodyR * .12, f.body.z + f.bodyR * .7); g.add(foot);
   });
   g.traverse(o => { if (o.isMesh) o.castShadow = true; });
