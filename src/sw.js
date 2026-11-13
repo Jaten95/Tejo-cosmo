@@ -1,5 +1,6 @@
 /* Service worker del Tejo (solo en GitHub Pages): permite instalar el juego y jugar sin internet contra Don Chepe.
-   - La página se pide primero a la red (así llegan las versiones nuevas) y, sin internet, sale de la caché.
+   - La página se pide primero a la red, sin caché del navegador (así llegan las versiones nuevas) y, sin internet, sale de la caché.
+   - version.json nunca se guarda: la página lo consulta para avisar que hay una versión nueva.
    - Three.js, el cargador de la mano, las fuentes y los íconos se guardan al instalar y se sirven desde la caché.
    - Las salas en línea necesitan internet: sus conexiones no pasan por aquí. */
 const VERSION = '{{VERSION}}';
@@ -17,9 +18,10 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.hostname.endsWith('supabase.co')) return;
+  if (url.origin === location.origin && /\/(version\.json|sw\.js)$/.test(url.pathname)) return;   // siempre de la red
   const page = req.mode === 'navigate' || (url.origin === location.origin && (url.pathname.endsWith('/') || url.pathname.endsWith('/index.html')));
   if (page) {
-    e.respondWith(fetch(req).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put('./', copy)); return r; })
+    e.respondWith(fetch(req, { cache: 'no-store' }).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put('./', copy)); return r; })
       .catch(() => caches.match('./').then(r => r || caches.match(req))));
     return;
   }

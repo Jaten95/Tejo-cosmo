@@ -8,6 +8,7 @@ Genera:
   build/tejo-claude.html  la versión que se publica como artifact en Claude
   build/juego.js          todo el JavaScript junto, para revisarlo con `node --check`
   sw.js                   el service worker de GitHub Pages (instalar y jugar sin internet)
+  version.json            la versión publicada, para el aviso de actualizar
 """
 import base64
 import pathlib
@@ -95,4 +96,5 @@ precache = ['./', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-
             'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js', fonts.replace('&amp;', '&')]
 sw = (SRC / 'sw.js').read_text().replace('{{VERSION}}', VERSION).replace('{{PRECACHE}}', json.dumps(precache, indent=2))
 (ROOT / 'sw.js').write_text(sw)
+(ROOT / 'version.json').write_text(json.dumps({'version': VERSION}) + '\n')   # la página lo consulta para avisar de versiones nuevas
 print(f'v{VERSION}: index.html y build/tejo-claude.html listos')
