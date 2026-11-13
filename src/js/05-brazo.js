@@ -83,7 +83,13 @@ function armSetPlayer(p) {
   const key = [isRana() ? 'rana' : 'tejo', p.color, p.design, p.name].join('|');
   if (key === ARM.key) return; ARM.key = key;
   if (ARM.tejo) ARM.slot.remove(ARM.tejo);
-  if (isRana()) { ARM.tejo = makeArgolla(); ARM.tejo.rotation.x = Math.PI / 2; ARM.tejo.position.y = .012; }   // en la rana va una argolla en la mano
+  if (isRana()) {   // en la rana la argolla se sostiene entre el pulgar y el índice; los otros tres dedos van recogidos
+    ARM.tejo = makeArgolla(); const G = ARG_GRIP;
+    ARM.tejo.position.fromArray(G.pos).sub(ARM.slot.position).applyAxisAngle(V(1, 0, 0), -ARM.slot.rotation.x);
+    ARM.tejo.quaternion.setFromUnitVectors(V(0, 0, 1), V(...G.n).normalize()).multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), G.spin))
+      .premultiply(new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), -ARM.slot.rotation.x));   // de la mano al soporte
+    ARM.tejo.scale.setScalar(G.s);
+  }
   else ARM.tejo = makeTejo(p.color, p.design, p.name);
   ARM.tejo.castShadow = false; ARM.slot.add(ARM.tejo);
   if (ARM.medal) ARM.medal.material[1] = tejoTopMaterial(p.color, p.design, p.name);
@@ -118,6 +124,13 @@ function armPose(th, be) {
   const right = new THREE.Vector3().crossVectors(up, fwd.clone().negate()).normalize();
   m.makeBasis(right, up, fwd.clone().negate()); ARM.hand.quaternion.setFromRotationMatrix(m);
   ARM.hand.position.copy(W).addScaledVector(dir, ARM.model ? .064 : .045);
+  if (isRana()) {   // con la argolla la mano va de medio lado y la C abre hacia adentro, como en la foto
+    const R = ARG_HAND, q = new THREE.Quaternion().setFromEuler(new THREE.Euler(R.pitch, R.yaw, R.roll, 'YXZ'));
+    const piv = V(0, 0, .05);   // gira desde la muñeca para no despegarse del antebrazo
+    ARM.hand.position.add(piv.clone().sub(piv.clone().applyQuaternion(q)).applyQuaternion(ARM.hand.quaternion));
+    ARM.hand.quaternion.multiply(q);
+    if (ARM.band) { const qi = q.clone().invert(); ARM.band.quaternion.copy(qi); ARM.band.position.set(0, 0, .07).sub(piv).applyQuaternion(qi).add(piv); }   // la manilla se queda en el antebrazo
+  } else if (ARM.band) { ARM.band.quaternion.identity(); ARM.band.position.set(0, 0, .07); }
 }
 function armVisibleTurn() {
   if (!game || game.over || paused) return false;
@@ -142,10 +155,11 @@ function updateArm(dt, now) {
   else ARM.root.visible = true;
   const k = 1 - Math.exp(-16 * dt);
   if (ARM.state === 'ready') {
-    let th = 62 + Math.sin(now / 520) * 2.5, be = 42, L = 0;
+    const R0 = isRana() ? ARG_ARM : [62, 42];   // con la argolla el antebrazo va más parado, como en la foto
+    let th = R0[0] + Math.sin(now / 520) * 2.5, be = R0[1], L = 0;
     if (drag) {
       const P = clamp(drag.P, 0, 1), e = P * P * (3 - 2 * P);
-      th = lerp(62, -48, e); be = lerp(42, 4, e); L = drag.L || 0;
+      th = lerp(R0[0], -48, e); be = lerp(R0[1], 4, e); L = drag.L || 0;
       const w = drag.aim && drag.aim.amp ? (drag.aim.amp - .016) * 220 : 0;   // el pulso que tiembla
       th += Math.sin(now / 47) * w; be += Math.cos(now / 61) * w * .6;
     }
@@ -279,17 +293,25 @@ function bendChain(J, angles, start) {
     if (k + 1 < J.length) N = N.clone().add(rest[J[k + 1]].p.clone().sub(rest[J[k]].p).applyQuaternion(C));
   }
 }
+// Rana, como en la foto del agarre: antebrazo parado, mano de medio lado (se ve el lado del pulgar) y la argolla en la C
+const ARG_ARM = [45, 95];   // hombro y codo con la argolla en la mano
+const ARG_HAND = { roll: 1.9, yaw: 0, pitch: 0 };   // cuánto se voltea la mano (desde la muñeca)
+// dónde queda la argolla (coordenadas de la mano: palma +Y, dedos -Z, pulgar +X): entre la yema del índice y la del pulgar, de cara al jugador
+const ARG_GRIP = { pos: [.0314, .0784, -.0427], n: [.927, -.333, -.175], spin: .4, s: 1.1 };
 const HAND_POSE = {
   closed: { index: [.587, .701, .738], middle: [.647, .571, 1.037], ring: [.475, .818, .459], pinky: [.695, -.202, 1.276], thumb: [[-.719, -.86, -.578], [.664, .243, .16], [.944, -.076, -.134]] },
-  open: { index: [.02, .1, .05], middle: [.02, .1, .05], ring: [.03, .12, .06], pinky: [.05, .14, .08], thumb: [[0, 0, 0], [0, 0, 0], [0, 0, 0]] }
+  open: { index: [.02, .1, .05], middle: [.02, .1, .05], ring: [.03, .12, .06], pinky: [.05, .14, .08], thumb: [[0, 0, 0], [0, 0, 0], [0, 0, 0]] },
+  // la argolla la sostienen el pulgar y el índice (en C); corazón, anular y meñique van recogidos
+  argolla: { index: [.45, 1, .8], middle: [1.25, 1.55, 1], ring: [1.35, 1.55, 1], pinky: [1.4, 1.5, 1], thumb: [[.1, -.7, 0], [.3, 0, 0], [.4, 0, 0]] }
 };
 function poseModel(c) {
   const mix = (a, b) => Array.isArray(a) ? a.map((v, i) => mix(v, b[i])) : lerp(b, a, c);
+  const G = isRana() ? HAND_POSE.argolla : HAND_POSE.closed;   // la argolla se agarra distinto al tejo
   ['index', 'middle', 'ring', 'pinky'].forEach(f => {
     const J = ['metacarpal', 'phalanx-proximal', 'phalanx-intermediate', 'phalanx-distal', 'tip'].map(s => `${f}-finger-${s}`);
-    bendChain(J, mix(HAND_POSE.closed[f], HAND_POSE.open[f]), 1);
+    bendChain(J, mix(G[f], HAND_POSE.open[f]), 1);
   });
-  bendChain(['thumb-metacarpal', 'thumb-phalanx-proximal', 'thumb-phalanx-distal', 'thumb-tip'], mix(HAND_POSE.closed.thumb, HAND_POSE.open.thumb), 0);
+  bendChain(['thumb-metacarpal', 'thumb-phalanx-proximal', 'thumb-phalanx-distal', 'thumb-tip'], mix(G.thumb, HAND_POSE.open.thumb), 0);
 }
 
 /* ---------- Manilla tricolor en la muñeca (tapa la unión de la mano con el antebrazo) ---------- */
