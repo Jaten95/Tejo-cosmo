@@ -3,7 +3,7 @@
    - version.json nunca se guarda: la página lo consulta para avisar que hay una versión nueva.
    - Three.js, el cargador de la mano, las fuentes y los íconos se guardan al instalar y se sirven desde la caché.
    - Las salas en línea necesitan internet: sus conexiones no pasan por aquí. */
-const VERSION = '1.36';
+const VERSION = '1.37';
 const CACHE = 'tejo-' + VERSION;
 const PRECACHE = [
   "./",

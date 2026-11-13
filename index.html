@@ -133,6 +133,8 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 .hudBtns{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;gap:8px;pointer-events:auto;}
 .iconBtn{width:42px;height:42px;display:grid;place-items:center;background:rgba(22,16,11,.82);border:1px solid rgba(245,237,221,.18);border-radius:50%;}
 .iconBtn svg{width:18px;height:18px;fill:none;stroke:var(--paper);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+#zoomBtns{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;pointer-events:auto;}
+#zoomBtns .iconBtn:disabled{opacity:.35;}
 .iconBtn.muted .wave{display:none;} .iconBtn:not(.muted) .x{display:none;}
 
 /* ---------- announcements ---------- */
@@ -279,6 +281,10 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
   <div id="lupa"><span>LUPA</span></div>
   <div id="gauge" aria-hidden="true"><div id="gaugeFill"></div><div id="gaugeLast"></div><b>FUERZA</b></div>
   <div id="feed" aria-live="polite"></div>
+  <div id="zoomBtns">
+    <button class="iconBtn" id="btnZoomIn" aria-label="Acercar la cámara"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M10.5 7.5v6M7.5 10.5h6"/></svg></button>
+    <button class="iconBtn" id="btnZoomOut" aria-label="Alejar la cámara"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M7.5 10.5h6"/></svg></button>
+  </div>
   <div class="hudBtns">
     <button class="iconBtn" id="btnPause" aria-label="Pausa"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
     <button class="iconBtn" id="btnRx" aria-label="Reaccionar" aria-expanded="false" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg></button>
@@ -360,7 +366,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.36</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.37</span></div>
   </div></div>
 </section>
 
@@ -457,7 +463,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.36";
+const GAME_VERSION = "1.37";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -1562,7 +1568,7 @@ function buzz(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, muted: false };
+const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, muted: false };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
@@ -1930,12 +1936,18 @@ function gameOver(winner) {
 /* ================= Cámaras ================= */
 const camCur = { pos: V(0, 2, 4), look: V(0, 1, -10), fov: 40 };
 let closeup = null, orbit = 0;
+/* Zoom al apuntar: 0 = lo más cerca (encuadra la cancha, como siempre); 1 = lo más lejos (se ve todo el salón) */
+const ZOOM_STEP = .25;
 function aimPose() {
   const asp = isFinite(cam.aspect) && cam.aspect > 0 ? cam.aspect : .5;
   const dist = W.D + 2.1, span = Math.max(2.7, 2.0 / asp);
-  const t = performance.now() / 1000;
-  return { pos: V(Math.sin(t * .5) * .02, 1.78 + Math.sin(t * .8) * .01, 2.1), look: V(0, CY - .1, -W.D), fov: 2 * Math.atan(span / 2 / dist) * 180 / Math.PI };
+  const t = performance.now() / 1000, z = clamp(settings.zoom || 0, 0, 1);
+  const near = 2 * Math.atan(span / 2 / dist) * 180 / Math.PI, far = asp < 1 ? 44 : 30;
+  const fov = near * Math.pow(far / near, z);   // en escala logarítmica, para que cada paso se sienta igual
+  return { pos: V(Math.sin(t * .5) * .02, 1.78 + Math.sin(t * .8) * .01, 2.1), look: V(0, lerp(CY - .1, 1.15, z), -W.D), fov };
 }
+function zoomBy(d) { settings.zoom = clamp(Math.round(((settings.zoom || 0) + d) / ZOOM_STEP) * ZOOM_STEP, 0, 1); saveSettings(); updateZoomBtns(); }
+function updateZoomBtns() { const z = settings.zoom || 0; $('btnZoomIn').disabled = z <= 0; $('btnZoomOut').disabled = z >= 1; }
 function closePose(u = 0, v = 0) {
   const c = fromUV(u * .6, v * .6);
   const portrait = cam.aspect < 1;
@@ -2000,6 +2012,7 @@ function render() {
   renderer.setScissorTest(false); renderer.setViewport(0, 0, w, h); renderer.clear(); renderer.render(scene, cam); renderArm(w, h);
   const el = document.getElementById('lupa'); const show = lupaOn();
   el.style.visibility = show ? 'visible' : 'hidden';
+  document.getElementById('zoomBtns').style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay ? 'visible' : 'hidden';
   if (show) {
     const r = el.getBoundingClientRect(), b = 3;
     const x = r.left + b, y = h - (r.bottom - b), s = r.width - b * 2;
@@ -3254,6 +3267,7 @@ function bindUI() {
   $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; if (!settings.aimHelp) settings.lupa = false; saveSettings(); renderMenu(); });
   $('swLupa').addEventListener('click', () => { if (!settings.aimHelp) return; settings.lupa = !settings.lupa; saveSettings(); renderMenu(); });
   $('swPower').addEventListener('click', () => { settings.power = !settings.power; saveSettings(); renderMenu(); });
+  $('btnZoomIn').addEventListener('click', () => zoomBy(-ZOOM_STEP)); $('btnZoomOut').addEventListener('click', () => zoomBy(ZOOM_STEP)); updateZoomBtns();
   $('btnPlay').addEventListener('click', () => { A.init(); A.tick(); if (settings.mode === 'online') netCreate(); else startGame(); });
   $('btnRules').addEventListener('click', () => showScreen('rules'));
   $('btnRulesBack').addEventListener('click', () => { showScreen('menu'); });

@@ -1,7 +1,7 @@
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, muted: false };
+const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, muted: false };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
@@ -369,12 +369,18 @@ function gameOver(winner) {
 /* ================= Cámaras ================= */
 const camCur = { pos: V(0, 2, 4), look: V(0, 1, -10), fov: 40 };
 let closeup = null, orbit = 0;
+/* Zoom al apuntar: 0 = lo más cerca (encuadra la cancha, como siempre); 1 = lo más lejos (se ve todo el salón) */
+const ZOOM_STEP = .25;
 function aimPose() {
   const asp = isFinite(cam.aspect) && cam.aspect > 0 ? cam.aspect : .5;
   const dist = W.D + 2.1, span = Math.max(2.7, 2.0 / asp);
-  const t = performance.now() / 1000;
-  return { pos: V(Math.sin(t * .5) * .02, 1.78 + Math.sin(t * .8) * .01, 2.1), look: V(0, CY - .1, -W.D), fov: 2 * Math.atan(span / 2 / dist) * 180 / Math.PI };
+  const t = performance.now() / 1000, z = clamp(settings.zoom || 0, 0, 1);
+  const near = 2 * Math.atan(span / 2 / dist) * 180 / Math.PI, far = asp < 1 ? 44 : 30;
+  const fov = near * Math.pow(far / near, z);   // en escala logarítmica, para que cada paso se sienta igual
+  return { pos: V(Math.sin(t * .5) * .02, 1.78 + Math.sin(t * .8) * .01, 2.1), look: V(0, lerp(CY - .1, 1.15, z), -W.D), fov };
 }
+function zoomBy(d) { settings.zoom = clamp(Math.round(((settings.zoom || 0) + d) / ZOOM_STEP) * ZOOM_STEP, 0, 1); saveSettings(); updateZoomBtns(); }
+function updateZoomBtns() { const z = settings.zoom || 0; $('btnZoomIn').disabled = z <= 0; $('btnZoomOut').disabled = z >= 1; }
 function closePose(u = 0, v = 0) {
   const c = fromUV(u * .6, v * .6);
   const portrait = cam.aspect < 1;
@@ -439,6 +445,7 @@ function render() {
   renderer.setScissorTest(false); renderer.setViewport(0, 0, w, h); renderer.clear(); renderer.render(scene, cam); renderArm(w, h);
   const el = document.getElementById('lupa'); const show = lupaOn();
   el.style.visibility = show ? 'visible' : 'hidden';
+  document.getElementById('zoomBtns').style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay ? 'visible' : 'hidden';
   if (show) {
     const r = el.getBoundingClientRect(), b = 3;
     const x = r.left + b, y = h - (r.bottom - b), s = r.width - b * 2;

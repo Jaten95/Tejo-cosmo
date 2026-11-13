@@ -253,6 +253,7 @@ function bindUI() {
   $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; if (!settings.aimHelp) settings.lupa = false; saveSettings(); renderMenu(); });
   $('swLupa').addEventListener('click', () => { if (!settings.aimHelp) return; settings.lupa = !settings.lupa; saveSettings(); renderMenu(); });
   $('swPower').addEventListener('click', () => { settings.power = !settings.power; saveSettings(); renderMenu(); });
+  $('btnZoomIn').addEventListener('click', () => zoomBy(-ZOOM_STEP)); $('btnZoomOut').addEventListener('click', () => zoomBy(ZOOM_STEP)); updateZoomBtns();
   $('btnPlay').addEventListener('click', () => { A.init(); A.tick(); if (settings.mode === 'online') netCreate(); else startGame(); });
   $('btnRules').addEventListener('click', () => showScreen('rules'));
   $('btnRulesBack').addEventListener('click', () => { showScreen('menu'); });
