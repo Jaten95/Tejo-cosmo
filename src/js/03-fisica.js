@@ -305,11 +305,13 @@ function explodeMecha(m) {
 }
 
 /* ================= Sonido (sintetizado) ================= */
+document.addEventListener('visibilitychange', () => { try { if (!A.ctx) return; if (document.hidden) A.ctx.suspend(); else A.wake(); } catch (e) { } });
+['pointerdown', 'touchend', 'keydown'].forEach(ev => document.addEventListener(ev, () => A.wake(), { passive: true, capture: true }));
 const A = {
   ctx: null, out: null, noise: null, muted: false,
   init() {
     try {
-      if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+      if (this.ctx) { if (this.ctx.state !== 'running' && !this.muted) this.ctx.resume().catch(() => { }); return; }   // en iPhone queda 'interrupted' al volver de otra app
       const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
       this.ctx = new AC();
       const comp = this.ctx.createDynamicsCompressor(); comp.connect(this.ctx.destination);
@@ -319,7 +321,9 @@ const A = {
       this.noise = b;
     } catch (e) { this.ctx = null; }
   },
-  setMuted(m) { this.muted = m; if (this.out) this.out.gain.setTargetAtTime(m ? 0 : .85, this.ctx.currentTime, .02); },
+  setMuted(m) { this.muted = m; if (this.out) this.out.gain.setTargetAtTime(m ? 0 : .85, this.ctx.currentTime, .02); if (!m) this.wake(); },
+  // al irse a otra app el celular pausa el audio: se pausa aquí también y se reanuda al volver o con el siguiente toque
+  wake() { try { if (this.ctx && this.ctx.state !== 'running' && !this.muted) this.ctx.resume().catch(() => { }); } catch (e) { } },
   ok() { return this.ctx && !this.muted; },
   nz(dur, { type = 'lowpass', f0 = 1000, f1 = f0, q = .7, gain = .5, attack = .005, delay = 0, dest = null, at = null } = {}) {
     if (!this.ok()) return; const c = this.ctx, t = (at === null ? c.currentTime : at) + delay;
