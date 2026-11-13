@@ -16,6 +16,7 @@ src/
     01-escena.js     cancha, texturas, luces y el tejo
     01b-greda-tablero.js  la greda de barro y el tablero pintado de atrás
     01c-utileria.js  herramientas, canastas de cerveza y banderines del salón
+    01d-ambiente.js  bombillos encendidos, polvo en la luz, mesa, sillas plásticas y caneca
     02-grabados.js   los diseños grabados en la cara del tejo
     03-fisica.js     vuelo, choques, puntaje, efectos y sonido
     04-partida.js    turnos, rondas, Don Chepe, cámaras y bucle principal

@@ -235,6 +235,7 @@ function buildProps() {
   });
   [[1.92, z0 + .95, 0], [2.02, z0 + 1.02, 0], [2.4, z0 + .85, 1]].forEach(([x, z, lying]) => { const b = makeBottle(lying); b.position.x = x; b.position.z = z; if (lying) b.rotation.y = .7; hall.add(b); });
   buildBunting();
+  buildAmbience();
   // la pala recostada en la tabla, por fuera
   const shovel = makeShovel(); shovel.position.set(-1.95, 0, z0 + .85); shovel.rotation.set(0, -.25, -.17); hall.add(shovel);
 }

@@ -192,14 +192,7 @@ function buildHall() {
   // letreros
   const fia = new THREE.Mesh(new THREE.PlaneGeometry(1.8, .45), std({ map: T.fia, roughness: .9 }));
   fia.position.set(-3.48, 2.2, -D * .45); fia.rotation.y = Math.PI / 2; hall.add(fia);
-  // bombillos colgantes
-  const bulbMat = new THREE.MeshBasicMaterial({ color: '#ffd9a0' });
-  [-2, -D * .5, -D + 1.2].forEach((z, i) => {
-    const bx = i % 2 ? -1.35 : 1.35;
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 10), bulbMat); bulb.position.set(bx, 3.55, z); hall.add(bulb);
-    const cord = new THREE.Mesh(new THREE.CylinderGeometry(.006, .006, .6), std({ color: '#111' })); cord.position.set(bx, 3.9, z); hall.add(cord);
-    if (i < 2) { const pl = new THREE.PointLight('#ffc98a', i ? 1.1 : .8, 14, 1.6); pl.position.set(bx, 3.45, z); hall.add(pl); }
-  });
+  // los bombillos colgantes están en 01d-ambiente.js
   // canasta y butaco junto a la línea
   const crate = new THREE.Mesh(new THREE.BoxGeometry(.45, .3, .32), std({ color: '#b8352a', roughness: .7 }));
   crate.position.set(-1.9, .15, .4); crate.rotation.y = .3; crate.castShadow = true; hall.add(crate);

@@ -483,6 +483,7 @@ function frame(now) {
   const dt = clamp((now - lastT) / 1000, 0, .05); lastT = now;
   try {
     if (!paused) { tickTimers(dt); updateGame(dt, now); updateFx(dt); }
+    updateAmbience(paused ? 0 : dt);
     updateArm(paused ? 0 : dt, now);
     updateCamera(paused ? 0 : dt);
     camSafe();
