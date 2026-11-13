@@ -154,9 +154,7 @@ function buildTextures() {
   T.woodRed = makeWoodTex('#7d2a21', null);
   T.woodPlain = makeWoodTex('#5a4029', null);
   T.stripes = makeStripeTex(); T.soft = softTex(); T.crater = craterTex(); T.scorch = scorchTex();
-  T.sign = signTex([
-    { t: 'CLUB DE TEJO', size: 92, y: .38, c: '#f3c22f' },
-    { t: 'EL COSMO', size: 70, y: .74, c: '#f5eddd' }], '#2565b3', '#f3c22f', '#16110c');
+  T.sign = makeChalkboard();
   T.fia = signTex([
     { t: 'HOY NO SE FÍA', size: 84, y: .38, c: '#d8392d' },
     { t: 'MAÑANA SÍ', size: 84, y: .74, c: '#2565b3' }], '#f2ead8', '#d8392d', 'rgba(0,0,0,.25)');
