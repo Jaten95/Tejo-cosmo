@@ -182,12 +182,14 @@ function updateSoundBtn() { $('btnSound').classList.toggle('muted', settings.mut
 
 /* ---------- Entrada ---------- */
 let resultAt = 0;
+/* Tocar la pantalla adelanta la espera entre tiros (y salta la repetición) */
+function skipWait() { if (replay) { endReplay(); return; } timers.forEach(t => t.t = Math.min(t.t, .05)); }
 function bindInput() {
   const cv = renderer.domElement;
   cv.addEventListener('pointerdown', e => {
     A.init();
     if (paused || !game) return;
-    if (phase === 'result' || phase === 'roundEnd') { if (performance.now() - resultAt > 700) timers.forEach(t => t.t = Math.min(t.t, .05)); return; }
+    if (phase === 'result' || phase === 'roundEnd') { if (performance.now() - resultAt > 700) skipWait(); return; }
     if (phase !== 'aim' || drag || armBusy()) return;
     drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, t0: performance.now(), L: 0, P: 0 };
     try { cv.setPointerCapture(e.pointerId); } catch (er) { }
@@ -213,7 +215,7 @@ function bindInput() {
     if (e.target && e.target.tagName === 'INPUT') return;
     if (e.key === 'Escape') { $('pause').hidden ? pause() : resume(); return; }
     if (paused || !game) return;
-    if ((phase === 'result' || phase === 'roundEnd') && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); if (performance.now() - resultAt > 700) timers.forEach(t => t.t = Math.min(t.t, .05)); return; }
+    if ((phase === 'result' || phase === 'roundEnd') && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); if (performance.now() - resultAt > 700) skipWait(); return; }
     if (phase !== 'aim') return;
     const keys = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] };
     if (keys[e.key]) {

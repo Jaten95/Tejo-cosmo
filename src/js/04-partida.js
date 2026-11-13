@@ -279,10 +279,61 @@ function finishFlight() {
     renderBoard();
   });
   flight = null;
-  later(delay, advance);
+  if (r.kind === 'monona') {
+    const shot = { path: f.sim.path, impactAt: f.impactAt, spin: f.spin, tilt: f.tilt.clone(), mesh: f.mesh, pos: f.mesh.position.clone(), q: f.mesh.quaternion.clone(),
+      mechas: r.mechas.map(m => ({ u: m.userData.u, v: m.userData.v })), u: r.u, v: r.v, p };
+    later(1.9, () => startReplay(shot, advance));
+  } else later(delay, advance);
+}
+
+/* ================= Repetición de la moñona =================
+   Solo se ve: el tejo fantasma repite el vuelo en cámara lenta, con otra cámara, y revientan otra vez las mechas. */
+let replay = null;
+const REPLAY_SPEED = .32;
+function startReplay(s, done) {
+  if (!game || phase === 'over' || replay) { done && done(); return; }
+  const ghost = makeTejo(s.p.color, s.p.design, s.p.name); scene.add(ghost);
+  s.mesh.visible = false;
+  replay = { s, ghost, done, t: Math.max(0, s.impactAt - 1.15), end: s.impactAt + .45, boom: false };
+  $('replayTag').hidden = false; $('turn').style.visibility = 'hidden'; A.whoosh();
+}
+function updateReplay(dt) {
+  const r = replay; if (!r) return;
+  r.t += dt * REPLAY_SPEED;
+  const s = r.s;
+  if (r.t < s.impactAt) {
+    r.ghost.position.copy(samplePath(s.path, r.t));
+    r.ghost.rotation.set(s.tilt.x, r.t * s.spin, s.tilt.z);
+  } else {
+    r.ghost.position.copy(s.pos); r.ghost.quaternion.copy(s.q);
+    if (!r.boom) {
+      r.boom = true; A.thud(1); A.boom(true); buzz([40, 30, 80]); flashScreen();
+      dirt(fromUV(s.u, s.v, .02), W.n, 30);
+      s.mechas.forEach(m => { const wp = fromUV(m.u, m.v, .01);
+        burst(wp, W.n, { count: 90, speed: [1.2, 4.2], grav: 2.5, life: 1.2, size: .028 }); smoke(wp); flashLight(wp, 9); });
+    }
+  }
+  if (r.t >= r.end) endReplay();
+}
+function endReplay() {
+  const r = replay; if (!r) return;
+  replay = null; scene.remove(r.ghost); r.s.mesh.visible = true; $('replayTag').hidden = true; $('turn').style.visibility = '';
+  if (r.done) r.done();
+}
+/* cámara de la repetición: persigue el tejo desde atrás y de lado; al final, encima del bocín */
+function replayCamera(dt) {
+  const r = replay, g = r.ghost.position, s = r.s;
+  const k = clamp((r.t - (s.impactAt - .35)) / .35, 0, 1);
+  const side = { pos: g.clone().add(V(.38, .26, 1.05)), look: g.clone().lerp(W.C, .35), fov: 36 };   // cámara que va detrás del tejo, un poco de lado
+  const top = { pos: fromUV(s.u, s.v).addScaledVector(W.n, .75).add(V(.35, .05, 0)), look: fromUV(s.u, s.v), fov: 40 };
+  const tp = side.pos.lerp(top.pos, k), tl = side.look.lerp(top.look, k), fov = lerp(side.fov, top.fov, k);
+  const a = 1 - Math.exp(-8 * dt);
+  camCur.pos.lerp(tp, a); camCur.look.lerp(tl, a); camCur.fov = lerp(camCur.fov, fov, a);
+  cam.position.copy(camCur.pos); cam.fov = camCur.fov; cam.updateProjectionMatrix(); cam.lookAt(camCur.look);
 }
 
 function advance() {
+  if (replay) { const r = replay; r.done = null; endReplay(); }
   if (phase === 'over') return;
   const leader = winnerNow();
   if (game.mode !== 'reto' && leader) return gameOver(leader);
@@ -329,6 +380,7 @@ function closePose(u = 0, v = 0) {
   return { pos: c.clone().addScaledVector(W.n, portrait ? 1.55 : 1.2).add(V(.18, .12, 0)), look: c, fov: portrait ? 44 : 36 };
 }
 function updateCamera(dt) {
+  if (replay) { replayCamera(dt); return; }
   let tgt, k = 5;
   if (phase === 'menu' || phase === 'boot' || phase === 'over') {
     orbit += dt * .12;
@@ -375,6 +427,7 @@ function updateGame(dt, now) {
   if (phase === 'wait') netWatch();
   if (phase === 'cpu') updateCpu(dt);
   if (phase === 'flight') updateFlight(dt);
+  if (replay) updateReplay(dt);
   mechaMeshes.forEach(m => { if (m.userData.grow !== undefined) { m.userData.grow += dt * 3; const s = ease(clamp(m.userData.grow, 0, 1)); m.scale.setScalar(Math.max(.01, s)); if (m.userData.grow >= 1) delete m.userData.grow; } });
   if (manoRing) { const s = 1 + Math.sin(now / 160) * .12; manoRing.scale.set(s, s, 1); }
   if (reticle.visible) reticle.rotation.z += dt * .8;
