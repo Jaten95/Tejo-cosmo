@@ -370,7 +370,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="switch" id="swPower" role="switch" aria-checked="true" aria-label="Barra de fuerza"></button>
     </div>
     <div class="row">
-      <div class="lbl"><b>Música de fondo</b><span>Un vallenato suave mientras juegas</span></div>
+      <div class="lbl"><b>Música de fondo</b><span>Un vallenato suave; en el juego toca un parlante para prenderla o apagarla</span></div>
       <button class="switch" id="swMusic" role="switch" aria-checked="true" aria-label="Música de fondo"></button>
     </div>
     <div class="cta">
@@ -378,7 +378,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.57</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.58</span></div>
   </div></div>
 </section>
 
@@ -477,7 +477,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.57";
+const GAME_VERSION = "1.58";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -1297,6 +1297,7 @@ function buildProps() {
 /* ================= Ambiente del salón =================
    Bombillos encendidos con luz cálida (uno titila de vez en cuando) y polvo flotando en la luz;
    a los lados, una mesa de madera con botellas, sillas plásticas amarillas y una caneca azul con un trapo.
+   Arriba en las esquinas del fondo, dos parlantes: tocarlos prende o apaga la música (ver 03b-musica.js).
    Es decoración: el tejo no choca con esto. */
 
 let AMB = null;
@@ -1345,6 +1346,32 @@ function makeChair(color) {
   return g;
 }
 
+// Parlante colgado de la pared con su soporte (genérico, sin marca). El cono se mueve con la música y el bombillito dice si está prendida.
+function makeSpeaker() {
+  const g = new THREE.Group(), box = std({ color: '#0c0b0b', roughness: .6 }), dark = std({ color: '#0b0b0b', roughness: .9 });
+  const W2 = .4, H2 = .6, D2 = .34, front = D2 / 2 + .001;
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(W2, H2, D2), box); g.add(cab);
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(W2 - .04, H2 - .04), std({ color: '#121212', roughness: .9 })); face.position.z = front; g.add(face);
+  // bajo: aro, cono y tapa del centro (el cono es lo que se mueve)
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(.135, .016, 8, 32), std({ color: '#2a2a2a', roughness: .6 })); ring.position.set(0, -.08, front + .006); g.add(ring);
+  const cone = new THREE.Group(); cone.position.set(0, -.08, front); cone.userData.z0 = front; g.add(cone);
+  const coneMesh = new THREE.Mesh(new THREE.ConeGeometry(.125, .05, 32, 1, true), dark); coneMesh.rotation.x = -Math.PI / 2; coneMesh.position.z = -.012; cone.add(coneMesh);
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(.04, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), std({ color: '#2b2b2b', roughness: .4 })); cap.rotation.x = Math.PI / 2; cap.position.z = -.02; cone.add(cap);
+  // agudo y ranura del bajo
+  const tw = new THREE.Mesh(new THREE.CylinderGeometry(.05, .04, .02, 20), std({ color: '#262626', roughness: .5 })); tw.rotation.x = Math.PI / 2; tw.position.set(0, .18, front + .008); g.add(tw);
+  const twc = new THREE.Mesh(new THREE.CircleGeometry(.022, 16), std({ color: '#3a3a3a', roughness: .3, metalness: .3 })); twc.position.set(0, .18, front + .019); g.add(twc);
+  const port = new THREE.Mesh(new THREE.PlaneGeometry(.2, .025), new THREE.MeshBasicMaterial({ color: '#000' })); port.position.set(0, -.255, front + .002); g.add(port);
+  // bombillito: verde con música, rojo apagado
+  const led = new THREE.Mesh(new THREE.CircleGeometry(.011, 12), new THREE.MeshBasicMaterial({ color: '#38e070' })); led.position.set(.14, -.255, front + .003); g.add(led);
+  // soporte a la pared
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(.04, .04, .3), std({ color: '#2d2d2d', roughness: .5, metalness: .4 })); arm.position.set(0, 0, -D2 / 2 - .15); g.add(arm);
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(.14, .2, .02), arm.material); plate.position.set(0, 0, -D2 / 2 - .3); g.add(plate);
+  // zona para tocar, más grande que el parlante para que sea fácil atinarle con el dedo
+  const hit = new THREE.Mesh(new THREE.BoxGeometry(.9, 1.05, .6), new THREE.MeshBasicMaterial({ visible: false })); g.add(hit);
+  g.traverse(o => { if (o.isMesh && o !== hit) o.castShadow = true; });
+  return { g, cone, led, hit };
+}
+
 // Mesa de madera con botellas encima
 function makeTable() {
   const g = new THREE.Group(), wood = std({ map: T.woodPlain, color: '#a48262', roughness: .8 });
@@ -1380,6 +1407,10 @@ function buildAmbience() {
     AMB.bulbs.push(b);
   });
   AMB.flicker = AMB.bulbs[2];   // este titila de vez en cuando
+  // parlantes arriba en las esquinas del fondo, mirando hacia quien lanza
+  AMB.speakers = [-1, 1].map(sx => {
+    const s = makeSpeaker(); s.g.position.set(sx * 2.35, 3.58, -D - 1.15); s.g.rotation.set(.22, -sx * .3, 0, 'YXZ'); hall.add(s.g); return s;
+  });
   // polvo flotando cerca de los bombillos
   const N = 260, pos = new Float32Array(N * 3), seeds = [];
   for (let i = 0; i < N; i++) {
@@ -2058,10 +2089,10 @@ const A = {
   ctx: null, out: null, noise: null, muted: false,
   init() {
     try {
-      if (this.ctx) { if (this.ctx.state !== 'running' && !this.muted) this.ctx.resume().catch(() => { }); return; }   // en iPhone queda 'interrupted' al volver de otra app
+      if (this.ctx) { if (this.ctx.state !== 'running' && this.need()) this.ctx.resume().catch(() => { }); return; }   // en iPhone queda 'interrupted' al volver de otra app
       const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
       this.ctx = new AC();
-      const comp = this.ctx.createDynamicsCompressor(); comp.connect(this.ctx.destination);
+      const comp = this.comp = this.ctx.createDynamicsCompressor(); comp.connect(this.ctx.destination);
       this.out = this.ctx.createGain(); this.out.gain.value = this.muted ? 0 : .85; this.out.connect(comp);
       const len = this.ctx.sampleRate * 2, b = this.ctx.createBuffer(1, len, this.ctx.sampleRate), d = b.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
@@ -2070,7 +2101,8 @@ const A = {
   },
   setMuted(m) { this.muted = m; if (this.out) this.out.gain.setTargetAtTime(m ? 0 : .85, this.ctx.currentTime, .02); if (!m) this.wake(); },
   // al irse a otra app el celular pausa el audio: se pausa aquí también y se reanuda al volver o con el siguiente toque
-  wake() { try { if (this.ctx && this.ctx.state !== 'running' && !this.muted) this.ctx.resume().catch(() => { }); } catch (e) { } },
+  wake() { try { if (this.ctx && this.ctx.state !== 'running' && this.need()) this.ctx.resume().catch(() => { }); } catch (e) { } },
+  need() { return !this.muted || musicWanted(); },   // el botón de abajo calla solo los efectos: la música va aparte
   ok() { return this.ctx && !this.muted; },
   nz(dur, { type = 'lowpass', f0 = 1000, f1 = f0, q = .7, gain = .5, attack = .005, delay = 0, dest = null, at = null } = {}) {
     if (!this.ok()) return; const c = this.ctx, t = (at === null ? c.currentTime : at) + delay;
@@ -2109,11 +2141,12 @@ function buzz(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e
 /* ================= Música de fondo =================
    Un vallenato suave mientras se juega: "Vallenato con ritmo o aire de son" de vjgalaxy, vía Pixabay
    (licencia de contenido de Pixabay, ver LICENSES/musica-pixabay.md).
-   Suena por debajo de los efectos, se apaga con el switch "Música de fondo" del menú y también calla con el botón de silencio.
+   Suena por debajo de los efectos. Se prende y se apaga con el switch "Música de fondo" del menú o tocando un parlante del salón;
+   el botón de silencio de abajo calla solo los efectos.
    El archivo se baja la primera vez que hace falta y se repite sin parar; al volver a jugar sigue donde iba. */
 
 const MUSIC_URL = 'musica-vallenato.mp3', MUSIC_VOL = .08;
-const MUSIC = { buf: null, loading: false, failed: 0, play: null, at: 0 };
+const MUSIC = { buf: null, loading: false, failed: 0, play: null, at: 0, bus: null, an: null, data: null, level: 0 };
 
 function musicWanted() { return settings.music !== false && phase !== 'menu' && phase !== 'boot'; }
 
@@ -2134,7 +2167,11 @@ function musicSync() {
     if (!MUSIC.buf) { musicLoad(); return; }
     const src = c.createBufferSource(), g = c.createGain();
     src.buffer = MUSIC.buf; src.loop = true; g.gain.value = 0;
-    src.connect(g); g.connect(A.out);   // pasa por el volumen general: el botón de silencio también la calla
+    if (!MUSIC.bus) {   // va directo al compresor, no por el volumen de los efectos; el analizador mueve los conos de los parlantes
+      MUSIC.bus = c.createGain(); MUSIC.an = c.createAnalyser(); MUSIC.an.fftSize = 256; MUSIC.data = new Uint8Array(MUSIC.an.fftSize);
+      MUSIC.bus.connect(A.comp || A.out); MUSIC.bus.connect(MUSIC.an);
+    }
+    src.connect(g); g.connect(MUSIC.bus);
     const at = MUSIC.at % MUSIC.buf.duration;
     src.start(t, at); g.gain.setTargetAtTime(MUSIC_VOL, t, .7);   // entra suave
     MUSIC.play = { src, g, t0: t - at };
@@ -2144,6 +2181,32 @@ function musicSync() {
     p.g.gain.cancelScheduledValues(t); p.g.gain.setValueAtTime(p.g.gain.value, t); p.g.gain.setTargetAtTime(0, t, .3);   // sale suave
     try { p.src.stop(t + 1.5); } catch (e) { }
   }
+}
+
+// Tocar un parlante del salón prende o apaga la música
+function speakerHit(e) {
+  if (!AMB || !AMB.speakers) return false;
+  const r = renderer.domElement.getBoundingClientRect(), rc = new THREE.Raycaster();
+  rc.setFromCamera({ x: (e.clientX - r.left) / r.width * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1 }, cam);
+  return rc.intersectObjects(AMB.speakers.map(s => s.hit), false).length > 0;
+}
+function toggleMusic() {
+  settings.music = settings.music === false; saveSettings(); A.init(); A.wake();
+  if (settings.music) musicLoad();
+  toast(settings.music ? 'Música prendida' : 'Música apagada');
+  if (typeof renderMenu === 'function') renderMenu();
+}
+function updateSpeakers(dt) {
+  if (!AMB || !AMB.speakers) return;
+  let lvl = 0;
+  if (MUSIC.play && MUSIC.an) {   // qué tan duro va la música ahora (sin contar el volumen bajito de fondo)
+    MUSIC.an.getByteTimeDomainData(MUSIC.data); let sum = 0;
+    for (let i = 0; i < MUSIC.data.length; i++) { const v = (MUSIC.data[i] - 128) / 128; sum += v * v; }
+    lvl = Math.min(1, Math.sqrt(sum / MUSIC.data.length) / MUSIC_VOL * 2.2);
+  }
+  MUSIC.level += (lvl - MUSIC.level) * Math.min(1, dt * 30);
+  const on = settings.music !== false;
+  AMB.speakers.forEach(s => { s.cone.position.z = s.cone.userData.z0 + MUSIC.level * .014; s.led.material.color.set(on ? '#38e070' : '#b3261e'); });
 }
 
 /* ================= Estado ================= */
@@ -2632,7 +2695,7 @@ function frame(now) {
     if (!paused) { tickTimers(dt); updateGame(dt, now); updateFx(dt); }
     updateAmbience(paused ? 0 : dt);
     updatePets(paused ? 0 : dt);
-    musicSync();
+    musicSync(); updateSpeakers(paused ? 0 : dt);
     updateArm(paused ? 0 : dt, now);
     updateCamera(paused ? 0 : dt);
     camSafe();
@@ -3826,7 +3889,7 @@ function pause() {
   showScreen('pause');
 }
 function resume() { paused = false; showScreen(null); }
-function updateSoundBtn() { $('btnSound').classList.toggle('muted', settings.muted); $('btnSound').setAttribute('aria-label', settings.muted ? 'Activar sonido' : 'Silenciar'); }
+function updateSoundBtn() { $('btnSound').classList.toggle('muted', settings.muted); $('btnSound').setAttribute('aria-label', settings.muted ? 'Activar los efectos de sonido' : 'Silenciar los efectos de sonido'); }
 
 /* ---------- Entrada ---------- */
 let resultAt = 0;
@@ -3837,6 +3900,7 @@ function bindInput() {
   cv.addEventListener('pointerdown', e => {
     A.init();
     if (paused || !game) return;
+    if (speakerHit(e)) { toggleMusic(); return; }   // tocar un parlante prende o apaga la música
     if (phase === 'result' || phase === 'roundEnd') { if (performance.now() - resultAt > 700) skipWait(); return; }
     if (phase !== 'aim' || drag || armBusy()) return;
     drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, t0: performance.now(), L: 0, P: 0 };

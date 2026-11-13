@@ -197,7 +197,7 @@ function pause() {
   showScreen('pause');
 }
 function resume() { paused = false; showScreen(null); }
-function updateSoundBtn() { $('btnSound').classList.toggle('muted', settings.muted); $('btnSound').setAttribute('aria-label', settings.muted ? 'Activar sonido' : 'Silenciar'); }
+function updateSoundBtn() { $('btnSound').classList.toggle('muted', settings.muted); $('btnSound').setAttribute('aria-label', settings.muted ? 'Activar los efectos de sonido' : 'Silenciar los efectos de sonido'); }
 
 /* ---------- Entrada ---------- */
 let resultAt = 0;
@@ -208,6 +208,7 @@ function bindInput() {
   cv.addEventListener('pointerdown', e => {
     A.init();
     if (paused || !game) return;
+    if (speakerHit(e)) { toggleMusic(); return; }   // tocar un parlante prende o apaga la música
     if (phase === 'result' || phase === 'roundEnd') { if (performance.now() - resultAt > 700) skipWait(); return; }
     if (phase !== 'aim' || drag || armBusy()) return;
     drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, t0: performance.now(), L: 0, P: 0 };

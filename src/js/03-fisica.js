@@ -311,10 +311,10 @@ const A = {
   ctx: null, out: null, noise: null, muted: false,
   init() {
     try {
-      if (this.ctx) { if (this.ctx.state !== 'running' && !this.muted) this.ctx.resume().catch(() => { }); return; }   // en iPhone queda 'interrupted' al volver de otra app
+      if (this.ctx) { if (this.ctx.state !== 'running' && this.need()) this.ctx.resume().catch(() => { }); return; }   // en iPhone queda 'interrupted' al volver de otra app
       const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
       this.ctx = new AC();
-      const comp = this.ctx.createDynamicsCompressor(); comp.connect(this.ctx.destination);
+      const comp = this.comp = this.ctx.createDynamicsCompressor(); comp.connect(this.ctx.destination);
       this.out = this.ctx.createGain(); this.out.gain.value = this.muted ? 0 : .85; this.out.connect(comp);
       const len = this.ctx.sampleRate * 2, b = this.ctx.createBuffer(1, len, this.ctx.sampleRate), d = b.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
@@ -323,7 +323,8 @@ const A = {
   },
   setMuted(m) { this.muted = m; if (this.out) this.out.gain.setTargetAtTime(m ? 0 : .85, this.ctx.currentTime, .02); if (!m) this.wake(); },
   // al irse a otra app el celular pausa el audio: se pausa aquí también y se reanuda al volver o con el siguiente toque
-  wake() { try { if (this.ctx && this.ctx.state !== 'running' && !this.muted) this.ctx.resume().catch(() => { }); } catch (e) { } },
+  wake() { try { if (this.ctx && this.ctx.state !== 'running' && this.need()) this.ctx.resume().catch(() => { }); } catch (e) { } },
+  need() { return !this.muted || musicWanted(); },   // el botón de abajo calla solo los efectos: la música va aparte
   ok() { return this.ctx && !this.muted; },
   nz(dur, { type = 'lowpass', f0 = 1000, f1 = f0, q = .7, gain = .5, attack = .005, delay = 0, dest = null, at = null } = {}) {
     if (!this.ok()) return; const c = this.ctx, t = (at === null ? c.currentTime : at) + delay;

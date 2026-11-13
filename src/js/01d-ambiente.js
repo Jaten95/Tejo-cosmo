@@ -2,6 +2,7 @@
 /* ================= Ambiente del salón =================
    Bombillos encendidos con luz cálida (uno titila de vez en cuando) y polvo flotando en la luz;
    a los lados, una mesa de madera con botellas, sillas plásticas amarillas y una caneca azul con un trapo.
+   Arriba en las esquinas del fondo, dos parlantes: tocarlos prende o apaga la música (ver 03b-musica.js).
    Es decoración: el tejo no choca con esto. */
 
 let AMB = null;
@@ -50,6 +51,32 @@ function makeChair(color) {
   return g;
 }
 
+// Parlante colgado de la pared con su soporte (genérico, sin marca). El cono se mueve con la música y el bombillito dice si está prendida.
+function makeSpeaker() {
+  const g = new THREE.Group(), box = std({ color: '#0c0b0b', roughness: .6 }), dark = std({ color: '#0b0b0b', roughness: .9 });
+  const W2 = .4, H2 = .6, D2 = .34, front = D2 / 2 + .001;
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(W2, H2, D2), box); g.add(cab);
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(W2 - .04, H2 - .04), std({ color: '#121212', roughness: .9 })); face.position.z = front; g.add(face);
+  // bajo: aro, cono y tapa del centro (el cono es lo que se mueve)
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(.135, .016, 8, 32), std({ color: '#2a2a2a', roughness: .6 })); ring.position.set(0, -.08, front + .006); g.add(ring);
+  const cone = new THREE.Group(); cone.position.set(0, -.08, front); cone.userData.z0 = front; g.add(cone);
+  const coneMesh = new THREE.Mesh(new THREE.ConeGeometry(.125, .05, 32, 1, true), dark); coneMesh.rotation.x = -Math.PI / 2; coneMesh.position.z = -.012; cone.add(coneMesh);
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(.04, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), std({ color: '#2b2b2b', roughness: .4 })); cap.rotation.x = Math.PI / 2; cap.position.z = -.02; cone.add(cap);
+  // agudo y ranura del bajo
+  const tw = new THREE.Mesh(new THREE.CylinderGeometry(.05, .04, .02, 20), std({ color: '#262626', roughness: .5 })); tw.rotation.x = Math.PI / 2; tw.position.set(0, .18, front + .008); g.add(tw);
+  const twc = new THREE.Mesh(new THREE.CircleGeometry(.022, 16), std({ color: '#3a3a3a', roughness: .3, metalness: .3 })); twc.position.set(0, .18, front + .019); g.add(twc);
+  const port = new THREE.Mesh(new THREE.PlaneGeometry(.2, .025), new THREE.MeshBasicMaterial({ color: '#000' })); port.position.set(0, -.255, front + .002); g.add(port);
+  // bombillito: verde con música, rojo apagado
+  const led = new THREE.Mesh(new THREE.CircleGeometry(.011, 12), new THREE.MeshBasicMaterial({ color: '#38e070' })); led.position.set(.14, -.255, front + .003); g.add(led);
+  // soporte a la pared
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(.04, .04, .3), std({ color: '#2d2d2d', roughness: .5, metalness: .4 })); arm.position.set(0, 0, -D2 / 2 - .15); g.add(arm);
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(.14, .2, .02), arm.material); plate.position.set(0, 0, -D2 / 2 - .3); g.add(plate);
+  // zona para tocar, más grande que el parlante para que sea fácil atinarle con el dedo
+  const hit = new THREE.Mesh(new THREE.BoxGeometry(.9, 1.05, .6), new THREE.MeshBasicMaterial({ visible: false })); g.add(hit);
+  g.traverse(o => { if (o.isMesh && o !== hit) o.castShadow = true; });
+  return { g, cone, led, hit };
+}
+
 // Mesa de madera con botellas encima
 function makeTable() {
   const g = new THREE.Group(), wood = std({ map: T.woodPlain, color: '#a48262', roughness: .8 });
@@ -85,6 +112,10 @@ function buildAmbience() {
     AMB.bulbs.push(b);
   });
   AMB.flicker = AMB.bulbs[2];   // este titila de vez en cuando
+  // parlantes arriba en las esquinas del fondo, mirando hacia quien lanza
+  AMB.speakers = [-1, 1].map(sx => {
+    const s = makeSpeaker(); s.g.position.set(sx * 2.35, 3.58, -D - 1.15); s.g.rotation.set(.22, -sx * .3, 0, 'YXZ'); hall.add(s.g); return s;
+  });
   // polvo flotando cerca de los bombillos
   const N = 260, pos = new Float32Array(N * 3), seeds = [];
   for (let i = 0; i < N; i++) {

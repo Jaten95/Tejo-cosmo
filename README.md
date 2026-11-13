@@ -16,11 +16,11 @@ src/
     01-escena.js     cancha, texturas, luces y el tejo
     01b-greda-tablero.js  la greda de barro y el tablero pintado de atrás
     01c-utileria.js  herramientas, canastas de cerveza y banderines del salón
-    01d-ambiente.js  bombillos encendidos, polvo en la luz, mesa, sillas plásticas y caneca
+    01d-ambiente.js  bombillos encendidos, polvo en la luz, mesa, sillas plásticas, caneca y parlantes
     01e-mascotas.js  de vez en cuando pasa un perro criollo o un husky
     02-grabados.js   los diseños grabados en la cara del tejo
     03-fisica.js     vuelo, choques, puntaje, efectos y sonido
-    03b-musica.js    música de fondo (se apaga en el menú)
+    03b-musica.js    música de fondo: se prende y apaga tocando un parlante o con el switch del menú
     04-partida.js    turnos, rondas, Don Chepe, cámaras y bucle principal
     05-brazo.js      brazo en primera persona, mano 3D y manilla
     06-salas.js      salas en línea (salas de Claude o Supabase Realtime)
