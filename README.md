@@ -22,6 +22,7 @@ src/
     03-fisica.js     vuelo, choques, puntaje, efectos y sonido
     03b-musica.js    música de fondo: se prende y apaga tocando un parlante o con el switch del menú
     04-partida.js    turnos, rondas, Don Chepe, cámaras y bucle principal
+    04b-rana.js      el juego de la rana: la mesa, la física de la argolla, las tandas y Don Chepe
     05-brazo.js      brazo en primera persona, mano 3D y manilla
     06-salas.js      salas en línea (salas de Claude o Supabase Realtime)
     07-interfaz.js   menú, marcador, controles y arranque
@@ -55,6 +56,8 @@ El juego usa [versionado semántico (SemVer)](https://semver.org/lang/es/): **MA
 En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la física son iguales para todos); con distinto PARCHE sí se puede jugar junto. Si alguien tiene otra versión, el juego le dice quién debe actualizar.
 
 `build.py` solo acepta números así (`python3 build.py 1.43.0`).
+
+**Modo beta:** lo que todavía se está probando (por ahora la rana) no sale en el menú. Se prende en un celular tocando 7 veces la versión del menú y escribiendo el código; otras 7 veces lo apagan. No es seguridad: solo esconde lo que está en prueba.
 
 <details>
 <summary>Hasta la v1.63 el número subía de a uno en cada cambio. Así quedó cada versión con SemVer (la v1.63 equivale a la 1.42.0), y las que siguieron.</summary>
@@ -124,6 +127,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | v1.63 | 1.42.0 | Cambiado | la repetición ya no se salta; títulos que caben en el celular |
 | — | 1.43.0 | Agregado | versiones con SemVer y aviso en salas si alguien tiene otra versión |
 | — | 1.44.0 | Agregado | partida a otro valor (de 3 a 99) |
+| — | 1.45.0 | Agregado | el juego de la rana (en beta), contra Don Chepe, por turnos y en salas; modo beta con código |
 
 </details>
 

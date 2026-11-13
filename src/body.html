@@ -31,8 +31,12 @@
   <div class="panel"><div class="pin">
     <div class="brand">
       <span class="eyebrow">Club de Tejo El Cosmo · Bucaramanga</span>
-      <h1>TEJO</h1>
-      <p>Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.</p>
+      <h1 id="brandTitle">TEJO</h1>
+      <p id="brandLine">Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.</p>
+    </div>
+    <div class="group" id="grpGame" hidden>
+      <h3>Juego · beta</h3>
+      <div class="seg" id="segGame"><button data-v="tejo">Tejo<small>greda y bocín</small></button><button data-v="rana">Rana<small>argollas</small></button></div>
     </div>
     <div class="group">
       <h3>Modo</h3>
@@ -67,7 +71,7 @@
         <button data-v="0">Fácil</button><button data-v="1">Normal</button><button data-v="2">Difícil</button><button data-v="3">Maestro</button>
       </div>
     </div>
-    <div class="group">
+    <div class="group" id="grpDist">
       <h3>Distancia</h3>
       <div class="seg" id="segDist">
         <button data-v="10">10 m<small>arrimada</small></button>
@@ -85,7 +89,7 @@
       </div>
     </div>
     <div class="row">
-      <div class="lbl"><b>Mira en la cancha</b><span>Muestra dónde cae el tejo mientras apuntas</span></div>
+      <div class="lbl"><b>Mira en la cancha</b><span id="aimHint">Muestra dónde cae el tejo mientras apuntas</span></div>
       <button class="switch" id="swAim" role="switch" aria-checked="true" aria-label="Mira en la cancha"></button>
     </div>
     <div class="row" id="rowLupa">
@@ -105,7 +109,11 @@
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v{{VERSION}}</span></div>
+    <div class="group" id="grpBeta" hidden>
+      <h3>Modo beta</h3>
+      <div class="joinRow"><input id="betaIn" placeholder="Código beta" aria-label="Código del modo beta" autocomplete="off" autocapitalize="off"><button class="btn ghost" id="btnBeta" type="button">Activar</button></div>
+    </div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v{{VERSION}}</span></div>
   </div></div>
 </section>
 
@@ -167,6 +175,13 @@
     <p class="prose"><b>Bocín:</b> si el tejo cae encima del aro de metal y no revienta mecha, a veces se resbala: cuenta donde quede en la greda, y si se sale es nulo.</p>
     <p class="prose"><b>Equipos:</b> con 4 o más jugadores se puede jugar en 2 equipos (o en 3 con 6 jugadores). Se arman al azar, los turnos se alternan entre equipos y los puntos de cada jugador suman para su equipo.</p>
     <p class="prose"><b>Reto:</b> 10 tejos para hacer el mayor puntaje posible. La mano no cuenta.</p>
+    <h3 class="rulesH">Rana</h3>
+    <table class="rulesT">
+      <tr><td>Sapito<span>La argolla se mete por la boca chica del sapito de metal de adelante.</span></td><td>100</td></tr>
+      <tr><td>Rana<span>Se mete en la boca grande de la rana de atrás.</span></td><td>80</td></tr>
+      <tr><td>Huecos<span>Cada hueco da lo que dice su cajón: 50, 45, 40, 30, 20 o 10.</span></td><td>10–50</td></tr>
+    </table>
+    <p class="prose"><b>Rana:</b> se lanza desde la raya, a 3,5 m de la mesa. Cada jugador tiene una tanda de 6 argollas y lo que entra se suma al momento; el tablero de arriba de la mesa va mostrando sus puntos. Si la argolla se queda en la tabla o se cae, no cuenta. Gana el primero que llegue a la meta.</p>
     <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
     <p class="prose"><b>Tiempo en salas:</b> tienes 20 segundos para lanzar. Si no lanzas, tu tiro es nulo y pasa el turno.</p>
     <p class="prose"><b>Configuración en salas:</b> la mira, la lupa, la barra de fuerza y el zoom de la cámara son los que tenga puestos quien creó la sala, para que todos jueguen igual.</p>

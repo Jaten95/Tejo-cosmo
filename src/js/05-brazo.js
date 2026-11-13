@@ -80,10 +80,12 @@ function buildArm() {
   loadHandModel();
 }
 function armSetPlayer(p) {
-  const key = [p.color, p.design, p.name].join('|');
+  const key = [isRana() ? 'rana' : 'tejo', p.color, p.design, p.name].join('|');
   if (key === ARM.key) return; ARM.key = key;
   if (ARM.tejo) ARM.slot.remove(ARM.tejo);
-  ARM.tejo = makeTejo(p.color, p.design, p.name); ARM.tejo.castShadow = false; ARM.slot.add(ARM.tejo);
+  if (isRana()) { ARM.tejo = makeArgolla(); ARM.tejo.rotation.x = Math.PI / 2; ARM.tejo.position.y = .012; }   // en la rana va una argolla en la mano
+  else ARM.tejo = makeTejo(p.color, p.design, p.name);
+  ARM.tejo.castShadow = false; ARM.slot.add(ARM.tejo);
   if (ARM.medal) ARM.medal.material[1] = tejoTopMaterial(p.color, p.design, p.name);
   const c = new THREE.Color(p.color); c.multiplyScalar(.55); ARM.mats.sleeve.color.copy(c);
 }

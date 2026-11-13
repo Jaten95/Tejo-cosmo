@@ -218,7 +218,9 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 .record{font-size:12px;color:var(--muted);}
 .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:-4px;}
 .ver{margin-left:auto;font:800 11px/1 var(--body);letter-spacing:.08em;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap;}
+#verTag{padding:10px 0 10px 14px;margin:-10px 0;cursor:default;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;}
 .rulesT{width:100%;border-collapse:collapse;font-size:14px;}
+.rulesH{margin:20px 0 4px;font:700 11px/1 var(--body);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);}
 .rulesT td{padding:9px 4px;border-bottom:1px solid var(--wood-2);vertical-align:top;}
 .rulesT td:first-child{font-family:var(--display);font-size:16px;white-space:nowrap;padding-right:10px;}
 .rulesT td:last-child{text-align:right;font-family:var(--display);font-size:20px;color:var(--yellow);font-variant-numeric:tabular-nums;}
@@ -313,8 +315,12 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
   <div class="panel"><div class="pin">
     <div class="brand">
       <span class="eyebrow">Club de Tejo El Cosmo · Bucaramanga</span>
-      <h1>TEJO</h1>
-      <p>Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.</p>
+      <h1 id="brandTitle">TEJO</h1>
+      <p id="brandLine">Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.</p>
+    </div>
+    <div class="group" id="grpGame" hidden>
+      <h3>Juego · beta</h3>
+      <div class="seg" id="segGame"><button data-v="tejo">Tejo<small>greda y bocín</small></button><button data-v="rana">Rana<small>argollas</small></button></div>
     </div>
     <div class="group">
       <h3>Modo</h3>
@@ -349,7 +355,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
         <button data-v="0">Fácil</button><button data-v="1">Normal</button><button data-v="2">Difícil</button><button data-v="3">Maestro</button>
       </div>
     </div>
-    <div class="group">
+    <div class="group" id="grpDist">
       <h3>Distancia</h3>
       <div class="seg" id="segDist">
         <button data-v="10">10 m<small>arrimada</small></button>
@@ -367,7 +373,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       </div>
     </div>
     <div class="row">
-      <div class="lbl"><b>Mira en la cancha</b><span>Muestra dónde cae el tejo mientras apuntas</span></div>
+      <div class="lbl"><b>Mira en la cancha</b><span id="aimHint">Muestra dónde cae el tejo mientras apuntas</span></div>
       <button class="switch" id="swAim" role="switch" aria-checked="true" aria-label="Mira en la cancha"></button>
     </div>
     <div class="row" id="rowLupa">
@@ -387,7 +393,11 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.44.0</span></div>
+    <div class="group" id="grpBeta" hidden>
+      <h3>Modo beta</h3>
+      <div class="joinRow"><input id="betaIn" placeholder="Código beta" aria-label="Código del modo beta" autocomplete="off" autocapitalize="off"><button class="btn ghost" id="btnBeta" type="button">Activar</button></div>
+    </div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.45.0</span></div>
   </div></div>
 </section>
 
@@ -449,6 +459,13 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     <p class="prose"><b>Bocín:</b> si el tejo cae encima del aro de metal y no revienta mecha, a veces se resbala: cuenta donde quede en la greda, y si se sale es nulo.</p>
     <p class="prose"><b>Equipos:</b> con 4 o más jugadores se puede jugar en 2 equipos (o en 3 con 6 jugadores). Se arman al azar, los turnos se alternan entre equipos y los puntos de cada jugador suman para su equipo.</p>
     <p class="prose"><b>Reto:</b> 10 tejos para hacer el mayor puntaje posible. La mano no cuenta.</p>
+    <h3 class="rulesH">Rana</h3>
+    <table class="rulesT">
+      <tr><td>Sapito<span>La argolla se mete por la boca chica del sapito de metal de adelante.</span></td><td>100</td></tr>
+      <tr><td>Rana<span>Se mete en la boca grande de la rana de atrás.</span></td><td>80</td></tr>
+      <tr><td>Huecos<span>Cada hueco da lo que dice su cajón: 50, 45, 40, 30, 20 o 10.</span></td><td>10–50</td></tr>
+    </table>
+    <p class="prose"><b>Rana:</b> se lanza desde la raya, a 3,5 m de la mesa. Cada jugador tiene una tanda de 6 argollas y lo que entra se suma al momento; el tablero de arriba de la mesa va mostrando sus puntos. Si la argolla se queda en la tabla o se cae, no cuenta. Gana el primero que llegue a la meta.</p>
     <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
     <p class="prose"><b>Tiempo en salas:</b> tienes 20 segundos para lanzar. Si no lanzas, tu tiro es nulo y pasa el turno.</p>
     <p class="prose"><b>Configuración en salas:</b> la mira, la lupa, la barra de fuerza y el zoom de la cámara son los que tenga puestos quien creó la sala, para que todos jueguen igual.</p>
@@ -486,7 +503,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.44.0";
+const GAME_VERSION = "1.45.0";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -2220,7 +2237,7 @@ function updateSpeakers(dt) {
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, music: true };
+const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, music: true, game: 'tejo', ranaGoal: 1000 };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
@@ -2271,6 +2288,7 @@ function later(sec, fn) { timers.push({ t: sec, fn }); }
 function tickTimers(dt) { for (let i = timers.length - 1; i >= 0; i--) { timers[i].t -= dt; if (timers[i].t <= 0) { const f = timers[i].fn; timers.splice(i, 1); f(); } } }
 
 function computeDvdP() {
+  if (isRana() || (!game && settings.game === 'rana')) { dvdP = RANA.SPAN; return; }
   const a = predict({ L: 0, P: AIM.P0 - .03 }), b = predict({ L: 0, P: AIM.P0 + .03 });
   dvdP = (a && b) ? Math.max(.3, (toUV(b.p).v - toUV(a.p).v) / .06) : 1.4;
 }
@@ -2308,6 +2326,7 @@ function startGame() {
   else players = [newPlayer(settings.names[0] || 'Tú', 0, false, D[0])];
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: settings.goal, mode: settings.mode, thrown: 0, over: false };
   game.teams = applyTeams(players, players[0].team !== undefined ? nT : 0);
+  if (settings.game === 'rana' && settings.mode !== 'reto') { ranaPrepare(); game.goal = clampRanaGoal(settings.ranaGoal); computeDvdP(); }
   lastP = {};
   clearFeed();
   showScreen(null); setHud(true);
@@ -2320,6 +2339,7 @@ function clearCancha() {
   clearDecals();
   if (manoRing) { cancha.remove(manoRing); manoRing = null; }
   resetMechas(false);
+  if (isRana()) { ranaClearRings(); game.arg = 0; game.turnPts = 0; }
 }
 
 // first: quien sale en esta ronda. Si no se dice, sale el siguiente al que salió en la ronda anterior
@@ -2336,6 +2356,7 @@ function nextThrow() {
   const p = current();
   renderBoard(); renderTurn();
   reticle.visible = false; setGauge(0, lastP[p.name]);
+  if (isRana()) ranaBoardDraw();
   if (online()) return netTurn(p);
   if (p.cpu) {
     phase = 'cpu'; hint(`${p.name} está midiendo…`, true);
@@ -2343,7 +2364,7 @@ function nextThrow() {
   } else {
     phase = 'aim';
     helpHint(game.thrown < 2 ? 'Arrastra hacia abajo para cargar,\na los lados para apuntar • suelta' : 'Arrastra y suelta para lanzar');
-    if (settings.mode === 'local' && game.players.length > 1) toast(`Turno de ${p.name}`);
+    if (settings.mode === 'local' && game.players.length > 1 && !(isRana() && game.arg)) toast(isRana() ? `Tanda de ${p.name}: 6 argollas` : `Turno de ${p.name}`);
   }
 }
 
@@ -2358,6 +2379,7 @@ function aimForUV(tu, tv) {
   return { L, P: (lo + hi) / 2 };
 }
 function planCpu(p) {
+  if (isRana()) return ranaPlanCpu(p);
   const d = DIFF[settings.diff];
   let tu = 0, tv = 0;
   if (settings.diff >= 2 && Math.random() < (settings.diff === 3 ? .7 : .35)) { const a = MECHA_ANG[Math.floor(Math.random() * 4)]; tu = Math.cos(a) * .035; tv = Math.sin(a) * .035; }
@@ -2382,10 +2404,11 @@ function wobble(holdT, t) {
 }
 function currentAim(now) {
   if (!drag) return null;
-  const w = wobble((now - drag.t0) / 1000, now / 1000);
-  return { L: drag.L + w.x, P: clamp(drag.P + w.y / dvdP, 0, 1), amp: w.amp };
+  const w = wobble((now - drag.t0) / 1000, now / 1000), kx = isRana() ? 2.4 : 1;   // en la rana la mesa es pequeña: el pulso se nota más de lado
+  return { L: drag.L + w.x * kx, P: clamp(drag.P + w.y / dvdP, 0, 1), amp: w.amp };
 }
 function showReticle(aim) {
+  if (isRana()) return ranaShowReticle(aim);
   if (!aimHelpNow()) { reticle.visible = false; return; }
   const pr = predict(aim);
   if (!pr) { reticle.visible = false; return; }
@@ -2399,8 +2422,9 @@ function showReticle(aim) {
 }
 
 /* ---------- Lanzar ---------- */
-function finalAim(aim) { return { L: aim.L + gauss() * .012, P: aim.P + gauss() * .012 / dvdP }; }
+function finalAim(aim) { return isRana() ? { L: aim.L + gauss() * .03 / RANA.LX, P: aim.P + gauss() * .03 / RANA.SPAN } : { L: aim.L + gauss() * .012, P: aim.P + gauss() * .012 / dvdP }; }
 function launch(a, opts) {
+  if (isRana()) return ranaLaunch(a, opts);
   const p = current();
   lastP[p.name] = a.P;
   const v0 = aimToVel(a);
@@ -2575,6 +2599,7 @@ function replayCamera(dt) {
 }
 
 function advance() {
+  if (isRana()) return ranaAdvance();
   if (replay) { const r = replay; r.done = null; endReplay(); }
   if (phase === 'over') return;
   const leader = winnerNow();
@@ -2655,6 +2680,8 @@ function updateCamera(dt) {
     orbit += dt * .12;
     const r = 3.4, c = W.C;
     tgt = { pos: V(Math.sin(orbit) * r * .8, 1.5 + Math.sin(orbit * .7) * .3, c.z + Math.cos(orbit) * r * .6 + 2.2), look: c.clone().add(V(0, .1, 0)), fov: 42 }; k = 2;
+    if (phase === 'over' ? isRana() : settings.game === 'rana') tgt = ranaMenuPose(orbit);
+  } else if (isRana()) { tgt = ranaCamPose(); k = 4;
   } else if (phase === 'flight' && flight) {
     const f = flight, p = f.mesh.position, remain = f.impactAt - f.t;
     const chase = { pos: p.clone().add(V(.15, .38, 1.35)), look: p.clone().lerp(W.C, .45), fov: 48 };
@@ -2681,6 +2708,7 @@ function updateCamera(dt) {
   lupaCur.u = lerp(lupaCur.u, lu, 1 - Math.exp(-4 * dt)); lupaCur.v = lerp(lupaCur.v, lv, 1 - Math.exp(-4 * dt));
   const lc = fromUV(lupaCur.u, lupaCur.v);
   lupaCam.position.copy(lc).addScaledVector(W.n, 1.15); lupaCam.up.copy(W.s); lupaCam.lookAt(lc);
+  if (isRana()) ranaLupa();
 }
 const lupaCur = { u: 0, v: 0 };
 
@@ -2695,7 +2723,7 @@ function updateGame(dt, now) {
   }
   if (phase === 'wait') netWatch();
   if (phase === 'cpu') updateCpu(dt);
-  if (phase === 'flight') updateFlight(dt);
+  if (phase === 'flight') { if (isRana()) ranaUpdate(dt); else updateFlight(dt); }
   if (replay) updateReplay(dt);
   mechaMeshes.forEach(m => { if (m.userData.grow !== undefined) { m.userData.grow += dt * 3; const s = ease(clamp(m.userData.grow, 0, 1)); m.scale.setScalar(Math.max(.01, s)); if (m.userData.grow >= 1) delete m.userData.grow; } });
   if (manoRing) { const s = 1 + Math.sin(now / 160) * .12; manoRing.scale.set(s, s, 1); }
@@ -2708,7 +2736,7 @@ function render() {
   const el = document.getElementById('lupa'); const show = lupaOn();
   el.style.visibility = show ? 'visible' : 'hidden';
   const zb = document.getElementById('zoomBtns');   // arriba a la derecha; si la lupa está, debajo de ella
-  zb.style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay && !online() ? 'visible' : 'hidden';   // en salas el zoom lo pone el anfitrión
+  zb.style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay && !online() && !isRana() ? 'visible' : 'hidden';   // en salas el zoom lo pone el anfitrión
   zb.classList.toggle('underLupa', show);
   if (show) {
     const r = el.getBoundingClientRect(), b = 3;
@@ -2724,7 +2752,7 @@ function frame(now) {
     if (!paused) { tickTimers(dt); updateGame(dt, now); updateFx(dt); }
     updateAmbience(paused ? 0 : dt);
     updatePets(paused ? 0 : dt);
-    musicSync(); updateSpeakers(paused ? 0 : dt);
+    musicSync(); updateSpeakers(paused ? 0 : dt); ranaFrame();
     updateArm(paused ? 0 : dt, now);
     updateCamera(paused ? 0 : dt);
     camSafe();
@@ -2764,6 +2792,435 @@ function joinRebound(sim, rb) {
     first: s2.first, firstT: s2.firstT + t1, firstP: s2.firstP, firstN: s2.firstN, clay: s2.clay, vEnd: s2.vEnd,
     duration: s2.duration + t1, end: s2.end, onFloor: s2.onFloor, rebound: true
   };
+}
+
+/* ================= Rana =================
+   El otro juego del salón, como la rana de la foto: tabla azul con diez huecos, la rana de metal atrás (boca grande, 80)
+   y el sapito de adelante (boca chica, 100). Debajo, los cajones: 10 80 10 / 20 100 20 / 30 45 30 / 40 50 40.
+   Cada jugador lanza 6 argollas por turno desde la raya (a 3,5 m de la mesa); cada hueco tiene su puntaje en
+   el cajón de abajo y gana el primero que llegue a la meta. La física es propia y determinista (el aleatorio sale
+   de una semilla), así en las salas todos ven caer la argolla en el mismo hueco.
+   Estadísticas por jugador (van en los mismos campos del tejo para que las salas no cambien):
+   st.mon = ranas (80) · st.emb = sapitos (100) · st.mechas = argollas que entraron · st.nulos = afuera · st.tiros = lanzadas. */
+
+const RANA = {
+  Z: -3.8, TOP: .8, HW: .3, HD: .3,   // centro de la mesa (el borde de adelante queda a 3,5 m de la raya), altura y media tabla
+  AR: .024, AT: .006,                 // argolla: radio del aro y medio grosor
+  HOLE: .05, PER_TURN: 6, PANEL_H: .44,
+  P0: .55, SPAN: 1.6, LX: .36, THETA: .72,   // puntería: fuerza que cae en el centro, metros por unidad de fuerza y de lado, ángulo de salida
+  FR: 8, KEEP: [.15, .35], HOP: .25,         // al caer: freno al arrastrarse (m/s²), cuánta velocidad le queda y qué tan seguido rebota
+};
+// Puntos de cada cajón, de la fila de atrás a la de adelante (como en la foto del cajón)
+const RANA_PTS = [[10, 80, 10], [20, 100, 20], [30, 45, 30], [40, 50, 40]];
+const RANA_COLS = [-.17, 0, .17], RANA_ROWS = [-.21, -.07, .07, .21];
+function ranaSlotKind(r, c) { return c === 1 && r === 0 ? 'rana' : c === 1 && r === 1 ? 'sapito' : 'hueco'; }
+const RANA_SLOTS = [];
+RANA_PTS.forEach((row, r) => row.forEach((pts, c) => RANA_SLOTS.push({ i: r * 3 + c, r, c, pts, kind: ranaSlotKind(r, c), x: RANA_COLS[c], z: RANA_ROWS[r] })));
+// Las dos figuras de metal (en coordenadas de la mesa: y desde la tabla, z positiva hacia el jugador).
+// La argolla tiene que entrar por la boca; si pega en el cuerpo, rebota.
+const FIGS = [
+  { slot: 1, how: 'rana', body: V(0, .055, -.235), bodyR: .058, mouth: V(0, .132, -.17), mouthN: V(0, .3, .95).normalize(), mouthR: .032, cap: .027 },
+  { slot: 4, how: 'sapito', body: V(0, .024, -.085), bodyR: .034, mouth: V(0, .054, -.04), mouthN: V(0, .55, .83).normalize(), mouthR: .021, cap: .017 },
+];
+const FROG = FIGS[0];
+
+let RANA_M = null;    // la mesa en la escena
+let rflight = null;   // argolla en el aire
+function isRana() { return !!(game && game.kind === 'rana'); }
+function ranaWorld(x, y, z) { return V(x, RANA.TOP + y, RANA.Z + z); }
+
+/* ---------- Física de la argolla ---------- */
+// Velocidad de salida para que caiga en la tabla donde se apunta
+function ranaTarget(aim) { return { x: aim.L * RANA.LX, z: RANA.Z + (RANA.P0 - aim.P) * RANA.SPAN }; }
+function ranaVel(aim) {
+  const tg = ranaTarget(aim), dx = tg.x - REL.x, dz = tg.z - REL.z, Dh = Math.max(.3, Math.hypot(dx, dz)), h = RANA.TOP + RANA.AT - REL.y;
+  const c = Math.cos(RANA.THETA), tn = Math.tan(RANA.THETA);
+  const v = Math.sqrt(G * Dh * Dh / (2 * c * c * Math.max(.05, Dh * tn - h)));
+  return V(dx / Dh * v * c, v * Math.sin(RANA.THETA), dz / Dh * v * c);
+}
+// Dónde cruza la argolla un plano z (para que Don Chepe apunte a la boca o a los huecos de atrás)
+function ranaAt(aim, zw) { const v = ranaVel(aim), t = (zw - REL.z) / v.z; return V(REL.x + v.x * t, REL.y + v.y * t - G * t * t / 2, zw); }
+
+/* Simula el tiro completo. k es el número del tiro: con él sale el aleatorio, igual en todos los celulares. */
+function ranaSimulate(aim, k) {
+  const rnd = i => seeded(aim.L * 7.31 + i * .173, aim.P * 5.17 + k * .311, k * 1.7 + i);
+  const p = V(REL.x, REL.y, REL.z), v = ranaVel(aim), dt = 1 / 400, T = RANA.TOP;
+  const path = [{ t: 0, p: p.clone() }], events = [];
+  let t = 0, mode = 'air', res = null, ri = 0, hops = 0, lands = 0;
+  const L = q => V(q.x, q.y - T, q.z - RANA.Z);   // a coordenadas de la mesa
+  const ev = (kind, q) => events.push({ t, kind, p: q.clone(), speed: v.length() });
+  const jitter = (amp) => { const a = (rnd(ri++) - .5) * amp, c = Math.cos(a), s = Math.sin(a), x = v.x * c - v.z * s, z = v.x * s + v.z * c; v.x = x; v.z = z; };
+  const end = (slot, how, extra) => { res = { slot, how, pts: slot >= 0 ? RANA_SLOTS[slot].pts : 0, ...extra }; };
+  const holeAt = (x, z, rad) => { for (const s of RANA_SLOTS) if (s.kind === 'hueco' && Math.hypot(x - s.x, z - s.z) < rad) return s.i; return -1; };
+  for (let i = 0; i < 5000 && !res; i++) {
+    const prev = p.clone();
+    if (mode === 'air') { v.y -= G * dt; p.addScaledVector(v, dt); }
+    else {
+      const sp = Math.hypot(v.x, v.z), dec = RANA.FR * dt;
+      if (sp <= dec) { v.set(0, 0, 0); end(-1, 'mesa', { at: p.clone() }); break; }
+      v.x -= v.x / sp * dec; v.z -= v.z / sp * dec; p.x += v.x * dt; p.z += v.z * dt;
+    }
+    t += dt;
+    const a = L(prev), b = L(p);
+    if (mode === 'air') {
+      // 1) las bocas de la rana y del sapito; 2) si pega en el cuerpo de metal, rebota
+      let inMouth = null;
+      for (const f of FIGS) {
+        const da = a.clone().sub(f.mouth).dot(f.mouthN), db = b.clone().sub(f.mouth).dot(f.mouthN);
+        if (da > 0 && db <= 0 && a.clone().lerp(b, da / (da - db)).distanceTo(f.mouth) < f.cap) { inMouth = f; break; }
+      }
+      if (inMouth) { ev(inMouth.how, p); end(inMouth.slot, inMouth.how, { at: ranaWorld(inMouth.mouth.x, inMouth.mouth.y, inMouth.mouth.z) }); break; }
+      for (const f of FIGS) {
+        if (b.distanceTo(f.body) < f.bodyR + RANA.AR * .5) {
+          const n = b.clone().sub(f.body).normalize(), vn = v.dot(n);
+          if (vn < 0) { v.addScaledVector(n, -1.35 * vn); v.multiplyScalar(.6); jitter(.7); }
+          p.copy(ranaWorld(0, 0, 0).add(f.body).addScaledVector(n, f.bodyR + RANA.AR * .5 + .002)); ev('metal', p); hops++;
+        }
+      }
+      // 3) el tablero de atrás (y el marcador de encima): rebota hacia adelante
+      if (a.z > -RANA.HD && b.z <= -RANA.HD && Math.abs(b.x) < RANA.HW && b.y > 0 && b.y < RANA.PANEL_H + .3) {
+        v.z = Math.abs(v.z) * .45; v.x *= .7; v.y *= .6; jitter(.5); p.z = RANA.Z - RANA.HD + .002; ev('madera', p); hops++;
+      }
+      // 5) las barandas de los lados
+      if (Math.abs(b.z) < RANA.HD && b.y > -.01 && b.y < .05 && Math.abs(a.x) < RANA.HW && Math.abs(b.x) >= RANA.HW) {
+        v.x = -v.x * .35; p.x = Math.sign(b.x) * (RANA.HW - .002); ev('madera', p); hops++;
+      }
+      // 6) cae en la tabla: si cae encima de un hueco se va adentro; si no, rebota un poquito (es metal sobre madera) y se arrastra
+      if (a.y > RANA.AT && b.y <= RANA.AT && Math.abs(b.x) <= RANA.HW && Math.abs(b.z) <= RANA.HD) {
+        ev('mesa', p);
+        const h = holeAt(b.x, b.z, RANA.HOLE * .7);
+        if (h >= 0) { end(h, 'hueco', { at: ranaWorld(RANA_SLOTS[h].x, 0, RANA_SLOTS[h].z) }); break; }
+        p.y = T + RANA.AT;
+        if (!lands++ && Math.abs(v.y) > .9 && rnd(ri++) < RANA.HOP) { v.y = Math.abs(v.y) * (.12 + rnd(ri++) * .1); const keep = .3 + rnd(ri++) * .2; v.x *= keep; v.z *= keep; jitter(1.1); hops++; }
+        else { mode = 'slide'; v.y = 0; const keep = RANA.KEEP[0] + rnd(ri++) * (RANA.KEEP[1] - RANA.KEEP[0]); v.x *= keep; v.z *= keep; jitter(.5); }
+      }
+      // 7) le pega al frente de la mesa y se cae
+      if (a.z > RANA.HD && b.z <= RANA.HD && b.y < 0 && Math.abs(b.x) < RANA.HW + .02) { v.z = Math.abs(v.z) * .25; v.x *= .5; p.z = RANA.Z + RANA.HD + .002; ev('madera', p); hops++; }
+      // 8) al piso
+      if (p.y <= RANA.AT) { p.y = RANA.AT; ev('piso', p); const s = .12 + rnd(ri++) * .2; p.x += v.x * .03 * s; p.z += v.z * .03 * s; end(-1, 'piso', { at: p.clone() }); break; }
+      if (hops > 14 || t > 4) { end(-1, 'piso', { at: V(p.x, RANA.AT, p.z) }); break; }
+    } else {
+      // arrastrándose por la tabla: si pasa despacio por un hueco se cae; rápido, solo si pasa por el centro
+      const sp2 = Math.hypot(v.x, v.z), h = holeAt(b.x, b.z, sp2 < .6 ? .046 : sp2 < 1.5 ? .042 : .03);
+      if (h >= 0) { end(h, 'hueco', { at: ranaWorld(RANA_SLOTS[h].x, 0, RANA_SLOTS[h].z) }); break; }
+      for (const f of FIGS) {   // las figuras de metal la desvían
+        const fd = Math.hypot(b.x - f.body.x, b.z - f.body.z), fr = f.bodyR * .85 + RANA.AR;
+        if (fd < fr) {
+          const nx = (b.x - f.body.x) / fd, nz = (b.z - f.body.z) / fd, vn = v.x * nx + v.z * nz;
+          if (vn < 0) { v.x -= 1.4 * vn * nx; v.z -= 1.4 * vn * nz; jitter(.5); }
+          p.x = f.body.x + nx * (fr + .002); p.z = RANA.Z + f.body.z + nz * (fr + .002); ev('metal', p);
+        }
+      }
+      if (b.z < -RANA.HD + RANA.AR) { v.z = Math.abs(v.z) * .6; p.z = RANA.Z - RANA.HD + RANA.AR; ev('madera', p); }
+      if (Math.abs(b.x) > RANA.HW - RANA.AR) { v.x = -v.x * .55; p.x = Math.sign(b.x) * (RANA.HW - RANA.AR); ev('madera', p); }
+      if (b.z > RANA.HD + RANA.AR * .3) {   // se sale por el borde de adelante: cae al piso
+        mode = 'air'; v.y = 0;
+      }
+    }
+    if (i % 2 === 0) path.push({ t, p: p.clone() });
+  }
+  if (!res) end(-1, 'piso', { at: V(p.x, RANA.AT, p.z) });
+  path.push({ t, p: p.clone() });
+  // al entrar se ve cómo se mete por el hueco o por la boca
+  if (res.slot >= 0) {
+    const s = res.at.clone(), steps = 10;
+    const fig = FIGS.find(f => f.how === res.how);
+    const inside = fig ? s.clone().addScaledVector(fig.mouthN, -.04).add(V(0, -.05, 0)) : s.clone().add(V(0, -.07, 0));
+    const from = p.clone();
+    for (let j = 1; j <= steps; j++) { const u = j / steps; path.push({ t: t + u * .14, p: from.clone().lerp(s, Math.min(1, u * 2)).lerp(inside, Math.max(0, u * 2 - 1)) }); }
+    t += .14;
+  }
+  return { path, events, duration: t, res, end: path[path.length - 1].p.clone() };
+}
+
+/* ---------- La mesa ---------- */
+// Argolla de rana: disco de bronce dorado con cuatro ventanas, como las de verdad
+let ARG_GEO = null, ARG_MAT = null;
+function makeArgolla() {
+  if (!ARG_GEO) {
+    const R = RANA.AR + .001, sh = new THREE.Shape(); sh.absarc(0, 0, R, 0, Math.PI * 2, false);
+    for (let k = 0; k < 4; k++) {   // ventanas en forma de riñón entre los rayos
+      const a0 = k * Math.PI / 2 + .3, a1 = a0 + Math.PI / 2 - .6, r1 = R * .3, r2 = R * .76, h = new THREE.Path();
+      h.moveTo(r1 * Math.cos(a0), r1 * Math.sin(a0)); h.absarc(0, 0, r2, a0, a1, false); h.lineTo(r1 * Math.cos(a1), r1 * Math.sin(a1)); h.absarc(0, 0, r1, a1, a0, true);
+      sh.holes.push(h);
+    }
+    ARG_GEO = new THREE.ExtrudeGeometry(sh, { depth: RANA.AT * .7, bevelEnabled: true, bevelThickness: .0008, bevelSize: .0008, bevelSegments: 1, curveSegments: 18 });
+    ARG_GEO.translate(0, 0, -RANA.AT * .35);
+    ARG_MAT = std({ color: '#d8b04a', metalness: .6, roughness: .3 });
+  }
+  const m = new THREE.Mesh(ARG_GEO, ARG_MAT); m.castShadow = true; return m;
+}
+function feltTex(color) {   // paño de la tabla
+  const S = 512, [c, g] = cnv(S, S);
+  g.fillStyle = color; g.fillRect(0, 0, S, S);
+  for (let i = 0; i < 9000; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.06)'; g.fillRect(Math.random() * S, Math.random() * S, 1.5, 1.5); }
+  return [c, g];
+}
+function ranaTopTex() {   // la tabla de paño azul con sus diez huecos
+  const S = 512, [c, g] = feltTex('#1d4c93'), k = S / (RANA.HW * 2);
+  RANA_SLOTS.filter(s => s.kind === 'hueco').forEach(s => {
+    const x = (s.x + RANA.HW) * k, y = (s.z + RANA.HD) * k, r = RANA.HOLE * k;
+    const gr = g.createRadialGradient(x, y - r * .2, r * .1, x, y, r); gr.addColorStop(0, '#0a0503'); gr.addColorStop(.7, '#3a1c0a'); gr.addColorStop(1, '#8a4a1c');
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  });
+  return tex(c);
+}
+function ranaPanelTex() {   // tablero de atrás: el mismo paño azul con el nombre en esténcil
+  return fontTex(512, Math.round(512 * RANA.PANEL_H / (RANA.HW * 2)), (g, w, h) => {
+    g.fillStyle = '#1d4c93'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 6000; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.06)'; g.fillRect(Math.random() * w, Math.random() * h, 1.5, 1.5); }
+    g.fillStyle = 'rgba(14,16,22,.85)'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '92px "Alfa Slab One"'; g.fillText('RANA', w / 2, h * .26);
+  });
+}
+function ranaSlatTex(row) {   // tablilla naranja con los puntos de la fila en esténcil, como el cajón de la foto
+  return fontTex(512, 96, (g, w, h) => {
+    g.fillStyle = '#e0913a'; g.fillRect(0, 0, w, h);
+    g.globalAlpha = .16; for (let i = 0; i < 18; i++) { g.strokeStyle = Math.random() < .5 ? '#7a3f12' : '#fff'; g.lineWidth = rand(.5, 2); g.beginPath(); const y = rand(0, h); g.moveTo(0, y); g.lineTo(w, y + rand(-3, 3)); g.stroke(); }
+    g.globalAlpha = 1; g.fillStyle = '#2a211b'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '64px "Alfa Slab One"';
+    RANA_PTS[row].forEach((pts, c) => g.fillText(String(pts), w * (c + .5) / 3, h * .55));
+  });
+}
+function ranaLabelTex() {
+  return fontTex(512, 96, (g, w, h) => {
+    g.fillStyle = '#e0913a'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#2a211b'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '62px "Alfa Slab One"'; g.fillText('RANA', w / 2, h * .54);
+  });
+}
+// Figura de metal plateado con la boca abierta hacia la raya (la rana grande atrás, el sapito adelante)
+function makeFigure(f, big) {
+  const g = new THREE.Group(), m = std({ color: '#cfcfca', metalness: .55, roughness: .32 }), dark = new THREE.MeshBasicMaterial({ color: '#050403' });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), m); body.scale.set(f.bodyR * 1.05, f.body.y * 1.1, f.bodyR); body.position.copy(f.body); g.add(body);
+  const hc = f.mouth.clone().addScaledVector(f.mouthN, -f.mouthR * .9);   // la cabeza alrededor de la boca
+  const head = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), m); head.scale.set(f.mouthR * 1.65, f.mouthR * 1.45, f.mouthR * 1.3); head.position.copy(hc); g.add(head);
+  if (big) { const neck = new THREE.Mesh(new THREE.CylinderGeometry(f.mouthR * 1.2, f.bodyR * .8, hc.y - f.body.y, 18), m); neck.position.set(0, (hc.y + f.body.y) / 2, (hc.z + f.body.z) / 2); g.add(neck); }
+  const lip = new THREE.Mesh(new THREE.TorusGeometry(f.mouthR + .004, .0055, 10, 28), m);
+  lip.position.copy(f.mouth); lip.lookAt(lip.position.clone().add(f.mouthN)); g.add(lip);
+  const hole = new THREE.Mesh(new THREE.CircleGeometry(f.mouthR + .001, 24), dark); hole.position.copy(f.mouth).addScaledVector(f.mouthN, .001); hole.lookAt(hole.position.clone().add(f.mouthN)); g.add(hole);
+  [-1, 1].forEach(sx => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(f.mouthR * .45, 12, 10), m); eye.position.set(sx * f.mouthR * .9, hc.y + f.mouthR * 1.2, hc.z + f.mouthR * .3); g.add(eye);
+    const pup = new THREE.Mesh(new THREE.SphereGeometry(f.mouthR * .2, 10, 8), dark); pup.position.set(sx * f.mouthR * .95, hc.y + f.mouthR * 1.3, hc.z + f.mouthR * .68); g.add(pup);
+    const foot = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), m); foot.scale.set(f.bodyR * .32, f.bodyR * .18, f.bodyR * .45); foot.position.set(sx * f.bodyR * .65, f.bodyR * .12, f.body.z + f.bodyR * .7); g.add(foot);
+  });
+  g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  return g;
+}
+// Siete segmentos para el marcador de luces
+function draw7(g, str, x, y, w, h, on, off) {
+  const SEG = { 0: 'abcdef', 1: 'bc', 2: 'abged', 3: 'abgcd', 4: 'fgbc', 5: 'afgcd', 6: 'afgedc', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg', '-': 'g', ' ': '' };
+  const t = w * .16, gap = w * .28;
+  [...str].forEach((ch, k) => {
+    const ox = x + k * (w + gap), lit = SEG[ch] || '';
+    const segs = { a: [ox + t, y, w - 2 * t, t], b: [ox + w - t, y + t, t, h / 2 - 1.5 * t], c: [ox + w - t, y + h / 2 + t / 2, t, h / 2 - 1.5 * t], d: [ox + t, y + h - t, w - 2 * t, t],
+      e: [ox, y + h / 2 + t / 2, t, h / 2 - 1.5 * t], f: [ox, y + t, t, h / 2 - 1.5 * t], g: [ox + t, y + h / 2 - t / 2, w - 2 * t, t] };
+    for (const s in segs) { g.fillStyle = lit.includes(s) ? on : off; const [a, b, c2, d] = segs[s]; g.fillRect(a, b, c2, d); }
+  });
+}
+function ranaBoardDraw() {
+  const M = RANA_M; if (!M) return;
+  const g = M.boardG, W2 = M.boardC.width, H2 = M.boardC.height;
+  g.fillStyle = '#0b0a09'; g.fillRect(0, 0, W2, H2);
+  const p = isRana() && game.order.length ? current() : null;
+  g.fillStyle = '#f5eddd'; g.font = '800 40px "Bricolage Grotesque", sans-serif'; g.textBaseline = 'top'; g.textAlign = 'left';
+  g.fillText(p ? p.name.toUpperCase().slice(0, 14) : 'RANA', 22, 16);
+  g.fillStyle = '#8c7b62'; g.font = '700 22px "Bricolage Grotesque", sans-serif'; g.textAlign = 'right';
+  g.fillText(p && isRana() ? `META ${game.goal}` : '', W2 - 22, 26);
+  const total = p ? String(Math.min(9999, p.score)).padStart(4, ' ') : '   0';
+  g.shadowColor = '#ff2a1a'; g.shadowBlur = 16;
+  draw7(g, total, 26, 78, 58, 110, '#ff3b24', '#2a0d09');
+  g.shadowBlur = 10; g.fillStyle = '#8c7b62'; g.shadowBlur = 0; g.textAlign = 'left'; g.font = '700 20px "Bricolage Grotesque", sans-serif';
+  g.fillText('TANDA', 360, 76);
+  g.shadowColor = '#ffb21a'; g.shadowBlur = 12;
+  draw7(g, (p && isRana() ? String(Math.min(999, game.turnPts)) : '0').padStart(3, ' '), 360, 104, 30, 56, '#ffb72a', '#2a1a06');
+  g.shadowBlur = 0;
+  const left = p && isRana() ? RANA.PER_TURN - game.arg - (phase === 'flight' || phase === 'result' || phase === 'roundEnd' ? 1 : 0) : RANA.PER_TURN;
+  for (let i = 0; i < RANA.PER_TURN; i++) { g.beginPath(); g.arc(372 + i * 22, 196, 7, 0, Math.PI * 2); g.fillStyle = i < left ? '#3ddc6a' : '#1d2a1f'; g.fill(); }
+  M.boardT.needsUpdate = true;
+}
+function buildRana() {
+  if (RANA_M) return;
+  const g = new THREE.Group(), T0 = RANA.TOP, HW = RANA.HW, HD = RANA.HD;
+  const pine = std({ map: makeWoodTex('#d4842e', null), roughness: .75 }), dark = std({ color: '#2a1407', roughness: 1 });
+  const box = (w, h, d, x, y, z, m) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); b.castShadow = true; b.receiveShadow = true; g.add(b); return b; };
+  // tabla de arriba: paño azul con los huecos
+  const topM = std({ map: ranaTopTex(), roughness: .95 });
+  box(HW * 2, .04, HD * 2, 0, T0 - .02, 0, [pine, pine, topM, pine, pine, pine]);
+  // costados con baranda, cuerpo y patas
+  [-1, 1].forEach(sx => {
+    box(.025, T0 + .06, HD * 2 + .02, sx * (HW + .0125), (T0 + .06) / 2, 0, pine);
+  });
+  box(HW * 2, T0 - .05, .02, 0, (T0 - .05) / 2 + .03, -HD + .01, pine);   // fondo del cuerpo
+  // frente: franja con el letrero, los cajones abiertos y las tablillas con los puntos
+  const front = HD + .01, label = std({ map: ranaLabelTex(), roughness: .7 });
+  box(HW * 2, .1, .02, 0, T0 - .09, front, [pine, pine, pine, pine, label, pine]);
+  const rowH = .15, slatH = .05, y0 = T0 - .14;
+  for (let r = 0; r < 4; r++) {
+    const yTop = y0 - r * rowH, slatY = yTop - (rowH - slatH) - slatH / 2;
+    box(HW * 2, slatH, .02, 0, slatY, front, [pine, pine, pine, pine, std({ map: ranaSlatTex(r), roughness: .75 }), pine]);
+    box(HW * 2, .008, .3, 0, yTop - (rowH - slatH) + .004, front - .15, dark);   // piso del cajón
+    [-1, 1].forEach(sx => box(.012, rowH - slatH, .3, sx * HW / 3, yTop - (rowH - slatH) / 2, front - .15, pine));   // divisiones
+  }
+  box(HW * 2, rowH * 4, .01, 0, y0 - rowH * 2, front - .3, dark);   // fondo oscuro de los cajones
+  box(HW * 2, y0 - rowH * 4, .02, 0, (y0 - rowH * 4) / 2, front, pine);   // zócalo
+  // tablero de atrás de paño azul, con un gancho y una argolla colgada (adorno, como en la foto)
+  const panelM = std({ map: ranaPanelTex(), roughness: .95 });
+  box(HW * 2 + .05, RANA.PANEL_H, .025, 0, T0 + RANA.PANEL_H / 2, -HD - .0125, [pine, pine, pine, pine, panelM, pine]);
+  const hook = new THREE.Mesh(new THREE.TorusGeometry(.008, .0018, 6, 16, Math.PI * 1.4), std({ color: '#b9b4a8', metalness: .6, roughness: .3 }));
+  hook.position.set(0, T0 + RANA.PANEL_H * .66, -HD + .012); hook.rotation.set(0, Math.PI / 2, Math.PI * .8); g.add(hook);
+  const deco = makeArgolla(); deco.position.set(0, T0 + RANA.PANEL_H * .66 - .03, -HD + .008); g.add(deco);
+  // marcador de luces encima del tablero, con marco de madera
+  const [bc, bg] = cnv(512, 224), bt = tex(bc);
+  const boardY = T0 + RANA.PANEL_H + .14;
+  box(HW * 2 + .08, .3, .05, 0, boardY, -HD - .02, pine);
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(HW * 2 - .02, .26), new THREE.MeshBasicMaterial({ map: bt, toneMapped: false }));
+  screen.position.set(0, boardY, -HD + .006); g.add(screen);
+  // la rana grande atrás y el sapito adelante
+  FIGS.forEach((f, i) => { const m = makeFigure(f, i === 0); m.position.set(0, T0, 0); g.add(m); });
+  g.position.set(0, 0, RANA.Z); g.visible = false; scene.add(g);
+  RANA_M = { g, boardC: bc, boardG: bg, boardT: bt };
+  ranaBoardDraw(); onFont('64px "Bricolage Grotesque"', ranaBoardDraw);
+}
+
+/* ---------- Las argollas de la tanda ---------- */
+// Donde queda la argolla en el cajón de su hueco (se ven por el frente de la mesa)
+function ranaDrawerPos(slot, n) {
+  const s = RANA_SLOTS[slot], rowH = .15, slatH = .05, yTop = RANA.TOP - .14 - s.r * rowH, floor = yTop - (rowH - slatH) + .008;
+  const jx = ((n * 37 + slot * 11) % 9 - 4) * .012, jz = ((n * 53 + slot * 7) % 5 - 2) * .02;
+  return V(RANA_COLS[s.c] * (2 * RANA.HW / 3) / .17 + jx, floor + RANA.AT + n * .011, RANA.Z + RANA.HD - .09 + jz);
+}
+function ranaPlaceRing(mesh, slot, n) {
+  mesh.position.copy(ranaDrawerPos(slot, n)); mesh.rotation.set(Math.PI / 2, 0, (slot * 1.7 + n * 2.3) % 6.28); mesh.visible = true;
+}
+function ranaClearRings() { if (game && game.rings) game.rings.forEach(r => scene.remove(r.mesh)); if (game) game.rings = []; }
+
+/* ---------- Turno, tiro y resultado ---------- */
+function ranaPrepare() { buildRana(); game.kind = 'rana'; game.arg = 0; game.turnPts = 0; game.rings = []; ranaBoardDraw(); }
+function ranaLaunch(a, opts) {
+  const p = current();
+  lastP[p.name] = a.P;
+  const sim = ranaSimulate(a, game.thrown);
+  const mesh = makeArgolla(); mesh.position.copy(sim.path[0].p); scene.add(mesh);
+  rflight = { sim, mesh, t: 0, ev: 0, owner: game.order[game.idx], timeout: !!(opts && opts.timeout), spin: 9 + seeded(a.L, a.P, game.thrown) * 6, landed: false, done: false };
+  reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
+  game.thrown++;
+  A.whoosh(); buzz(15); ranaBoardDraw();
+}
+function ranaUpdate(dt) {
+  const f = rflight; if (!f || f.done) return;
+  f.t += dt;
+  const sim = f.sim;
+  while (f.ev < sim.events.length && sim.events[f.ev].t <= f.t) {
+    const e = sim.events[f.ev++];
+    if (e.kind === 'metal' || e.kind === 'rana' || e.kind === 'sapito') { A.hit(); sparks(e.p, 10); }
+    else if (e.kind === 'piso') { A.floor(); }
+    else { A.wood(); }
+    if (e.kind === 'mesa' || e.kind === 'madera') f.landed = true;
+  }
+  f.mesh.position.copy(samplePath(sim.path, Math.min(f.t, sim.duration)));
+  if (!f.landed) f.mesh.rotation.set(Math.PI / 2 + Math.sin(f.t * 5) * .5, f.t * 2, f.t * f.spin);
+  else f.mesh.rotation.set(Math.PI / 2, 0, f.mesh.rotation.z + dt * 3);
+  if (f.t >= sim.duration) ranaFinish();
+}
+function ranaFinish() {
+  const f = rflight; if (!f || f.done) return; f.done = true; rflight = null;
+  const p = game.players[f.owner], r = f.sim.res;
+  const n = game.rings.filter(x => x.slot === r.slot).length;
+  game.rings.push({ owner: f.owner, mesh: f.mesh, slot: r.slot, pts: r.pts });
+  if (r.slot >= 0) { ranaPlaceRing(f.mesh, r.slot, n); A.wood(); }
+  else { f.mesh.position.copy(r.at); f.mesh.rotation.set(Math.PI / 2, 0, f.spin); }
+  p.st.tiros++;
+  phase = 'result'; resultAt = performance.now();
+  if (r.pts) {
+    p.score += r.pts; game.turnPts += r.pts; p.st.mechas++;
+    if (r.how === 'rana' || r.how === 'sapito') {
+      if (r.how === 'rana') p.st.mon++; else p.st.emb++;
+      announce(r.how === 'rana' ? '¡RANA!' : '¡SAPITO!', `${p.name.toUpperCase()} +${r.pts}`, true); A.cheer(); A.clank(); flashScreen(); buzz([40, 30, 80]);
+    } else { toast(`+${r.pts}`); A.tick(); }
+    bumpChip(f.owner); feed(p, `${{ rana: 'RANA', sapito: 'SAPITO', hueco: 'Hueco' }[r.how]} +${r.pts}`);
+  } else if (r.how === 'mesa') { toast('Se quedó en la mesa'); feed(p, 'Quedó en la mesa'); }
+  else { p.st.nulos++; toast(f.timeout ? 'Se acabó el tiempo' : 'Afuera'); feed(p, f.timeout ? 'Se le acabó el tiempo' : 'Afuera'); }
+  renderBoard(); ranaBoardDraw();
+  later(r.how === 'rana' || r.how === 'sapito' ? 2.2 : 1.0, advance);
+}
+function ranaAdvance() {
+  if (phase === 'over') return;
+  const leader = winnerNow(); if (leader) return gameOver(leader);
+  game.arg++;
+  if (game.arg < RANA.PER_TURN) return nextThrow();
+  // terminó la tanda de 6 argollas: se recogen y sigue el siguiente
+  const p = current();
+  phase = 'roundEnd'; resultAt = performance.now();
+  toast(game.turnPts ? `Tanda de ${p.name}: +${game.turnPts}` : `${p.name} no metió nada en esta tanda`);
+  later(1.5, () => {
+    ranaClearRings(); game.arg = 0; game.turnPts = 0;
+    game.idx++;
+    if (game.idx < game.order.length) nextThrow(); else startRound();
+  });
+}
+
+/* ---------- Puntería y cámaras ---------- */
+function ranaShowReticle(aim) {
+  if (!aimHelpNow()) { reticle.visible = false; return; }
+  const tg = ranaTarget(aim), lx = tg.x, lz = tg.z - RANA.Z;
+  let pos, n = V(0, 1, 0), good = false;
+  if (Math.abs(lx) <= RANA.HW && Math.abs(lz) <= RANA.HD) { pos = V(lx, RANA.TOP + .004, tg.z); good = true; }
+  else if (lz < -RANA.HD) {
+    const q = ranaAt(aim, RANA.Z - RANA.HD + .003), y = q.y - RANA.TOP;
+    if (y > 0 && y < RANA.PANEL_H && Math.abs(q.x) < RANA.HW) { pos = q; n = V(0, 0, 1); }
+  }
+  if (!pos) { const v = ranaVel(aim), t = (v.y + Math.sqrt(v.y * v.y + 2 * G * (REL.y - .004))) / G; pos = V(REL.x + v.x * t, .004, REL.z + v.z * t); }
+  reticle.visible = true; reticle.position.copy(pos);
+  reticle.quaternion.setFromUnitVectors(V(0, 0, 1), n);
+  reticleCore.color.set(good ? '#f3c22f' : '#d8392d');
+  reticle.scale.setScalar(.42 * (1 + (drag ? clamp(((performance.now() - drag.t0) / 1000 - 1.6) * .25, 0, .8) : 0)));
+  reticle.userData.uv = null;
+}
+function ranaCamPose() {
+  const asp = isFinite(cam.aspect) && cam.aspect > 0 ? cam.aspect : .5, D = 4.3, t = performance.now() / 1000;
+  // un poco más abierta y mirando más arriba para que el marcador quede debajo de los puntajes de arriba
+  const fov = Math.max(2 * Math.atan(.48 / (D * asp)), 2 * Math.atan(.86 / D)) * 180 / Math.PI * 1.25;
+  return { pos: V(Math.sin(t * .5) * .012, 1.74 + Math.sin(t * .8) * .006, RANA.Z + D), look: V(0, 1.1, RANA.Z), fov };
+}
+function ranaMenuPose(orbit) {
+  const a = Math.sin(orbit * .8) * .9, r = 2.3;
+  return { pos: V(Math.sin(a) * r, 1.45, RANA.Z + Math.cos(a) * r), look: V(0, RANA.TOP + .1, RANA.Z), fov: 40 };
+}
+function ranaLupa() {   // la lupa mira la tabla desde arriba, con la raya hacia abajo
+  lupaCam.up.set(0, 0, -1); lupaCam.position.set(0, RANA.TOP + 1.05, RANA.Z + .02); lupaCam.lookAt(0, RANA.TOP, RANA.Z);
+}
+// La mesa solo se ve cuando se juega rana (o se escoge en el menú)
+function ranaFrame() {
+  const want = (phase === 'menu' || phase === 'boot') ? settings.game === 'rana' : isRana();
+  if (want && !RANA_M) buildRana();
+  if (RANA_M) RANA_M.g.visible = want;
+}
+
+/* ---------- Don Chepe en la rana ---------- */
+// Fuerza para que la argolla pase por el punto (x, y, z): primero el lado, luego la fuerza (bisección)
+function ranaAimThrough(x, y, z) {
+  let L = x / RANA.LX, P = .5;
+  for (let k = 0; k < 3; k++) {
+    let lo = 0, hi = 1;
+    for (let i = 0; i < 22; i++) { const m = (lo + hi) / 2, q = ranaAt({ L, P: m }, z); if (q.y < y) lo = m; else hi = m; }
+    P = (lo + hi) / 2;
+    const q = ranaAt({ L, P }, z); L += (x - q.x) / RANA.LX;
+  }
+  return { L, P };
+}
+function ranaAimLand(x, z) { return { L: x / RANA.LX, P: RANA.P0 - (z - RANA.Z) / RANA.SPAN }; }
+function ranaPlanCpu(p) {
+  const d = settings.diff, r = Math.random(), sd = [.075, .045, .03, .022][d];
+  // los buenos le apuntan al sapito (100) y a la rana (80); los demás, a los huecos que más dan
+  const want = d === 3 ? (r < .4 ? 'sapito' : r < .75 ? 'rana' : 'hueco') : d === 2 ? (r < .2 ? 'sapito' : r < .5 ? 'rana' : 'hueco')
+    : d === 1 ? (r < .08 ? 'sapito' : r < .25 ? 'rana' : 'hueco') : (r < .05 ? 'rana' : 'hueco');
+  let ideal;
+  const fig = FIGS.find(f => f.how === want);
+  if (fig) { const m = ranaWorld(fig.mouth.x, fig.mouth.y, fig.mouth.z); ideal = ranaAimThrough(m.x, m.y, m.z); }
+  else {
+    const hs = RANA_SLOTS.filter(s => s.kind === 'hueco' && (d >= 2 ? s.pts >= 40 : true)), s = hs[Math.floor(Math.random() * hs.length)];
+    ideal = ranaAimLand(s.x, RANA.Z + s.z + .015);
+  }
+  const fin = { L: ideal.L + gauss() * sd / RANA.LX, P: clamp(ideal.P + gauss() * sd / RANA.SPAN, .02, 1) };
+  cpuAim = { from: { L: rand(-.5, .5), P: rand(.2, .45) }, to: fin, t: 0, dur: rand(.9, 1.3) };
 }
 
 /* ================= Brazo en primera persona =================
@@ -2847,10 +3304,12 @@ function buildArm() {
   loadHandModel();
 }
 function armSetPlayer(p) {
-  const key = [p.color, p.design, p.name].join('|');
+  const key = [isRana() ? 'rana' : 'tejo', p.color, p.design, p.name].join('|');
   if (key === ARM.key) return; ARM.key = key;
   if (ARM.tejo) ARM.slot.remove(ARM.tejo);
-  ARM.tejo = makeTejo(p.color, p.design, p.name); ARM.tejo.castShadow = false; ARM.slot.add(ARM.tejo);
+  if (isRana()) { ARM.tejo = makeArgolla(); ARM.tejo.rotation.x = Math.PI / 2; ARM.tejo.position.y = .012; }   // en la rana va una argolla en la mano
+  else ARM.tejo = makeTejo(p.color, p.design, p.name);
+  ARM.tejo.castShadow = false; ARM.slot.add(ARM.tejo);
   if (ARM.medal) ARM.medal.material[1] = tejoTopMaterial(p.color, p.design, p.name);
   const c = new THREE.Color(p.color); c.multiplyScalar(.55); ARM.mats.sleeve.color.copy(c);
 }
@@ -3243,6 +3702,8 @@ function renderMenuOnline() {
 
 /* Versiones: para jugar en una sala todos deben tener la misma MAYOR.MENOR (las reglas y la física iguales).
    Con distinto PARCHE sí se puede: los parches no cambian cómo se juega (ver README, «Versiones»). */
+// Qué se juega en la sala: tejo (con su distancia) o rana; la meta es la de ese juego
+function roomGame() { return settings.game === 'rana' ? { kind: 'rana', dist: settings.dist, goal: settings.ranaGoal } : { kind: 'tejo', dist: settings.dist, goal: settings.goal }; }
 function sameGameVersion(v) { const mm = s => String(s || '').split('.').slice(0, 2).join('.'); return !!v && mm(v) === mm(GAME_VERSION); }
 function presentPids(peers) { const m = new Map(); peers.forEach(p => { const pr = p.presence || {}; if (typeof pr.pid === 'string') m.set(pr.pid, pr); }); return m; }
 function publishG(g) {
@@ -3262,7 +3723,7 @@ async function netEnter(code, create) {
     NET.unsub = sala.onPeers(netSync, netError);
     fixLocalDesigns();
     const me = { v: 1, pid: NET.pid, name: myName(), design: settings.designs[0], gv: GAME_VERSION };
-    if (create) me.g = { code, ver: 1, host: NET.pid, gv: GAME_VERSION, phase: 'lobby', seats: [{ pid: NET.pid, name: myName() }], dist: settings.dist, goal: settings.goal, ...hostRules() };
+    if (create) me.g = { code, ver: 1, host: NET.pid, gv: GAME_VERSION, phase: 'lobby', seats: [{ pid: NET.pid, name: myName() }], ...roomGame(), ...hostRules() };
     if (me.g) { NET.g = NET.lastG = NET.myG = me.g; }
     await sala.presence(me);
     showSala(); netSync();
@@ -3421,6 +3882,7 @@ function buildOnlineGame(g) {
   const players = st.players.slice(0, MAX_PLAYERS).map((s, i) => { const p = newPlayer(String(s.name).slice(0, 14), i, false, DESIGN_IDS.includes(s.design) ? s.design : null); p.pid = s.pid; if (nT && Number.isInteger(s.team) && s.team >= 0 && s.team < nT) p.team = s.team; return p; });
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: clampGoal(st.goal), mode: 'online', gid: g.gid, ...pickRules(st), aimHelp: !!st.aimHelp, thrown: 0, over: false };
   game.teams = applyTeams(players, nT);
+  if (st.kind === 'rana') { ranaPrepare(); game.goal = clampRanaGoal(st.goal); computeDvdP(); }
   NET.pending = {}; lastP = {}; clearFeed(); paused = false;
   showScreen(null); setHud(true);
 }
@@ -3439,7 +3901,8 @@ function makeSnap() {
     gid: game.gid, seq: game.thrown, round: game.round, idx: game.idx, order: game.order, scored: game.scored ? 1 : 0,
     sc: game.players.map(p => [p.score, p.st.mechas, p.st.emb, p.st.mon, p.st.manos, p.st.nulos, p.st.tiros]),
     mk: mechaMeshes.map(m => m.userData.alive ? 1 : 0),
-    tj: game.tejos.map(t => [t.owner, t.valid ? 1 : 0, r4(t.u || 0), r4(t.v || 0), isFinite(t.d) ? r4(t.d) : -1, ...t.mesh.position.toArray().map(r4), ...t.mesh.quaternion.toArray().map(r4), t.pts || 0])
+    tj: game.tejos.map(t => [t.owner, t.valid ? 1 : 0, r4(t.u || 0), r4(t.v || 0), isFinite(t.d) ? r4(t.d) : -1, ...t.mesh.position.toArray().map(r4), ...t.mesh.quaternion.toArray().map(r4), t.pts || 0]),
+    ...(isRana() ? { ra: [game.arg, game.turnPts], rg: game.rings.map(r => [r.owner, r.slot, r.pts, ...r.mesh.position.toArray().map(r4)]) } : {})   // rana: argolla de la tanda y las que ya cayeron
   };
 }
 function restoreSnap(s) {
@@ -3456,6 +3919,14 @@ function restoreSnap(s) {
     game.tejos.push({ owner, valid: !!valid, u, v, d: d < 0 ? Infinity : d, mesh: m, pts: a[12] | 0 });
     if (valid) decal(u, v, T.crater, .14);
   });
+  if (isRana()) {
+    const ra = Array.isArray(s.ra) ? s.ra : [0, 0]; game.arg = clamp(ra[0] | 0, 0, RANA.PER_TURN - 1); game.turnPts = ra[1] | 0;
+    (s.rg || []).forEach(([owner, slot, pts, x, y, z]) => {
+      const m = makeArgolla(); scene.add(m); const n = game.rings.filter(r => r.slot === slot).length;
+      if (slot >= 0 && RANA_SLOTS[slot]) ranaPlaceRing(m, slot, n); else { m.position.set(x, y, z); m.rotation.set(Math.PI / 2, 0, 0); }
+      game.rings.push({ owner, mesh: m, slot, pts: pts | 0 });
+    });
+  }
   for (const n in NET.pending) if (+n < game.thrown) delete NET.pending[n];
   showScreen(null); setHud(true); renderBoard();
   const winner = game.players.find(p => p.score >= game.goal);
@@ -3523,7 +3994,7 @@ function netStart() {
   const nT = teamsAllowed(players.length).includes(g.teams || 0) ? (g.teams || 0) : 0;
   if (nT) players = makeTeams(players, nT).map(x => ({ ...x.item, team: x.team }));
   A.init(); A.tick();
-  publishG({ ...g, phase: 'play', gid: rid(), setup: { players, dist: g.dist, goal: g.goal, ...pickRules(g), teams: nT }, snap: null, last: null, ver: g.ver + 1 });
+  publishG({ ...g, phase: 'play', gid: rid(), setup: { players, dist: g.dist, goal: g.goal, kind: g.kind === 'rana' ? 'rana' : 'tejo', ...pickRules(g), teams: nT }, snap: null, last: null, ver: g.ver + 1 });
   applyG();
 }
 
@@ -3537,7 +4008,7 @@ function netTick() {
   } else NET.discSince = 0;
   if (online()) applyG();
   if (!NET.g && !NET.lastG && now - NET.joinedAt > 3000 && [...here.keys()].sort()[0] === NET.pid) {
-    publishG({ code: NET.code, ver: 1, host: NET.pid, phase: 'lobby', seats: [{ pid: NET.pid, name: myName() }], dist: settings.dist, goal: settings.goal, ...hostRules() });
+    publishG({ code: NET.code, ver: 1, host: NET.pid, gv: GAME_VERSION, phase: 'lobby', seats: [{ pid: NET.pid, name: myName() }], ...roomGame(), ...hostRules() });
     netSync();
   }
   if (!NET.g && NET.lastG && NET.lostAt && now - NET.lostAt > 2500) {
@@ -3631,7 +4102,7 @@ function renderSala() {
   else if (full) info.textContent = `La sala está llena: ya hay ${MAX_PLAYERS} jugadores. Si alguien sale, entras de una; si no, crea otra sala.`;
   else if (host) info.textContent = seats.length < 2 ? 'Pásale el código a tus amigos. Cuando entren, aparecen aquí.' : 'Están listos. Empieza cuando quieras.';
   else info.textContent = 'Esperando a que el anfitrión empiece la partida.';
-  $('salaRules').textContent = g ? `${fmtD(g.dist)} · partida a ${g.goal} · mira ${g.aimHelp ? 'sí' : 'no'} · lupa ${g.aimHelp && g.lupa !== false ? 'sí' : 'no'} · barra de fuerza ${g.power !== false ? 'sí' : 'no'} · cámara ${!(+g.zoom) ? 'cerca' : +g.zoom >= 1 ? 'lejos' : 'media'} · hasta ${MAX_PLAYERS} jugadores` : '';
+  $('salaRules').textContent = g ? `${g.kind === 'rana' ? 'Rana · partida a ' + fmtGoal(g.goal) : fmtD(g.dist) + ' · partida a ' + g.goal} · mira ${g.aimHelp ? 'sí' : 'no'} · lupa ${g.aimHelp && g.lupa !== false ? 'sí' : 'no'} · barra de fuerza ${g.power !== false ? 'sí' : 'no'} · cámara ${!(+g.zoom) ? 'cerca' : +g.zoom >= 1 ? 'lejos' : 'media'} · hasta ${MAX_PLAYERS} jugadores` : '';
   // forma de juego: la escoge el anfitrión; los equipos se arman al azar al empezar
   const lobby = !!(g && g.phase === 'lobby'), nHere = seats.filter(s => here.has(s.pid)).length, allowed = teamsAllowed(nHere), want = (g && g.teams) || 0;
   $('salaTeams').hidden = !lobby;
@@ -3742,7 +4213,8 @@ const store = {
 function saveSettings() { store.set('tejo.settings.v1', settings); }
 function loadSettings() {
   const s = store.get('tejo.settings.v1', null); if (s) Object.assign(settings, s);
-  settings.goal = clampGoal(settings.goal);
+  settings.goal = clampGoal(settings.goal); settings.ranaGoal = clampRanaGoal(settings.ranaGoal);
+  if (settings.game !== 'rana') settings.game = 'tejo';
   // antes el juego traía nombres de ejemplo (Javi, Pacho…); se borran para que cada quien escriba el suyo
   if (!settings.namesV2) {
     const OLD = ['Javi', 'Pacho', 'Mafe', 'Leo', 'Caro', 'Nico'];
@@ -3824,6 +4296,7 @@ function renderTurn() {
   $('turnWho').textContent = game.mode === 'reto' ? `Tejo ${game.thrown + 1} de ${RETO_THROWS}` : (p.cpu ? `Lanza ${p.name}` : (online() && p.pid === NET.pid) ? 'Te toca' : `Lanza ${p.name}`);
   $('turnWho').style.color = p.color === COLORS[3] ? 'var(--yellow)' : '';
   const tm = teamOf(p);
+  if (isRana()) { $('turnMeta').textContent = `${tm ? 'Equipo ' + tm.name + ' · ' : ''}${online() ? 'Sala ' + NET.code + ' · ' : ''}Argolla ${Math.min(game.arg + 1, RANA.PER_TURN)} de ${RANA.PER_TURN} · ronda ${game.round} · partida a ${fmtGoal(game.goal)}`; return; }
   $('turnMeta').textContent = game.mode === 'reto' ? `${fmtD(W.D)} · mecha 3 · embocinada 6 · moñona 9` : `${tm ? 'Equipo ' + tm.name + ' · ' : ''}${online() ? 'Sala ' + NET.code + ' · ' : ''}Ronda ${game.round} · ${fmtD(W.D)} · partida a ${game.goal}`;
 }
 function renderOver(winner) {
@@ -3831,7 +4304,10 @@ function renderOver(winner) {
   const ts = p => teamOf(p) ? teamScore(teamOf(p)) : 0;
   const rows = [...game.players].map((p, i) => ({ p, i })).sort((a, b) => (ts(b.p) - ts(a.p)) || (b.p.score - a.p.score));
   const won = p => game.mode !== 'reto' && (winner.team ? p.team === winner.idx : p === winner);
-  tbl.innerHTML = `<tr><th>Jugador</th><th>Pts</th><th>Mecha</th><th>Emboc.</th><th>Moñona</th><th>Mano</th><th>Nulo</th></tr>` +
+  tbl.innerHTML = isRana()   // en la rana: st.mon = ranas, st.emb = sapitos, st.mechas = metidas, st.nulos = afuera
+    ? `<tr><th>Jugador</th><th>Pts</th><th>Rana</th><th>Sapito</th><th>Metidas</th><th>Afuera</th></tr>` +
+      rows.map(({ p }) => `<tr class="${won(p) ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.mon}</td><td>${p.st.emb}</td><td>${p.st.mechas}/${p.st.tiros}</td><td>${p.st.nulos}</td></tr>`).join('')
+    : `<tr><th>Jugador</th><th>Pts</th><th>Mecha</th><th>Emboc.</th><th>Moñona</th><th>Mano</th><th>Nulo</th></tr>` +
     rows.map(({ p }) => `<tr class="${won(p) ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.mechas}</td><td>${p.st.emb}</td><td>${p.st.mon}</td><td>${p.st.manos}</td><td>${p.st.nulos}</td></tr>`).join('');
   [...tbl.querySelectorAll('tr')].slice(1).forEach((tr, k) => tr.firstChild.textContent = rows[k].p.name);
   if (game.mode === 'reto') {
@@ -3844,13 +4320,13 @@ function renderOver(winner) {
   } else if (winner.team) {
     const t = game.teams[winner.idx], names = t.members.map(i => game.players[i].name);
     const others = game.teams.filter((x, i) => i !== winner.idx).map(teamScore);
-    $('overEyebrow').textContent = `Partida a ${game.goal} por equipos · ${fmtD(settings.dist)}`;
+    $('overEyebrow').textContent = isRana() ? `Rana a ${fmtGoal(game.goal)} por equipos` : `Partida a ${game.goal} por equipos · ${fmtD(settings.dist)}`;
     $('overWinner').textContent = `Ganó el equipo ${t.name}`;
     $('overLine').textContent = `${names.slice(0, -1).join(', ')}${names.length > 1 ? ' y ' : ''}${names[names.length - 1]}: ${winner.score} a ${others.join(' a ')} en ${game.round} ${game.round === 1 ? 'ronda' : 'rondas'}.`;
     $('btnAgain').textContent = 'Revancha';
   } else {
     const others = rows.filter(r => r.p !== winner).map(r => r.p.score);
-    $('overEyebrow').textContent = `Partida a ${game.goal} · ${fmtD(settings.dist)}`;
+    $('overEyebrow').textContent = isRana() ? `Rana a ${fmtGoal(game.goal)}` : `Partida a ${game.goal} · ${fmtD(settings.dist)}`;
     $('overWinner').textContent = `Ganó ${winner.name}`;
     $('overLine').textContent = winner.cpu ? `Don Chepe te ganó ${winner.score} a ${others[0]} en ${game.round} rondas.` :
       `${winner.score} a ${others.join(' a ')} en ${game.round} ${game.round === 1 ? 'ronda' : 'rondas'}.` + (game.mode === 'cpu' ? ' Don Chepe pide la revancha.' : '');
@@ -3866,19 +4342,32 @@ function renderOver(winner) {
 function setSeg(id, val) { $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(val)))); }
 function renderMenu() {
   fixLocalDesigns();
+  // tejo o rana: la rana es beta (solo sale en el celular donde se prendió); no tiene reto ni distancias y su meta va en otros números
+  if (!betaOn) settings.game = 'tejo';
+  $('grpGame').hidden = !betaOn; $('verTag').textContent = 'v' + GAME_VERSION + (betaOn ? ' · beta' : '');
+  const rana = settings.game === 'rana';
+  if (rana && settings.mode === 'reto') settings.mode = 'cpu';
+  setSeg('segGame', settings.game);
+  $('segMode').querySelector('[data-v="reto"]').hidden = rana;
+  $('grpDist').hidden = rana;
+  $('brandTitle').textContent = rana ? 'RANA' : 'TEJO';
+  $('brandLine').textContent = rana ? 'Argollas, huecos y la rana de metal. Métela en la boca de la rana y llega primero a la meta.' : 'Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.';
+  $('aimHint').textContent = rana ? 'Muestra dónde cae la argolla mientras apuntas' : 'Muestra dónde cae el tejo mientras apuntas';
   setSeg('segMode', settings.mode); setSeg('segCount', settings.count); setSeg('segDiff', settings.diff); setSeg('segDist', settings.dist);
-  // partida a 15, 21, 27 u otro valor que uno escribe
-  const otherGoal = goalOpen || !GOAL_PRESETS.includes(settings.goal);
-  setSeg('segGoal', otherGoal ? 'otra' : settings.goal);
-  $('goalOther').innerHTML = otherGoal ? `${settings.goal}<small>otra</small>` : 'Otra';
+  // partida a: valores de siempre u otro que uno escribe (en el tejo 15, 21, 27; en la rana 1.000, 2.000, 3.000)
+  const gc = goalCfg(), gv = settings[gc.key], otherGoal = goalOpen || !gc.presets.includes(gv);
+  [...$('segGoal').querySelectorAll('button:not(#goalOther)')].forEach((b, i) => { b.dataset.v = gc.presets[i]; b.textContent = fmtGoal(gc.presets[i]); });
+  setSeg('segGoal', otherGoal ? 'otra' : gv);
+  $('goalOther').innerHTML = otherGoal ? `${fmtGoal(gv)}<small>otra</small>` : 'Otra';
   $('goalCustom').hidden = !otherGoal;
-  if (document.activeElement !== $('goalIn')) $('goalIn').value = settings.goal;
-  $('goalMinus').disabled = settings.goal <= GOAL_MIN; $('goalPlus').disabled = settings.goal >= GOAL_MAX;
+  $('goalIn').min = gc.min; $('goalIn').max = gc.max; $('goalIn').step = gc.step;
+  if (document.activeElement !== $('goalIn')) $('goalIn').value = gv;
+  $('goalMinus').disabled = gv <= gc.min; $('goalPlus').disabled = gv >= gc.max;
   $('swAim').setAttribute('aria-checked', String(settings.aimHelp));
   // la lupa solo se puede prender con la mira prendida; la barra de fuerza va aparte
   $('swLupa').setAttribute('aria-checked', String(settings.aimHelp && settings.lupa)); $('swLupa').disabled = !settings.aimHelp;
   $('rowLupa').classList.toggle('off', !settings.aimHelp);
-  $('lupaHint').textContent = settings.aimHelp ? 'Acerca la greda donde va la mira' : 'Necesita la mira activada';
+  $('lupaHint').textContent = !settings.aimHelp ? 'Necesita la mira activada' : settings.game === 'rana' ? 'Muestra la mesa desde arriba' : 'Acerca la greda donde va la mira';
   $('swPower').setAttribute('aria-checked', String(settings.power)); $('gauge').hidden = !settings.power;
   $('swMusic').setAttribute('aria-checked', String(settings.music !== false));
   $('grpDiff').hidden = settings.mode !== 'cpu';
@@ -3925,20 +4414,47 @@ function showMenu() {
   if (game) clearCancha(); game = null; reticle.visible = false;
   setHud(false); renderMenu(); showScreen('menu');
 }
-/* Partida a: tres valores de siempre o uno personalizado entre GOAL_MIN y GOAL_MAX */
+/* Modo beta: lo nuevo que se está probando (por ahora la rana) solo sale en el celular donde se prende.
+   Se prende tocando 7 veces la versión del menú y escribiendo el código. No es seguridad (el código del juego es
+   público): solo esconde lo que todavía se está probando. Se guarda en este celular; otras 7 veces la apagan. */
+const BETA_HASH = 'dcb67db02a0afe0fb52cbe5a5af52bde7c63e5192de4376a242c4a06504883ef';
+let betaOn = false, betaTaps = 0, betaTapAt = 0;
+try { betaOn = !!store.get('tejo.beta.v1', false); } catch (e) { }
+function betaTap() {
+  const now = performance.now(); betaTaps = now - betaTapAt < 1500 ? betaTaps + 1 : 1; betaTapAt = now;
+  if (betaTaps < 7) return;
+  betaTaps = 0;
+  if (betaOn) { betaOn = false; store.set('tejo.beta.v1', false); toast('Modo beta apagado'); renderMenu(); return; }
+  $('grpBeta').hidden = false; $('betaIn').value = ''; $('betaIn').focus();
+}
+async function betaTry() {
+  const code = $('betaIn').value.trim().toLowerCase(); if (!code) return;
+  let h = '';
+  try { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code)); h = [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join(''); } catch (e) { }
+  if (h === BETA_HASH) { betaOn = true; store.set('tejo.beta.v1', true); $('grpBeta').hidden = true; toast('Modo beta activado'); renderMenu(); }
+  else toast('Ese código no es');
+}
+/* Partida a: tres valores de siempre o uno personalizado. Cada juego guarda su meta (goal en el tejo, ranaGoal en la rana). */
 const GOAL_PRESETS = [15, 21, 27], GOAL_MIN = 3, GOAL_MAX = 99;
+const RANA_GOAL = { presets: [500, 1000, 1500], min: 200, max: 9950, step: 50 };
 let goalOpen = false;
 function clampGoal(v) { v = Math.round(+v); return isFinite(v) ? Math.min(GOAL_MAX, Math.max(GOAL_MIN, v)) : 27; }
-function setGoal(v) { settings.goal = clampGoal(v); if (!GOAL_PRESETS.includes(settings.goal)) settings.goalOther = settings.goal; saveSettings(); renderMenu(); }
+function clampRanaGoal(v) { v = Math.round(+v); return isFinite(v) ? Math.min(RANA_GOAL.max, Math.max(RANA_GOAL.min, v)) : 1000; }
+function goalCfg() {
+  return settings.game === 'rana' ? { key: 'ranaGoal', other: 'ranaGoalOther', start: 750, clamp: clampRanaGoal, ...RANA_GOAL }
+    : { key: 'goal', other: 'goalOther', start: 33, clamp: clampGoal, presets: GOAL_PRESETS, min: GOAL_MIN, max: GOAL_MAX, step: 1 };
+}
+function fmtGoal(v) { return v >= 1000 ? v.toLocaleString('es-CO') : String(v); }
+function setGoal(v) { const gc = goalCfg(); settings[gc.key] = gc.clamp(v); if (!gc.presets.includes(settings[gc.key])) settings[gc.other] = settings[gc.key]; saveSettings(); renderMenu(); }
 function bindGoal() {
   $('segGoal').addEventListener('click', e => {
-    const b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.v === 'otra') { goalOpen = true; if (GOAL_PRESETS.includes(settings.goal)) settings.goal = clampGoal(settings.goalOther || 33); }
-    else { goalOpen = false; settings.goal = +b.dataset.v; }
+    const b = e.target.closest('button'); if (!b) return; const gc = goalCfg();
+    if (b.dataset.v === 'otra') { goalOpen = true; if (gc.presets.includes(settings[gc.key])) settings[gc.key] = gc.clamp(settings[gc.other] || gc.start); }
+    else { goalOpen = false; settings[gc.key] = +b.dataset.v; }
     saveSettings(); renderMenu(); A.init(); A.tick();
   });
-  $('goalMinus').addEventListener('click', () => { setGoal(settings.goal - 1); A.init(); A.tick(); });
-  $('goalPlus').addEventListener('click', () => { setGoal(settings.goal + 1); A.init(); A.tick(); });
+  $('goalMinus').addEventListener('click', () => { const gc = goalCfg(); setGoal(settings[gc.key] - gc.step); A.init(); A.tick(); });
+  $('goalPlus').addEventListener('click', () => { const gc = goalCfg(); setGoal(settings[gc.key] + gc.step); A.init(); A.tick(); });
   $('goalIn').addEventListener('change', () => setGoal($('goalIn').value));
   $('goalIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('goalIn').blur(); });
 }
@@ -3956,7 +4472,7 @@ function pause() {
   if (online()) { $('pauseInfo').textContent = `Sala ${NET.code} · la partida sigue mientras ves este menú. Si no ves los tiros de los demás, toca Reconectar.`; $('btnRestart').hidden = true; $('btnReconnect').hidden = false; $('btnMenu').textContent = 'Salir de la sala'; showScreen('pause'); return; }
   $('btnRestart').hidden = false; $('btnReconnect').hidden = true; $('btnMenu').textContent = 'Menú';
   paused = true; drag = null; if (phase === 'aim') { setGauge(0, lastP[current().name]); reticle.visible = false; }
-  $('pauseInfo').textContent = game.mode === 'reto' ? `Reto · tejo ${Math.min(game.thrown + 1, RETO_THROWS)} de ${RETO_THROWS} · ${fmtD(W.D)}` : `Ronda ${game.round} · partida a ${game.goal} · ${fmtD(W.D)}`;
+  $('pauseInfo').textContent = isRana() ? `Rana · ronda ${game.round} · partida a ${fmtGoal(game.goal)}` : game.mode === 'reto' ? `Reto · tejo ${Math.min(game.thrown + 1, RETO_THROWS)} de ${RETO_THROWS} · ${fmtD(W.D)}` : `Ronda ${game.round} · partida a ${game.goal} · ${fmtD(W.D)}`;
   showScreen('pause');
 }
 function resume() { paused = false; showScreen(null); }
@@ -4016,7 +4532,8 @@ function bindInput() {
 }
 
 function bindUI() {
-  bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
+  bindSeg('segGame', 'game', v => v === 'rana' ? 'rana' : 'tejo');
+  $('verTag').addEventListener('click', betaTap); $('btnBeta').addEventListener('click', betaTry); $('betaIn').addEventListener('keydown', e => { if (e.key === 'Enter') betaTry(); }); bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
   bindSeg('segDist', 'dist', Number); bindGoal(); bindSeg('segTeams', 'teams', Number); bindSeg('segCpuSize', 'cpuSize', Number);
   $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; if (!settings.aimHelp) settings.lupa = false; saveSettings(); renderMenu(); });
   $('swLupa').addEventListener('click', () => { if (!settings.aimHelp) return; settings.lupa = !settings.lupa; saveSettings(); renderMenu(); });
@@ -4048,7 +4565,7 @@ function resize() {
 /* ================= Recarga en caliente ================= */
 function snapshot() {
   const base = { settings: { ...settings } };
-  if (!game || game.over || phase === 'menu' || online()) return base;
+  if (!game || game.over || phase === 'menu' || online() || isRana()) return base;   // la rana no se guarda para seguir después
   return {
     ...base, lastP, pending: phase === 'result' || phase === 'roundEnd',
     game: {

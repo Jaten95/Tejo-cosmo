@@ -1,7 +1,7 @@
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, music: true };
+const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, music: true, game: 'tejo', ranaGoal: 1000 };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
@@ -52,6 +52,7 @@ function later(sec, fn) { timers.push({ t: sec, fn }); }
 function tickTimers(dt) { for (let i = timers.length - 1; i >= 0; i--) { timers[i].t -= dt; if (timers[i].t <= 0) { const f = timers[i].fn; timers.splice(i, 1); f(); } } }
 
 function computeDvdP() {
+  if (isRana() || (!game && settings.game === 'rana')) { dvdP = RANA.SPAN; return; }
   const a = predict({ L: 0, P: AIM.P0 - .03 }), b = predict({ L: 0, P: AIM.P0 + .03 });
   dvdP = (a && b) ? Math.max(.3, (toUV(b.p).v - toUV(a.p).v) / .06) : 1.4;
 }
@@ -89,6 +90,7 @@ function startGame() {
   else players = [newPlayer(settings.names[0] || 'Tú', 0, false, D[0])];
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: settings.goal, mode: settings.mode, thrown: 0, over: false };
   game.teams = applyTeams(players, players[0].team !== undefined ? nT : 0);
+  if (settings.game === 'rana' && settings.mode !== 'reto') { ranaPrepare(); game.goal = clampRanaGoal(settings.ranaGoal); computeDvdP(); }
   lastP = {};
   clearFeed();
   showScreen(null); setHud(true);
@@ -101,6 +103,7 @@ function clearCancha() {
   clearDecals();
   if (manoRing) { cancha.remove(manoRing); manoRing = null; }
   resetMechas(false);
+  if (isRana()) { ranaClearRings(); game.arg = 0; game.turnPts = 0; }
 }
 
 // first: quien sale en esta ronda. Si no se dice, sale el siguiente al que salió en la ronda anterior
@@ -117,6 +120,7 @@ function nextThrow() {
   const p = current();
   renderBoard(); renderTurn();
   reticle.visible = false; setGauge(0, lastP[p.name]);
+  if (isRana()) ranaBoardDraw();
   if (online()) return netTurn(p);
   if (p.cpu) {
     phase = 'cpu'; hint(`${p.name} está midiendo…`, true);
@@ -124,7 +128,7 @@ function nextThrow() {
   } else {
     phase = 'aim';
     helpHint(game.thrown < 2 ? 'Arrastra hacia abajo para cargar,\na los lados para apuntar • suelta' : 'Arrastra y suelta para lanzar');
-    if (settings.mode === 'local' && game.players.length > 1) toast(`Turno de ${p.name}`);
+    if (settings.mode === 'local' && game.players.length > 1 && !(isRana() && game.arg)) toast(isRana() ? `Tanda de ${p.name}: 6 argollas` : `Turno de ${p.name}`);
   }
 }
 
@@ -139,6 +143,7 @@ function aimForUV(tu, tv) {
   return { L, P: (lo + hi) / 2 };
 }
 function planCpu(p) {
+  if (isRana()) return ranaPlanCpu(p);
   const d = DIFF[settings.diff];
   let tu = 0, tv = 0;
   if (settings.diff >= 2 && Math.random() < (settings.diff === 3 ? .7 : .35)) { const a = MECHA_ANG[Math.floor(Math.random() * 4)]; tu = Math.cos(a) * .035; tv = Math.sin(a) * .035; }
@@ -163,10 +168,11 @@ function wobble(holdT, t) {
 }
 function currentAim(now) {
   if (!drag) return null;
-  const w = wobble((now - drag.t0) / 1000, now / 1000);
-  return { L: drag.L + w.x, P: clamp(drag.P + w.y / dvdP, 0, 1), amp: w.amp };
+  const w = wobble((now - drag.t0) / 1000, now / 1000), kx = isRana() ? 2.4 : 1;   // en la rana la mesa es pequeña: el pulso se nota más de lado
+  return { L: drag.L + w.x * kx, P: clamp(drag.P + w.y / dvdP, 0, 1), amp: w.amp };
 }
 function showReticle(aim) {
+  if (isRana()) return ranaShowReticle(aim);
   if (!aimHelpNow()) { reticle.visible = false; return; }
   const pr = predict(aim);
   if (!pr) { reticle.visible = false; return; }
@@ -180,8 +186,9 @@ function showReticle(aim) {
 }
 
 /* ---------- Lanzar ---------- */
-function finalAim(aim) { return { L: aim.L + gauss() * .012, P: aim.P + gauss() * .012 / dvdP }; }
+function finalAim(aim) { return isRana() ? { L: aim.L + gauss() * .03 / RANA.LX, P: aim.P + gauss() * .03 / RANA.SPAN } : { L: aim.L + gauss() * .012, P: aim.P + gauss() * .012 / dvdP }; }
 function launch(a, opts) {
+  if (isRana()) return ranaLaunch(a, opts);
   const p = current();
   lastP[p.name] = a.P;
   const v0 = aimToVel(a);
@@ -356,6 +363,7 @@ function replayCamera(dt) {
 }
 
 function advance() {
+  if (isRana()) return ranaAdvance();
   if (replay) { const r = replay; r.done = null; endReplay(); }
   if (phase === 'over') return;
   const leader = winnerNow();
@@ -436,6 +444,8 @@ function updateCamera(dt) {
     orbit += dt * .12;
     const r = 3.4, c = W.C;
     tgt = { pos: V(Math.sin(orbit) * r * .8, 1.5 + Math.sin(orbit * .7) * .3, c.z + Math.cos(orbit) * r * .6 + 2.2), look: c.clone().add(V(0, .1, 0)), fov: 42 }; k = 2;
+    if (phase === 'over' ? isRana() : settings.game === 'rana') tgt = ranaMenuPose(orbit);
+  } else if (isRana()) { tgt = ranaCamPose(); k = 4;
   } else if (phase === 'flight' && flight) {
     const f = flight, p = f.mesh.position, remain = f.impactAt - f.t;
     const chase = { pos: p.clone().add(V(.15, .38, 1.35)), look: p.clone().lerp(W.C, .45), fov: 48 };
@@ -462,6 +472,7 @@ function updateCamera(dt) {
   lupaCur.u = lerp(lupaCur.u, lu, 1 - Math.exp(-4 * dt)); lupaCur.v = lerp(lupaCur.v, lv, 1 - Math.exp(-4 * dt));
   const lc = fromUV(lupaCur.u, lupaCur.v);
   lupaCam.position.copy(lc).addScaledVector(W.n, 1.15); lupaCam.up.copy(W.s); lupaCam.lookAt(lc);
+  if (isRana()) ranaLupa();
 }
 const lupaCur = { u: 0, v: 0 };
 
@@ -476,7 +487,7 @@ function updateGame(dt, now) {
   }
   if (phase === 'wait') netWatch();
   if (phase === 'cpu') updateCpu(dt);
-  if (phase === 'flight') updateFlight(dt);
+  if (phase === 'flight') { if (isRana()) ranaUpdate(dt); else updateFlight(dt); }
   if (replay) updateReplay(dt);
   mechaMeshes.forEach(m => { if (m.userData.grow !== undefined) { m.userData.grow += dt * 3; const s = ease(clamp(m.userData.grow, 0, 1)); m.scale.setScalar(Math.max(.01, s)); if (m.userData.grow >= 1) delete m.userData.grow; } });
   if (manoRing) { const s = 1 + Math.sin(now / 160) * .12; manoRing.scale.set(s, s, 1); }
@@ -489,7 +500,7 @@ function render() {
   const el = document.getElementById('lupa'); const show = lupaOn();
   el.style.visibility = show ? 'visible' : 'hidden';
   const zb = document.getElementById('zoomBtns');   // arriba a la derecha; si la lupa está, debajo de ella
-  zb.style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay && !online() ? 'visible' : 'hidden';   // en salas el zoom lo pone el anfitrión
+  zb.style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay && !online() && !isRana() ? 'visible' : 'hidden';   // en salas el zoom lo pone el anfitrión
   zb.classList.toggle('underLupa', show);
   if (show) {
     const r = el.getBoundingClientRect(), b = 3;
@@ -505,7 +516,7 @@ function frame(now) {
     if (!paused) { tickTimers(dt); updateGame(dt, now); updateFx(dt); }
     updateAmbience(paused ? 0 : dt);
     updatePets(paused ? 0 : dt);
-    musicSync(); updateSpeakers(paused ? 0 : dt);
+    musicSync(); updateSpeakers(paused ? 0 : dt); ranaFrame();
     updateArm(paused ? 0 : dt, now);
     updateCamera(paused ? 0 : dt);
     camSafe();

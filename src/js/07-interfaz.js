@@ -9,7 +9,8 @@ const store = {
 function saveSettings() { store.set('tejo.settings.v1', settings); }
 function loadSettings() {
   const s = store.get('tejo.settings.v1', null); if (s) Object.assign(settings, s);
-  settings.goal = clampGoal(settings.goal);
+  settings.goal = clampGoal(settings.goal); settings.ranaGoal = clampRanaGoal(settings.ranaGoal);
+  if (settings.game !== 'rana') settings.game = 'tejo';
   // antes el juego traía nombres de ejemplo (Javi, Pacho…); se borran para que cada quien escriba el suyo
   if (!settings.namesV2) {
     const OLD = ['Javi', 'Pacho', 'Mafe', 'Leo', 'Caro', 'Nico'];
@@ -91,6 +92,7 @@ function renderTurn() {
   $('turnWho').textContent = game.mode === 'reto' ? `Tejo ${game.thrown + 1} de ${RETO_THROWS}` : (p.cpu ? `Lanza ${p.name}` : (online() && p.pid === NET.pid) ? 'Te toca' : `Lanza ${p.name}`);
   $('turnWho').style.color = p.color === COLORS[3] ? 'var(--yellow)' : '';
   const tm = teamOf(p);
+  if (isRana()) { $('turnMeta').textContent = `${tm ? 'Equipo ' + tm.name + ' · ' : ''}${online() ? 'Sala ' + NET.code + ' · ' : ''}Argolla ${Math.min(game.arg + 1, RANA.PER_TURN)} de ${RANA.PER_TURN} · ronda ${game.round} · partida a ${fmtGoal(game.goal)}`; return; }
   $('turnMeta').textContent = game.mode === 'reto' ? `${fmtD(W.D)} · mecha 3 · embocinada 6 · moñona 9` : `${tm ? 'Equipo ' + tm.name + ' · ' : ''}${online() ? 'Sala ' + NET.code + ' · ' : ''}Ronda ${game.round} · ${fmtD(W.D)} · partida a ${game.goal}`;
 }
 function renderOver(winner) {
@@ -98,7 +100,10 @@ function renderOver(winner) {
   const ts = p => teamOf(p) ? teamScore(teamOf(p)) : 0;
   const rows = [...game.players].map((p, i) => ({ p, i })).sort((a, b) => (ts(b.p) - ts(a.p)) || (b.p.score - a.p.score));
   const won = p => game.mode !== 'reto' && (winner.team ? p.team === winner.idx : p === winner);
-  tbl.innerHTML = `<tr><th>Jugador</th><th>Pts</th><th>Mecha</th><th>Emboc.</th><th>Moñona</th><th>Mano</th><th>Nulo</th></tr>` +
+  tbl.innerHTML = isRana()   // en la rana: st.mon = ranas, st.emb = sapitos, st.mechas = metidas, st.nulos = afuera
+    ? `<tr><th>Jugador</th><th>Pts</th><th>Rana</th><th>Sapito</th><th>Metidas</th><th>Afuera</th></tr>` +
+      rows.map(({ p }) => `<tr class="${won(p) ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.mon}</td><td>${p.st.emb}</td><td>${p.st.mechas}/${p.st.tiros}</td><td>${p.st.nulos}</td></tr>`).join('')
+    : `<tr><th>Jugador</th><th>Pts</th><th>Mecha</th><th>Emboc.</th><th>Moñona</th><th>Mano</th><th>Nulo</th></tr>` +
     rows.map(({ p }) => `<tr class="${won(p) ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.mechas}</td><td>${p.st.emb}</td><td>${p.st.mon}</td><td>${p.st.manos}</td><td>${p.st.nulos}</td></tr>`).join('');
   [...tbl.querySelectorAll('tr')].slice(1).forEach((tr, k) => tr.firstChild.textContent = rows[k].p.name);
   if (game.mode === 'reto') {
@@ -111,13 +116,13 @@ function renderOver(winner) {
   } else if (winner.team) {
     const t = game.teams[winner.idx], names = t.members.map(i => game.players[i].name);
     const others = game.teams.filter((x, i) => i !== winner.idx).map(teamScore);
-    $('overEyebrow').textContent = `Partida a ${game.goal} por equipos · ${fmtD(settings.dist)}`;
+    $('overEyebrow').textContent = isRana() ? `Rana a ${fmtGoal(game.goal)} por equipos` : `Partida a ${game.goal} por equipos · ${fmtD(settings.dist)}`;
     $('overWinner').textContent = `Ganó el equipo ${t.name}`;
     $('overLine').textContent = `${names.slice(0, -1).join(', ')}${names.length > 1 ? ' y ' : ''}${names[names.length - 1]}: ${winner.score} a ${others.join(' a ')} en ${game.round} ${game.round === 1 ? 'ronda' : 'rondas'}.`;
     $('btnAgain').textContent = 'Revancha';
   } else {
     const others = rows.filter(r => r.p !== winner).map(r => r.p.score);
-    $('overEyebrow').textContent = `Partida a ${game.goal} · ${fmtD(settings.dist)}`;
+    $('overEyebrow').textContent = isRana() ? `Rana a ${fmtGoal(game.goal)}` : `Partida a ${game.goal} · ${fmtD(settings.dist)}`;
     $('overWinner').textContent = `Ganó ${winner.name}`;
     $('overLine').textContent = winner.cpu ? `Don Chepe te ganó ${winner.score} a ${others[0]} en ${game.round} rondas.` :
       `${winner.score} a ${others.join(' a ')} en ${game.round} ${game.round === 1 ? 'ronda' : 'rondas'}.` + (game.mode === 'cpu' ? ' Don Chepe pide la revancha.' : '');
@@ -133,19 +138,32 @@ function renderOver(winner) {
 function setSeg(id, val) { $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(val)))); }
 function renderMenu() {
   fixLocalDesigns();
+  // tejo o rana: la rana es beta (solo sale en el celular donde se prendió); no tiene reto ni distancias y su meta va en otros números
+  if (!betaOn) settings.game = 'tejo';
+  $('grpGame').hidden = !betaOn; $('verTag').textContent = 'v' + GAME_VERSION + (betaOn ? ' · beta' : '');
+  const rana = settings.game === 'rana';
+  if (rana && settings.mode === 'reto') settings.mode = 'cpu';
+  setSeg('segGame', settings.game);
+  $('segMode').querySelector('[data-v="reto"]').hidden = rana;
+  $('grpDist').hidden = rana;
+  $('brandTitle').textContent = rana ? 'RANA' : 'TEJO';
+  $('brandLine').textContent = rana ? 'Argollas, huecos y la rana de metal. Métela en la boca de la rana y llega primero a la meta.' : 'Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.';
+  $('aimHint').textContent = rana ? 'Muestra dónde cae la argolla mientras apuntas' : 'Muestra dónde cae el tejo mientras apuntas';
   setSeg('segMode', settings.mode); setSeg('segCount', settings.count); setSeg('segDiff', settings.diff); setSeg('segDist', settings.dist);
-  // partida a 15, 21, 27 u otro valor que uno escribe
-  const otherGoal = goalOpen || !GOAL_PRESETS.includes(settings.goal);
-  setSeg('segGoal', otherGoal ? 'otra' : settings.goal);
-  $('goalOther').innerHTML = otherGoal ? `${settings.goal}<small>otra</small>` : 'Otra';
+  // partida a: valores de siempre u otro que uno escribe (en el tejo 15, 21, 27; en la rana 1.000, 2.000, 3.000)
+  const gc = goalCfg(), gv = settings[gc.key], otherGoal = goalOpen || !gc.presets.includes(gv);
+  [...$('segGoal').querySelectorAll('button:not(#goalOther)')].forEach((b, i) => { b.dataset.v = gc.presets[i]; b.textContent = fmtGoal(gc.presets[i]); });
+  setSeg('segGoal', otherGoal ? 'otra' : gv);
+  $('goalOther').innerHTML = otherGoal ? `${fmtGoal(gv)}<small>otra</small>` : 'Otra';
   $('goalCustom').hidden = !otherGoal;
-  if (document.activeElement !== $('goalIn')) $('goalIn').value = settings.goal;
-  $('goalMinus').disabled = settings.goal <= GOAL_MIN; $('goalPlus').disabled = settings.goal >= GOAL_MAX;
+  $('goalIn').min = gc.min; $('goalIn').max = gc.max; $('goalIn').step = gc.step;
+  if (document.activeElement !== $('goalIn')) $('goalIn').value = gv;
+  $('goalMinus').disabled = gv <= gc.min; $('goalPlus').disabled = gv >= gc.max;
   $('swAim').setAttribute('aria-checked', String(settings.aimHelp));
   // la lupa solo se puede prender con la mira prendida; la barra de fuerza va aparte
   $('swLupa').setAttribute('aria-checked', String(settings.aimHelp && settings.lupa)); $('swLupa').disabled = !settings.aimHelp;
   $('rowLupa').classList.toggle('off', !settings.aimHelp);
-  $('lupaHint').textContent = settings.aimHelp ? 'Acerca la greda donde va la mira' : 'Necesita la mira activada';
+  $('lupaHint').textContent = !settings.aimHelp ? 'Necesita la mira activada' : settings.game === 'rana' ? 'Muestra la mesa desde arriba' : 'Acerca la greda donde va la mira';
   $('swPower').setAttribute('aria-checked', String(settings.power)); $('gauge').hidden = !settings.power;
   $('swMusic').setAttribute('aria-checked', String(settings.music !== false));
   $('grpDiff').hidden = settings.mode !== 'cpu';
@@ -192,20 +210,47 @@ function showMenu() {
   if (game) clearCancha(); game = null; reticle.visible = false;
   setHud(false); renderMenu(); showScreen('menu');
 }
-/* Partida a: tres valores de siempre o uno personalizado entre GOAL_MIN y GOAL_MAX */
+/* Modo beta: lo nuevo que se está probando (por ahora la rana) solo sale en el celular donde se prende.
+   Se prende tocando 7 veces la versión del menú y escribiendo el código. No es seguridad (el código del juego es
+   público): solo esconde lo que todavía se está probando. Se guarda en este celular; otras 7 veces la apagan. */
+const BETA_HASH = 'dcb67db02a0afe0fb52cbe5a5af52bde7c63e5192de4376a242c4a06504883ef';
+let betaOn = false, betaTaps = 0, betaTapAt = 0;
+try { betaOn = !!store.get('tejo.beta.v1', false); } catch (e) { }
+function betaTap() {
+  const now = performance.now(); betaTaps = now - betaTapAt < 1500 ? betaTaps + 1 : 1; betaTapAt = now;
+  if (betaTaps < 7) return;
+  betaTaps = 0;
+  if (betaOn) { betaOn = false; store.set('tejo.beta.v1', false); toast('Modo beta apagado'); renderMenu(); return; }
+  $('grpBeta').hidden = false; $('betaIn').value = ''; $('betaIn').focus();
+}
+async function betaTry() {
+  const code = $('betaIn').value.trim().toLowerCase(); if (!code) return;
+  let h = '';
+  try { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code)); h = [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join(''); } catch (e) { }
+  if (h === BETA_HASH) { betaOn = true; store.set('tejo.beta.v1', true); $('grpBeta').hidden = true; toast('Modo beta activado'); renderMenu(); }
+  else toast('Ese código no es');
+}
+/* Partida a: tres valores de siempre o uno personalizado. Cada juego guarda su meta (goal en el tejo, ranaGoal en la rana). */
 const GOAL_PRESETS = [15, 21, 27], GOAL_MIN = 3, GOAL_MAX = 99;
+const RANA_GOAL = { presets: [500, 1000, 1500], min: 200, max: 9950, step: 50 };
 let goalOpen = false;
 function clampGoal(v) { v = Math.round(+v); return isFinite(v) ? Math.min(GOAL_MAX, Math.max(GOAL_MIN, v)) : 27; }
-function setGoal(v) { settings.goal = clampGoal(v); if (!GOAL_PRESETS.includes(settings.goal)) settings.goalOther = settings.goal; saveSettings(); renderMenu(); }
+function clampRanaGoal(v) { v = Math.round(+v); return isFinite(v) ? Math.min(RANA_GOAL.max, Math.max(RANA_GOAL.min, v)) : 1000; }
+function goalCfg() {
+  return settings.game === 'rana' ? { key: 'ranaGoal', other: 'ranaGoalOther', start: 750, clamp: clampRanaGoal, ...RANA_GOAL }
+    : { key: 'goal', other: 'goalOther', start: 33, clamp: clampGoal, presets: GOAL_PRESETS, min: GOAL_MIN, max: GOAL_MAX, step: 1 };
+}
+function fmtGoal(v) { return v >= 1000 ? v.toLocaleString('es-CO') : String(v); }
+function setGoal(v) { const gc = goalCfg(); settings[gc.key] = gc.clamp(v); if (!gc.presets.includes(settings[gc.key])) settings[gc.other] = settings[gc.key]; saveSettings(); renderMenu(); }
 function bindGoal() {
   $('segGoal').addEventListener('click', e => {
-    const b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.v === 'otra') { goalOpen = true; if (GOAL_PRESETS.includes(settings.goal)) settings.goal = clampGoal(settings.goalOther || 33); }
-    else { goalOpen = false; settings.goal = +b.dataset.v; }
+    const b = e.target.closest('button'); if (!b) return; const gc = goalCfg();
+    if (b.dataset.v === 'otra') { goalOpen = true; if (gc.presets.includes(settings[gc.key])) settings[gc.key] = gc.clamp(settings[gc.other] || gc.start); }
+    else { goalOpen = false; settings[gc.key] = +b.dataset.v; }
     saveSettings(); renderMenu(); A.init(); A.tick();
   });
-  $('goalMinus').addEventListener('click', () => { setGoal(settings.goal - 1); A.init(); A.tick(); });
-  $('goalPlus').addEventListener('click', () => { setGoal(settings.goal + 1); A.init(); A.tick(); });
+  $('goalMinus').addEventListener('click', () => { const gc = goalCfg(); setGoal(settings[gc.key] - gc.step); A.init(); A.tick(); });
+  $('goalPlus').addEventListener('click', () => { const gc = goalCfg(); setGoal(settings[gc.key] + gc.step); A.init(); A.tick(); });
   $('goalIn').addEventListener('change', () => setGoal($('goalIn').value));
   $('goalIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('goalIn').blur(); });
 }
@@ -223,7 +268,7 @@ function pause() {
   if (online()) { $('pauseInfo').textContent = `Sala ${NET.code} · la partida sigue mientras ves este menú. Si no ves los tiros de los demás, toca Reconectar.`; $('btnRestart').hidden = true; $('btnReconnect').hidden = false; $('btnMenu').textContent = 'Salir de la sala'; showScreen('pause'); return; }
   $('btnRestart').hidden = false; $('btnReconnect').hidden = true; $('btnMenu').textContent = 'Menú';
   paused = true; drag = null; if (phase === 'aim') { setGauge(0, lastP[current().name]); reticle.visible = false; }
-  $('pauseInfo').textContent = game.mode === 'reto' ? `Reto · tejo ${Math.min(game.thrown + 1, RETO_THROWS)} de ${RETO_THROWS} · ${fmtD(W.D)}` : `Ronda ${game.round} · partida a ${game.goal} · ${fmtD(W.D)}`;
+  $('pauseInfo').textContent = isRana() ? `Rana · ronda ${game.round} · partida a ${fmtGoal(game.goal)}` : game.mode === 'reto' ? `Reto · tejo ${Math.min(game.thrown + 1, RETO_THROWS)} de ${RETO_THROWS} · ${fmtD(W.D)}` : `Ronda ${game.round} · partida a ${game.goal} · ${fmtD(W.D)}`;
   showScreen('pause');
 }
 function resume() { paused = false; showScreen(null); }
@@ -283,7 +328,8 @@ function bindInput() {
 }
 
 function bindUI() {
-  bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
+  bindSeg('segGame', 'game', v => v === 'rana' ? 'rana' : 'tejo');
+  $('verTag').addEventListener('click', betaTap); $('btnBeta').addEventListener('click', betaTry); $('betaIn').addEventListener('keydown', e => { if (e.key === 'Enter') betaTry(); }); bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
   bindSeg('segDist', 'dist', Number); bindGoal(); bindSeg('segTeams', 'teams', Number); bindSeg('segCpuSize', 'cpuSize', Number);
   $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; if (!settings.aimHelp) settings.lupa = false; saveSettings(); renderMenu(); });
   $('swLupa').addEventListener('click', () => { if (!settings.aimHelp) return; settings.lupa = !settings.lupa; saveSettings(); renderMenu(); });
@@ -315,7 +361,7 @@ function resize() {
 /* ================= Recarga en caliente ================= */
 function snapshot() {
   const base = { settings: { ...settings } };
-  if (!game || game.over || phase === 'menu' || online()) return base;
+  if (!game || game.over || phase === 'menu' || online() || isRana()) return base;   // la rana no se guarda para seguir después
   return {
     ...base, lastP, pending: phase === 'result' || phase === 'roundEnd',
     game: {
