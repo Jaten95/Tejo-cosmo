@@ -147,9 +147,8 @@ function drawBackboard(g, Wd, Hd) {
   g.fillStyle = sun; g.fillRect(0, Hd * .5, Wd, Hd * .5);
   g.fillStyle = '#e9b520'; g.beginPath(); g.ellipse(cx, Hd * .64, Wd * .55, Hd * .07, 0, Math.PI, 0); g.fill();
   // medallón con el águila
-  g.fillStyle = '#2b5fae'; g.beginPath(); g.arc(cx, cy, 96, 0, 7); g.fill();
+  g.fillStyle = '#f2e6c8'; g.beginPath(); g.arc(cx, cy, 96, 0, 7); g.fill();
   g.lineWidth = 14; g.strokeStyle = '#c4361f'; g.stroke();
-  g.lineWidth = 4; g.strokeStyle = '#f2e6c8'; g.beginPath(); g.arc(cx, cy, 86, 0, 7); g.stroke();
   g.save(); g.beginPath(); g.arc(cx, cy, 84, 0, 7); g.clip(); g.translate(cx + 4, cy + 2); g.scale(84, 84); drawEagle(g); g.restore();
   // letrero del club en una banda azul curva
   g.save();

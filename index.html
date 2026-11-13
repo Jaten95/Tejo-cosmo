@@ -349,7 +349,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.34</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.35</span></div>
   </div></div>
 </section>
 
@@ -446,7 +446,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.34";
+const GAME_VERSION = "1.35";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -923,9 +923,8 @@ function drawBackboard(g, Wd, Hd) {
   g.fillStyle = sun; g.fillRect(0, Hd * .5, Wd, Hd * .5);
   g.fillStyle = '#e9b520'; g.beginPath(); g.ellipse(cx, Hd * .64, Wd * .55, Hd * .07, 0, Math.PI, 0); g.fill();
   // medallón con el águila
-  g.fillStyle = '#2b5fae'; g.beginPath(); g.arc(cx, cy, 96, 0, 7); g.fill();
+  g.fillStyle = '#f2e6c8'; g.beginPath(); g.arc(cx, cy, 96, 0, 7); g.fill();
   g.lineWidth = 14; g.strokeStyle = '#c4361f'; g.stroke();
-  g.lineWidth = 4; g.strokeStyle = '#f2e6c8'; g.beginPath(); g.arc(cx, cy, 86, 0, 7); g.stroke();
   g.save(); g.beginPath(); g.arc(cx, cy, 84, 0, 7); g.clip(); g.translate(cx + 4, cy + 2); g.scale(84, 84); drawEagle(g); g.restore();
   // letrero del club en una banda azul curva
   g.save();
