@@ -346,12 +346,12 @@ function restoreSnap(s) {
   if (winner) { gameOver(winner); return; }
   nextThrow();
 }
-const TURN_LIMIT = 15000;        // segundos para lanzar antes del nulo
+const TURN_LIMIT = 20000;        // segundos para lanzar antes del nulo
 function netTurn(p) {
   const mine = p.pid === NET.pid;
   phase = mine ? 'aim' : 'wait';
   NET.turnAt = performance.now(); NET.turnN = game.thrown;
-  if (mine) { hint('Te toca: arrastra hacia abajo y suelta', true); toast('Te toca'); buzz(25); }
+  if (mine) { helpHint('Te toca: arrastra hacia abajo y suelta'); toast('Te toca'); buzz(25); }
   else hint(`Esperando el tiro de ${p.name}…`, true);
   if (NET.sala) { NET.sala.presence({ s: makeSnap() }).catch(() => { }); if (amHost()) hostCheckThrow(presentPids(NET.sala.peers())); }
   tryConsume();

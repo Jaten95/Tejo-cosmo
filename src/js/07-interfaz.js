@@ -20,7 +20,9 @@ function records() { return store.get('tejo.record.v1', {}); }
 
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id); }
 function setHud(on) { $('hud').hidden = !on; $('gauge').hidden = !settings.power; keepAwake(on); $('btnRx').hidden = !(on && online()); if (!on || !online()) closeRxTray(); }
-function hint(text, on) { const h = $('hint'); if (text) h.textContent = text; h.classList.toggle('off', !on); }
+function hint(text, on, help = false) { const h = $('hint'); if (text) $('hintText').textContent = text; h.classList.toggle('off', !on); h.classList.toggle('help', !!help); }
+// ayudas de cómo lanzar: se pueden cerrar (vuelven a salir en la siguiente partida); los avisos de estado siempre salen
+function helpHint(text) { if (game && game.helpOff) hint('', false); else hint(text, true, true); }
 let toastTimer;
 function toast(text) { const t = $('toast'); t.textContent = text; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1900); }
 function announce(title, pts, big, nulo) {
@@ -207,7 +209,7 @@ function bindInput() {
     if (phase !== 'aim' || drag || armBusy()) return;
     drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, t0: performance.now(), L: 0, P: 0 };
     try { cv.setPointerCapture(e.pointerId); } catch (er) { }
-    hint('Suelta para lanzar · arrastra arriba del todo para cancelar', true);
+    helpHint('Suelta para lanzar · arrastra arriba del todo para cancelar');
   });
   cv.addEventListener('pointermove', e => {
     if (!drag || e.pointerId !== drag.id) return;
@@ -219,7 +221,7 @@ function bindInput() {
     if (!drag || e.pointerId !== drag.id) return;
     const aim = currentAim(performance.now()); const P = drag.P; drag = null;
     if (phase !== 'aim') return;
-    if (P < .06) { if (online()) netAim(null); reticle.visible = false; setGauge(0, lastP[current().name]); hint('Arrastra más hacia abajo para darle fuerza', true); return; }
+    if (P < .06) { if (online()) netAim(null); reticle.visible = false; setGauge(0, lastP[current().name]); helpHint('Arrastra más hacia abajo para darle fuerza'); return; }
     const fa = finalAim(aim);
     armRelease(() => { if (phase !== 'aim') return; if (online()) netThrow(fa); else launch(fa); });
   };
@@ -239,7 +241,7 @@ function bindInput() {
       drag.L = clamp(drag.L + keys[e.key][0] * .02 * f, -AIM.L, AIM.L);
       drag.P = clamp(drag.P + keys[e.key][1] * .01 * f, 0, 1);
       drag.t0 = performance.now();
-      hint('Flechas para apuntar · Shift afina · Espacio lanza', true);
+      helpHint('Flechas para apuntar · Shift afina · Espacio lanza');
     } else if ((e.key === ' ' || e.key === 'Enter') && drag && drag.id === 'kb') {
       e.preventDefault(); const aim = currentAim(performance.now()); drag = null; if (aim.P >= .06) { const fa = finalAim(aim); armRelease(() => { if (phase !== 'aim') return; if (online()) netThrow(fa); else launch(fa); }); }
     }
@@ -253,6 +255,7 @@ function bindUI() {
   $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; if (!settings.aimHelp) settings.lupa = false; saveSettings(); renderMenu(); });
   $('swLupa').addEventListener('click', () => { if (!settings.aimHelp) return; settings.lupa = !settings.lupa; saveSettings(); renderMenu(); });
   $('swPower').addEventListener('click', () => { settings.power = !settings.power; saveSettings(); renderMenu(); });
+  $('hintClose').addEventListener('click', () => { if (game) game.helpOff = true; hint('', false); });
   $('btnZoomIn').addEventListener('click', () => zoomBy(-ZOOM_STEP)); $('btnZoomOut').addEventListener('click', () => zoomBy(ZOOM_STEP)); updateZoomBtns();
   $('btnPlay').addEventListener('click', () => { A.init(); A.tick(); if (settings.mode === 'online') netCreate(); else startGame(); });
   $('btnRules').addEventListener('click', () => showScreen('rules'));
@@ -314,7 +317,7 @@ async function boot(data) {
   if (!window.THREE) { ld.textContent = 'No se pudo cargar el motor 3D. Revisa la conexión y vuelve a abrir la página.'; return; }
   loadSettings();
   if (data && data.settings) Object.assign(settings, data.settings);
-  try { await Promise.race([document.fonts.load('64px "Alfa Slab One"'), new Promise(r => setTimeout(r, 1800))]); } catch (e) { }
+  try { await Promise.race([Promise.all([document.fonts.load(CLUB_FONT), document.fonts.load(CHALK_FONT)]), new Promise(r => setTimeout(r, 1800))]); } catch (e) { }
   buildRenderer(); buildTextures(); buildArm();
   setDistance(settings.dist); buildHall(); computeDvdP();
   resize(); addEventListener('resize', resize);

@@ -18,7 +18,7 @@
     <button class="iconBtn" id="btnSound" aria-label="Sonido"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M17 9l5 6M22 9l-5 6"/></svg></button>
   </div>
   <div id="rxTray" hidden></div>
-  <div id="hint">Arrastra hacia abajo para cargar · suelta para lanzar</div>
+  <div id="hint"><span id="hintText">Arrastra hacia abajo para cargar · suelta para lanzar</span><button id="hintClose" aria-label="Cerrar la ayuda en esta partida">×</button></div>
   <button class="skipBtn" id="btnSkip" hidden>Saltar turno</button>
 </div>
 <div id="announce" aria-live="assertive"><div class="t" id="annT"></div><div class="s"></div><div class="p" id="annP"></div></div>
@@ -155,7 +155,7 @@
     <p class="prose"><b>Equipos:</b> con 4 o más jugadores se puede jugar en 2 equipos (o en 3 con 6 jugadores). Se arman al azar, los turnos se alternan entre equipos y los puntos de cada jugador suman para su equipo.</p>
     <p class="prose"><b>Reto:</b> 10 tejos para hacer el mayor puntaje posible. La mano no cuenta.</p>
     <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
-    <p class="prose"><b>Tiempo en salas:</b> tienes 15 segundos para lanzar. Si no lanzas, tu tiro es nulo y pasa el turno.</p>
+    <p class="prose"><b>Tiempo en salas:</b> tienes 20 segundos para lanzar. Si no lanzas, tu tiro es nulo y pasa el turno.</p>
     <p class="prose"><b>Salas:</b> uno crea la sala y pasa el código de 4 números; hasta 6 jugadores, cada uno en su celular. Si alguien no está cuando le toca, pierde el turno.</p>
     <div class="cta"><button class="btn" id="btnRulesBack">Entendido</button></div>
   </div></div>

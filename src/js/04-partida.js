@@ -108,7 +108,7 @@ function nextThrow() {
     planCpu(p);
   } else {
     phase = 'aim';
-    hint(game.thrown < 2 ? 'Arrastra hacia abajo para cargar · a los lados para apuntar · suelta' : 'Arrastra y suelta para lanzar', true);
+    helpHint(game.thrown < 2 ? 'Arrastra hacia abajo para cargar · a los lados para apuntar · suelta' : 'Arrastra y suelta para lanzar');
     if (settings.mode === 'local' && game.players.length > 1) toast(`Turno de ${p.name}`);
   }
 }

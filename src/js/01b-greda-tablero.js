@@ -7,7 +7,14 @@
 /* La fuente del club (Alfa Slab One) puede llegar tarde, sobre todo en el celular la primera vez. Las texturas
    con letras se dibujan de una vez con la letra de respaldo y se vuelven a dibujar cuando la fuente llega. */
 const CLUB_FONT = '64px "Alfa Slab One"', CHALK_FONT = '700 64px "Caveat"';   // letra del club y letra de tiza
-function fontReady(f) { try { return document.fonts.check(f); } catch (e) { return true; } }
+// Safari a veces dice que una fuente está lista sin haberla bajado; por eso se mira el estado de la fuente misma
+function fontReady(f) {
+  try {
+    const fam = /"([^"]+)"/.exec(f)[1]; let found = false, loaded = false;
+    document.fonts.forEach(ff => { if (ff.family.replace(/["']/g, '') === fam) { found = true; if (ff.status === 'loaded') loaded = true; } });
+    return found ? loaded : document.fonts.check(f);
+  } catch (e) { return true; }
+}
 function clubFontReady() { return fontReady(CLUB_FONT); }
 const fontWaiters = [];
 function runFontWaiters() { for (let i = fontWaiters.length - 1; i >= 0; i--) if (fontReady(fontWaiters[i][0])) { const fn = fontWaiters.splice(i, 1)[0][1]; try { fn(); } catch (e) { } } }
