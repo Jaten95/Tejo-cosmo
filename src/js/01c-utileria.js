@@ -92,6 +92,58 @@ function makeMechaBox() {
   return propShadows(g);
 }
 
+/* Canastas plásticas de cerveza (sin marca) y botellas de vidrio */
+function crateSideTex(color, w, h, handle) {
+  const [c, g] = cnv(w, h);
+  g.fillStyle = color; g.fillRect(0, 0, w, h);
+  g.globalCompositeOperation = 'destination-out';   // las ranuras de la canasta
+  const cols = Math.round(w / 34), rows = 3, gw = w / cols, gh = (h - 36) / rows;
+  for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) {
+    if (handle && j === 0 && i >= cols / 2 - 1 && i < cols / 2 + 1) continue;
+    const x = i * gw + 6, y = 18 + j * gh + 5, ww = gw - 12, hh = gh - 10, r = 5;
+    g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + ww, y, x + ww, y + hh, r); g.arcTo(x + ww, y + hh, x, y + hh, r); g.arcTo(x, y + hh, x, y, r); g.arcTo(x, y, x + ww, y, r); g.fill();
+  }
+  if (handle) { g.beginPath(); g.ellipse(w / 2, 32, w * .14, 11, 0, 0, 7); g.fill(); }   // agarradera
+  g.globalCompositeOperation = 'source-over';
+  g.globalAlpha = .12; for (let i = 0; i < 400; i++) { g.fillStyle = Math.random() < .5 ? '#000' : '#fff'; g.fillRect(rand(0, w), rand(0, h), rand(1, 3), rand(1, 2)); }
+  g.globalAlpha = 1;
+  const t = tex(c); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t;
+}
+let BOTTLE_GEO = null;
+function bottleGeo() {   // botella retornable de vidrio, de perfil
+  const pts = [[0, 0], [.031, 0], [.033, .006], [.033, .15], [.03, .17], [.016, .205], [.012, .225], [.012, .245], [.014, .25], [0, .25]].map(([x, y]) => new THREE.Vector2(x, y));
+  return new THREE.LatheGeometry(pts, 14);
+}
+function makeCrate(color, fill) {
+  const g = new THREE.Group(), W3 = .46, D3 = .32, H3 = .28;
+  const long = std({ map: crateSideTex(color, 368, 224, false), transparent: true, alphaTest: .5, side: THREE.DoubleSide, roughness: .55 });
+  const short = std({ map: crateSideTex(color, 256, 224, true), transparent: true, alphaTest: .5, side: THREE.DoubleSide, roughness: .55 });
+  [[W3, 0, D3 / 2, 0, long], [W3, 0, -D3 / 2, Math.PI, long], [D3, W3 / 2, 0, Math.PI / 2, short], [D3, -W3 / 2, 0, -Math.PI / 2, short]].forEach(([w, x, z, ry, m]) => {
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(w, H3), m); pl.position.set(x, H3 / 2, z); pl.rotation.y = ry; g.add(pl);
+  });
+  const solid = std({ color, roughness: .55 });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(W3, .012, D3), solid); base.position.y = .006; g.add(base);
+  [[W3 + .006, .02, .01, 0, H3 - .01, D3 / 2], [W3 + .006, .02, .01, 0, H3 - .01, -D3 / 2], [.01, .02, D3 + .006, W3 / 2, H3 - .01, 0], [.01, .02, D3 + .006, -W3 / 2, H3 - .01, 0]]
+    .forEach(([w, h, d, x, y, z]) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), solid); b.position.set(x, y, z); g.add(b); });   // borde de arriba
+  if (fill) {   // botellas adentro (6 x 5), a veces falta alguna
+    BOTTLE_GEO = BOTTLE_GEO || bottleGeo();
+    const spots = [];
+    for (let i = 0; i < 6; i++) for (let j = 0; j < 5; j++) if (Math.random() < fill) spots.push([-W3 / 2 + W3 * (i + .5) / 6, -D3 / 2 + D3 * (j + .5) / 5]);
+    const glass = new THREE.InstancedMesh(BOTTLE_GEO, BOTTLE_MAT(), spots.length), m4 = new THREE.Matrix4();
+    spots.forEach(([x, z], k) => { m4.makeTranslation(x, .012, z); glass.setMatrixAt(k, m4); });
+    g.add(glass);
+  }
+  return propShadows(g);
+}
+let bottleMat = null;
+function BOTTLE_MAT() { return bottleMat || (bottleMat = std({ color: '#3f1e07', roughness: .12, metalness: .1, transparent: true, opacity: .92 })); }
+function makeBottle(lying) {
+  BOTTLE_GEO = BOTTLE_GEO || bottleGeo();
+  const b = new THREE.Mesh(BOTTLE_GEO, BOTTLE_MAT());
+  if (lying) { b.rotation.z = Math.PI / 2; b.position.y = .033; }
+  b.castShadow = true; return b;
+}
+
 function buildProps() {
   // todo en la esquina izquierda, entre la tabla del costado de la cancha y la pared (ahí no llega el tejo)
   const z0 = -W.D, sack = std({ map: burlapTex(), roughness: 1, side: THREE.DoubleSide });
@@ -101,6 +153,17 @@ function buildProps() {
   const s1 = makeSack(true, sack); s1.position.set(-2.85, 0, z0 - .3); hall.add(s1);
   const s2 = makeSack(false, sack); s2.position.set(-2.9, 0, z0 + .45); s2.rotation.y = 1.35; hall.add(s2);
   const s3 = makeSack(false, sack); s3.position.set(-2.92, .2, z0 + .4); s3.rotation.set(0, 1.6, .08); s3.scale.setScalar(.9); hall.add(s3);
+  // lado derecho: canastas de cerveza apiladas y botellas regadas
+  const crates = [
+    ['#b52d24', 0, 2.3, z0 - .35, .05], ['#b52d24', 0, 2.3, z0 - .35, .28, -.04], ['#2f6b3a', .95, 2.3, z0 - .35, .56, .03],
+    ['#2f6b3a', 0, 2.92, z0 + .15, .4], ['#b52d24', .7, 2.92, z0 + .15, .68, .06],
+    ['#b52d24', .8, 2.08, z0 + .55, 1.45]];
+  const lv = {};
+  crates.forEach(([col, fill, x, z, ry, dry = 0]) => {
+    const key = x + ',' + z, y = (lv[key] || 0) * .285; lv[key] = (lv[key] || 0) + 1;
+    const c = makeCrate(col, fill); c.position.set(x, y, z); c.rotation.y = ry + dry; hall.add(c);
+  });
+  [[1.92, z0 + .95, 0], [2.02, z0 + 1.02, 0], [2.4, z0 + .85, 1]].forEach(([x, z, lying]) => { const b = makeBottle(lying); b.position.x = x; b.position.z = z; if (lying) b.rotation.y = .7; hall.add(b); });
   // la pala recostada en la tabla, por fuera
   const shovel = makeShovel(); shovel.position.set(-1.95, 0, z0 + .85); shovel.rotation.set(0, -.25, -.17); hall.add(shovel);
 }
