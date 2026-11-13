@@ -20,6 +20,7 @@ src/
     01e-mascotas.js  de vez en cuando pasa un perro criollo o un husky
     02-grabados.js   los diseños grabados en la cara del tejo
     03-fisica.js     vuelo, choques, puntaje, efectos y sonido
+    03b-musica.js    música de fondo (se apaga en el menú)
     04-partida.js    turnos, rondas, Don Chepe, cámaras y bucle principal
     05-brazo.js      brazo en primera persona, mano 3D y manilla
     06-salas.js      salas en línea (salas de Claude o Supabase Realtime)
@@ -31,6 +32,7 @@ src/
     perro.glb, husky.glb  los perros que pasan (Quaternius, CC0)
 build.py             une todo y genera index.html y sw.js
 manifest.webmanifest e icon-*.png: datos para instalar el juego como app
+musica-vallenato.mp3 la música de fondo; el juego la baja al empezar a jugar (ver LICENSES/)
 ```
 
 ## Generar una versión nueva
@@ -54,5 +56,7 @@ En GitHub Pages el juego se puede instalar: en Android sale el botón **Instalar
 ## Licencias de terceros
 
 El modelo de la mano es `generic-hand` de [WebXR Input Profiles](https://github.com/immersive-web/webxr-input-profiles), con licencia MIT. El aviso está en `LICENSES/` y dentro del juego.
+
+La música de fondo es "Vallenato con ritmo o aire de son" de vjgalaxy, vía [Pixabay](https://pixabay.com), con la licencia de contenido de Pixabay. La nota está en `LICENSES/musica-pixabay.md`.
 
 Los perros (Shiba Inu y Husky) son de [Quaternius](https://quaternius.com), con licencia CC0 (dominio público). La nota está en `LICENSES/quaternius-animales.md`.

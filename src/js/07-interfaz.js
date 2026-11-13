@@ -134,6 +134,7 @@ function renderMenu() {
   $('rowLupa').classList.toggle('off', !settings.aimHelp);
   $('lupaHint').textContent = settings.aimHelp ? 'Acerca la greda donde va la mira' : 'Necesita la mira activada';
   $('swPower').setAttribute('aria-checked', String(settings.power)); $('gauge').hidden = !settings.power;
+  $('swMusic').setAttribute('aria-checked', String(settings.music !== false));
   $('grpDiff').hidden = settings.mode !== 'cpu';
   $('grpCpuSize').hidden = settings.mode !== 'cpu'; setSeg('segCpuSize', settings.cpuSize || 1);
   $('grpDiff').querySelector('h3').textContent = (settings.cpuSize || 1) > 1 ? 'Pulso de los bots' : 'Pulso de Don Chepe';
@@ -257,6 +258,7 @@ function bindUI() {
   $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; if (!settings.aimHelp) settings.lupa = false; saveSettings(); renderMenu(); });
   $('swLupa').addEventListener('click', () => { if (!settings.aimHelp) return; settings.lupa = !settings.lupa; saveSettings(); renderMenu(); });
   $('swPower').addEventListener('click', () => { settings.power = !settings.power; saveSettings(); renderMenu(); });
+  $('swMusic').addEventListener('click', () => { settings.music = settings.music === false; saveSettings(); renderMenu(); A.init(); if (settings.music) musicLoad(); });   // se baja de una vez para que suene apenas empiece
   $('hintClose').addEventListener('click', () => { if (game) game.helpOff = true; hint('', false); });
   $('btnZoomIn').addEventListener('click', () => zoomBy(-ZOOM_STEP)); $('btnZoomOut').addEventListener('click', () => zoomBy(ZOOM_STEP)); updateZoomBtns();
   $('btnPlay').addEventListener('click', () => { A.init(); A.tick(); if (settings.mode === 'online') netCreate(); else startGame(); });

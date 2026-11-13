@@ -369,12 +369,16 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <div class="lbl"><b>Barra de fuerza</b><span>Muestra cuánta fuerza llevas al cargar</span></div>
       <button class="switch" id="swPower" role="switch" aria-checked="true" aria-label="Barra de fuerza"></button>
     </div>
+    <div class="row">
+      <div class="lbl"><b>Música de fondo</b><span>Un vallenato suave mientras juegas</span></div>
+      <button class="switch" id="swMusic" role="switch" aria-checked="true" aria-label="Música de fondo"></button>
+    </div>
     <div class="cta">
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.56</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.57</span></div>
   </div></div>
 </section>
 
@@ -473,7 +477,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.56";
+const GAME_VERSION = "1.57";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -2102,9 +2106,49 @@ const A = {
 };
 function buzz(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { } }
 
+/* ================= Música de fondo =================
+   Un vallenato suave mientras se juega: "Vallenato con ritmo o aire de son" de vjgalaxy, vía Pixabay
+   (licencia de contenido de Pixabay, ver LICENSES/musica-pixabay.md).
+   Suena por debajo de los efectos, se apaga con el switch "Música de fondo" del menú y también calla con el botón de silencio.
+   El archivo se baja la primera vez que hace falta y se repite sin parar; al volver a jugar sigue donde iba. */
+
+const MUSIC_URL = 'musica-vallenato.mp3', MUSIC_VOL = .08;
+const MUSIC = { buf: null, loading: false, failed: 0, play: null, at: 0 };
+
+function musicWanted() { return settings.music !== false && phase !== 'menu' && phase !== 'boot'; }
+
+function musicLoad() {
+  if (MUSIC.buf || MUSIC.loading || !A.ctx || (MUSIC.failed && performance.now() - MUSIC.failed < 30000)) return;   // si falló (sin internet) reintenta en 30 s
+  MUSIC.loading = true;
+  fetch(MUSIC_URL).then(r => { if (!r.ok) throw new Error('sin música'); return r.arrayBuffer(); })
+    .then(b => new Promise((ok, ko) => A.ctx.decodeAudioData(b, ok, ko)))   // con callbacks: Safari viejo no devuelve promesa
+    .then(buf => { MUSIC.buf = buf; MUSIC.loading = false; musicSync(); })
+    .catch(() => { MUSIC.loading = false; MUSIC.failed = performance.now(); });
+}
+
+// Se llama en cada cuadro: solo hace algo cuando cambia si debe sonar o no
+function musicSync() {
+  if (!A.ctx || !A.out) return;
+  const want = musicWanted(), c = A.ctx, t = c.currentTime;
+  if (want && !MUSIC.play) {
+    if (!MUSIC.buf) { musicLoad(); return; }
+    const src = c.createBufferSource(), g = c.createGain();
+    src.buffer = MUSIC.buf; src.loop = true; g.gain.value = 0;
+    src.connect(g); g.connect(A.out);   // pasa por el volumen general: el botón de silencio también la calla
+    const at = MUSIC.at % MUSIC.buf.duration;
+    src.start(t, at); g.gain.setTargetAtTime(MUSIC_VOL, t, .7);   // entra suave
+    MUSIC.play = { src, g, t0: t - at };
+  } else if (!want && MUSIC.play) {
+    const p = MUSIC.play; MUSIC.play = null;
+    MUSIC.at = (t - p.t0) % MUSIC.buf.duration;   // para seguir donde iba la próxima vez
+    p.g.gain.cancelScheduledValues(t); p.g.gain.setValueAtTime(p.g.gain.value, t); p.g.gain.setTargetAtTime(0, t, .3);   // sale suave
+    try { p.src.stop(t + 1.5); } catch (e) { }
+  }
+}
+
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, muted: false };
+const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, muted: false, music: true };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
@@ -2588,6 +2632,7 @@ function frame(now) {
     if (!paused) { tickTimers(dt); updateGame(dt, now); updateFx(dt); }
     updateAmbience(paused ? 0 : dt);
     updatePets(paused ? 0 : dt);
+    musicSync();
     updateArm(paused ? 0 : dt, now);
     updateCamera(paused ? 0 : dt);
     camSafe();
@@ -3718,6 +3763,7 @@ function renderMenu() {
   $('rowLupa').classList.toggle('off', !settings.aimHelp);
   $('lupaHint').textContent = settings.aimHelp ? 'Acerca la greda donde va la mira' : 'Necesita la mira activada';
   $('swPower').setAttribute('aria-checked', String(settings.power)); $('gauge').hidden = !settings.power;
+  $('swMusic').setAttribute('aria-checked', String(settings.music !== false));
   $('grpDiff').hidden = settings.mode !== 'cpu';
   $('grpCpuSize').hidden = settings.mode !== 'cpu'; setSeg('segCpuSize', settings.cpuSize || 1);
   $('grpDiff').querySelector('h3').textContent = (settings.cpuSize || 1) > 1 ? 'Pulso de los bots' : 'Pulso de Don Chepe';
@@ -3841,6 +3887,7 @@ function bindUI() {
   $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; if (!settings.aimHelp) settings.lupa = false; saveSettings(); renderMenu(); });
   $('swLupa').addEventListener('click', () => { if (!settings.aimHelp) return; settings.lupa = !settings.lupa; saveSettings(); renderMenu(); });
   $('swPower').addEventListener('click', () => { settings.power = !settings.power; saveSettings(); renderMenu(); });
+  $('swMusic').addEventListener('click', () => { settings.music = settings.music === false; saveSettings(); renderMenu(); A.init(); if (settings.music) musicLoad(); });   // se baja de una vez para que suene apenas empiece
   $('hintClose').addEventListener('click', () => { if (game) game.helpOff = true; hint('', false); });
   $('btnZoomIn').addEventListener('click', () => zoomBy(-ZOOM_STEP)); $('btnZoomOut').addEventListener('click', () => zoomBy(ZOOM_STEP)); updateZoomBtns();
   $('btnPlay').addEventListener('click', () => { A.init(); A.tick(); if (settings.mode === 'online') netCreate(); else startGame(); });
