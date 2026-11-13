@@ -5,7 +5,7 @@
    Modelos de Quaternius (CC0, ver LICENSES/quaternius-animales.md).
    Es decoración: el tejo no choca con ellos y en las salas cada quien ve los suyos. */
 
-const PET_TIMING = { first: [60, 150], every: [150, 300] };   // segundos: primera visita y las siguientes
+const PET_TIMING = { first: [20, 45], every: [45, 90] };   // segundos: primera visita y las siguientes
 const PET_SPEC = {   // qué tan seguido sale, escala, velocidad en m/s, ritmo de la caminada, qué hace al detenerse y sus colores
   perro: {   // perro criollo: el shiba con pelajes de la calle
     weight: 3, scale: .2, speed: .9, walkRate: 1.9, stops: ['Eating', 'Idle_2_HeadLow', 'Idle'], mats: ['Main', 'Main_Light'],
