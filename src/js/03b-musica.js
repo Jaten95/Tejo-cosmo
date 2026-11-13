@@ -3,7 +3,7 @@
    Un vallenato suave mientras se juega: "Vallenato con ritmo o aire de son" de vjgalaxy, vía Pixabay
    (licencia de contenido de Pixabay, ver LICENSES/musica-pixabay.md).
    Suena por debajo de los efectos. Se prende y se apaga con el switch "Música de fondo" del menú o tocando un parlante del salón;
-   el botón de silencio de abajo calla solo los efectos.
+   los efectos del juego siempre suenan.
    El archivo se baja la primera vez que hace falta y se repite sin parar; al volver a jugar sigue donde iba. */
 
 const MUSIC_URL = 'musica-vallenato.mp3', MUSIC_VOL = .08;

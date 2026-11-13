@@ -197,7 +197,6 @@ function pause() {
   showScreen('pause');
 }
 function resume() { paused = false; showScreen(null); }
-function updateSoundBtn() { $('btnSound').classList.toggle('muted', settings.muted); $('btnSound').setAttribute('aria-label', settings.muted ? 'Activar los efectos de sonido' : 'Silenciar los efectos de sonido'); }
 
 /* ---------- Entrada ---------- */
 let resultAt = 0;
@@ -274,7 +273,6 @@ function bindUI() {
   $('btnOverMenu').addEventListener('click', showMenu);
   $('pickClose').addEventListener('click', closePicker);
   $('picker').addEventListener('click', e => { if (e.target === $('picker')) closePicker(); });
-  $('btnSound').addEventListener('click', () => { A.init(); settings.muted = !settings.muted; A.setMuted(settings.muted); saveSettings(); updateSoundBtn(); });
   bindInput(); netBindUI();
 }
 
@@ -328,7 +326,8 @@ async function boot(data) {
   resize(); addEventListener('resize', resize);
   renderer.domElement.addEventListener('webglcontextrestored', () => { resize(); camSafe(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(resize, 300); });
-  A.muted = settings.muted; updateSoundBtn(); netInit(); bindUI();
+  delete settings.muted; A.muted = false;   // los efectos siempre suenan (antes había un botón para callarlos); la música se apaga con los parlantes o el menú
+  netInit(); bindUI();
   ld.remove();
   if (!restore(data)) showMenu();
   requestAnimationFrame(t => { lastT = t; requestAnimationFrame(frame); });

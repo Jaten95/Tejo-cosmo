@@ -139,7 +139,6 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 #zoomBtns{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 64px);display:flex;flex-direction:column;gap:10px;pointer-events:auto;}
 #zoomBtns.underLupa{top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 36px + min(40vw,190px));}
 #zoomBtns .iconBtn:disabled{opacity:.35;}
-.iconBtn.muted .wave{display:none;} .iconBtn:not(.muted) .x{display:none;}
 
 /* ---------- announcements ---------- */
 #announce{position:fixed;left:0;right:0;top:38%;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;opacity:0;}
@@ -292,7 +291,6 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
   <div class="hudBtns">
     <button class="iconBtn" id="btnPause" aria-label="Pausa"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
     <button class="iconBtn" id="btnRx" aria-label="Reaccionar" aria-expanded="false" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg></button>
-    <button class="iconBtn" id="btnSound" aria-label="Sonido"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M17 9l5 6M22 9l-5 6"/></svg></button>
   </div>
   <div id="rxTray" hidden></div>
   <div id="hint"><span id="hintText">Arrastra hacia abajo para cargar · suelta para lanzar</span><button id="hintClose" aria-label="Cerrar la ayuda en esta partida">×</button></div>
@@ -378,7 +376,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.58</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.59</span></div>
   </div></div>
 </section>
 
@@ -477,7 +475,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.58";
+const GAME_VERSION = "1.59";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -2142,7 +2140,7 @@ function buzz(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e
    Un vallenato suave mientras se juega: "Vallenato con ritmo o aire de son" de vjgalaxy, vía Pixabay
    (licencia de contenido de Pixabay, ver LICENSES/musica-pixabay.md).
    Suena por debajo de los efectos. Se prende y se apaga con el switch "Música de fondo" del menú o tocando un parlante del salón;
-   el botón de silencio de abajo calla solo los efectos.
+   los efectos del juego siempre suenan.
    El archivo se baja la primera vez que hace falta y se repite sin parar; al volver a jugar sigue donde iba. */
 
 const MUSIC_URL = 'musica-vallenato.mp3', MUSIC_VOL = .08;
@@ -2211,7 +2209,7 @@ function updateSpeakers(dt) {
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, muted: false, music: true };
+const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, music: true };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
@@ -3889,7 +3887,6 @@ function pause() {
   showScreen('pause');
 }
 function resume() { paused = false; showScreen(null); }
-function updateSoundBtn() { $('btnSound').classList.toggle('muted', settings.muted); $('btnSound').setAttribute('aria-label', settings.muted ? 'Activar los efectos de sonido' : 'Silenciar los efectos de sonido'); }
 
 /* ---------- Entrada ---------- */
 let resultAt = 0;
@@ -3966,7 +3963,6 @@ function bindUI() {
   $('btnOverMenu').addEventListener('click', showMenu);
   $('pickClose').addEventListener('click', closePicker);
   $('picker').addEventListener('click', e => { if (e.target === $('picker')) closePicker(); });
-  $('btnSound').addEventListener('click', () => { A.init(); settings.muted = !settings.muted; A.setMuted(settings.muted); saveSettings(); updateSoundBtn(); });
   bindInput(); netBindUI();
 }
 
@@ -4020,7 +4016,8 @@ async function boot(data) {
   resize(); addEventListener('resize', resize);
   renderer.domElement.addEventListener('webglcontextrestored', () => { resize(); camSafe(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(resize, 300); });
-  A.muted = settings.muted; updateSoundBtn(); netInit(); bindUI();
+  delete settings.muted; A.muted = false;   // los efectos siempre suenan (antes había un botón para callarlos); la música se apaga con los parlantes o el menú
+  netInit(); bindUI();
   ld.remove();
   if (!restore(data)) showMenu();
   requestAnimationFrame(t => { lastT = t; requestAnimationFrame(frame); });
