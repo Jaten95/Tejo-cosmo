@@ -92,56 +92,78 @@ function makeMechaBox() {
   return propShadows(g);
 }
 
-/* Canastas plásticas de cerveza (sin marca) y botellas de vidrio */
-function crateSideTex(color, w, h, handle) {
+/* Canasta de cerveza como las de las tiendas: plástico negro con ventanas, 30 botellas retornables de vidrio café
+   con etiqueta amarilla y tapa plateada (sin marca) */
+function crateSideTex(w, h, long) {
   const [c, g] = cnv(w, h);
-  g.fillStyle = color; g.fillRect(0, 0, w, h);
-  g.globalCompositeOperation = 'destination-out';   // las ranuras de la canasta
-  const cols = Math.round(w / 34), rows = 3, gw = w / cols, gh = (h - 36) / rows;
-  for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) {
-    if (handle && j === 0 && i >= cols / 2 - 1 && i < cols / 2 + 1) continue;
-    const x = i * gw + 6, y = 18 + j * gh + 5, ww = gw - 12, hh = gh - 10, r = 5;
-    g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + ww, y, x + ww, y + hh, r); g.arcTo(x + ww, y + hh, x, y + hh, r); g.arcTo(x, y + hh, x, y, r); g.arcTo(x, y, x + ww, y, r); g.fill();
-  }
-  if (handle) { g.beginPath(); g.ellipse(w / 2, 32, w * .14, 11, 0, 0, 7); g.fill(); }   // agarradera
+  g.fillStyle = '#211c18'; g.fillRect(0, 0, w, h);
+  g.globalAlpha = .25; for (let x = 6; x < w; x += 9) { g.fillStyle = x % 18 < 9 ? '#000' : '#3a332c'; g.fillRect(x, 0, 2, h); }   // nervaduras del plástico
+  g.globalAlpha = 1; g.fillStyle = '#2c2621'; g.fillRect(0, 0, w, h * .07); g.fillRect(0, h * .93, w, h * .07);
+  const hole = (x0, y0, x1, y1, r) => { const x = x0 * w, y = y0 * h, ww = (x1 - x0) * w, hh = (y1 - y0) * h; g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + ww, y, x + ww, y + hh, r); g.arcTo(x + ww, y + hh, x, y + hh, r); g.arcTo(x, y + hh, x, y, r); g.arcTo(x, y, x + ww, y, r); g.fill(); };
+  g.globalCompositeOperation = 'destination-out';
+  if (long) { hole(.14, .16, .86, .44, 26); hole(.07, .56, .27, .86, 10); hole(.73, .56, .93, .86, 10); }   // ventana larga arriba y dos abajo
+  else hole(.2, .14, .8, .74, 22);                                                                            // agarradera
   g.globalCompositeOperation = 'source-over';
-  g.globalAlpha = .12; for (let i = 0; i < 400; i++) { g.fillStyle = Math.random() < .5 ? '#000' : '#fff'; g.fillRect(rand(0, w), rand(0, h), rand(1, 3), rand(1, 2)); }
+  if (long) { g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = 3; g.beginPath(); g.arc(w / 2, h * .68, h * .13, 0, 7); g.stroke(); }   // relieve del centro
+  g.globalAlpha = .1; for (let i = 0; i < 500; i++) { g.fillStyle = Math.random() < .5 ? '#000' : '#fff'; g.fillRect(rand(0, w), rand(0, h), rand(1, 3), rand(1, 2)); }
   g.globalAlpha = 1;
   const t = tex(c); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t;
 }
-let BOTTLE_GEO = null;
-function bottleGeo() {   // botella retornable de vidrio, de perfil
-  const pts = [[0, 0], [.031, 0], [.033, .006], [.033, .15], [.03, .17], [.016, .205], [.012, .225], [.012, .245], [.014, .25], [0, .25]].map(([x, y]) => new THREE.Vector2(x, y));
-  return new THREE.LatheGeometry(pts, 14);
+function labelTex() {
+  const [c, g] = cnv(128, 64);
+  g.fillStyle = '#e9b925'; g.fillRect(0, 0, 128, 64);
+  g.fillStyle = '#b8232a'; g.fillRect(0, 6, 128, 3); g.fillRect(0, 55, 128, 3);
+  g.fillStyle = '#f6e7b4'; g.beginPath(); g.ellipse(64, 32, 20, 14, 0, 0, 7); g.fill();
+  g.strokeStyle = '#b8232a'; g.lineWidth = 2; g.stroke();
+  return tex(c);
 }
-function makeCrate(color, fill) {
-  const g = new THREE.Group(), W3 = .46, D3 = .32, H3 = .28;
-  const long = std({ map: crateSideTex(color, 368, 224, false), transparent: true, alphaTest: .5, side: THREE.DoubleSide, roughness: .55 });
-  const short = std({ map: crateSideTex(color, 256, 224, true), transparent: true, alphaTest: .5, side: THREE.DoubleSide, roughness: .55 });
+let BOTTLE = null;
+function bottleParts() {   // botella retornable: vidrio, etiqueta, etiqueta del cuello y tapa
+  if (BOTTLE) return BOTTLE;
+  const lathe = (pts, seg = 16, open = false) => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), seg);
+  BOTTLE = {
+    glass: lathe([[0, 0], [.03, 0], [.032, .006], [.032, .14], [.029, .165], [.015, .2], [.0115, .225], [.0115, .238], [.0135, .243], [0, .243]]),
+    label: new THREE.CylinderGeometry(.0325, .0325, .07, 16, 1, true).translate(0, .08, 0),
+    neck: new THREE.CylinderGeometry(.0122, .0168, .042, 14, 1, true).translate(0, .205, 0),
+    cap: new THREE.CylinderGeometry(.0145, .0145, .009, 14).translate(0, .246, 0),
+    mats: {
+      glass: std({ color: '#3a1905', roughness: .1, metalness: .1, transparent: true, opacity: .94 }),
+      label: std({ map: labelTex(), roughness: .6 }),
+      neck: std({ color: '#e9b925', roughness: .45, metalness: .3 }),
+      cap: std({ color: '#e2e4e6', roughness: .35, metalness: .35 }) },
+  };
+  return BOTTLE;
+}
+function makeCrate(fill) {
+  const g = new THREE.Group(), W3 = .47, D3 = .33, H3 = .23;
+  const mk = long => std({ map: crateSideTex(long ? 376 : 264, 184, long), transparent: true, alphaTest: .5, side: THREE.DoubleSide, roughness: .5 });
+  const long = mk(true), short = mk(false);
   [[W3, 0, D3 / 2, 0, long], [W3, 0, -D3 / 2, Math.PI, long], [D3, W3 / 2, 0, Math.PI / 2, short], [D3, -W3 / 2, 0, -Math.PI / 2, short]].forEach(([w, x, z, ry, m]) => {
     const pl = new THREE.Mesh(new THREE.PlaneGeometry(w, H3), m); pl.position.set(x, H3 / 2, z); pl.rotation.y = ry; g.add(pl);
   });
-  const solid = std({ color, roughness: .55 });
+  const solid = std({ color: '#211c18', roughness: .5 });
   const base = new THREE.Mesh(new THREE.BoxGeometry(W3, .012, D3), solid); base.position.y = .006; g.add(base);
-  [[W3 + .006, .02, .01, 0, H3 - .01, D3 / 2], [W3 + .006, .02, .01, 0, H3 - .01, -D3 / 2], [.01, .02, D3 + .006, W3 / 2, H3 - .01, 0], [.01, .02, D3 + .006, -W3 / 2, H3 - .01, 0]]
+  [[W3 + .012, .018, .016, 0, H3 - .009, D3 / 2], [W3 + .012, .018, .016, 0, H3 - .009, -D3 / 2], [.016, .018, D3 + .012, W3 / 2, H3 - .009, 0], [.016, .018, D3 + .012, -W3 / 2, H3 - .009, 0]]
     .forEach(([w, h, d, x, y, z]) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), solid); b.position.set(x, y, z); g.add(b); });   // borde de arriba
-  if (fill) {   // botellas adentro (6 x 5), a veces falta alguna
-    BOTTLE_GEO = BOTTLE_GEO || bottleGeo();
-    const spots = [];
+  for (let i = 1; i < 6; i++) { const d = new THREE.Mesh(new THREE.BoxGeometry(.004, H3 * .55, D3), solid); d.position.set(-W3 / 2 + W3 * i / 6, H3 * .275, 0); g.add(d); }   // separadores
+  for (let j = 1; j < 5; j++) { const d = new THREE.Mesh(new THREE.BoxGeometry(W3, H3 * .55, .004), solid); d.position.set(0, H3 * .275, -D3 / 2 + D3 * j / 5); g.add(d); }
+  if (fill) {   // 30 botellas (6 x 5); a veces falta alguna
+    const b = bottleParts(), spots = [];
     for (let i = 0; i < 6; i++) for (let j = 0; j < 5; j++) if (Math.random() < fill) spots.push([-W3 / 2 + W3 * (i + .5) / 6, -D3 / 2 + D3 * (j + .5) / 5]);
-    const glass = new THREE.InstancedMesh(BOTTLE_GEO, BOTTLE_MAT(), spots.length), m4 = new THREE.Matrix4();
-    spots.forEach(([x, z], k) => { m4.makeTranslation(x, .012, z); glass.setMatrixAt(k, m4); });
-    g.add(glass);
+    const m4 = new THREE.Matrix4();
+    ['glass', 'label', 'neck', 'cap'].forEach(k => {
+      const im = new THREE.InstancedMesh(b[k], b.mats[k], spots.length);
+      spots.forEach(([x, z], n) => { m4.makeRotationY(n * 1.7); m4.setPosition(x, .012, z); im.setMatrixAt(n, m4); });
+      g.add(im);
+    });
   }
   return propShadows(g);
 }
-let bottleMat = null;
-function BOTTLE_MAT() { return bottleMat || (bottleMat = std({ color: '#3f1e07', roughness: .12, metalness: .1, transparent: true, opacity: .92 })); }
 function makeBottle(lying) {
-  BOTTLE_GEO = BOTTLE_GEO || bottleGeo();
-  const b = new THREE.Mesh(BOTTLE_GEO, BOTTLE_MAT());
-  if (lying) { b.rotation.z = Math.PI / 2; b.position.y = .033; }
-  b.castShadow = true; return b;
+  const b = bottleParts(), g = new THREE.Group();
+  ['glass', 'label', 'neck', 'cap'].forEach(k => g.add(new THREE.Mesh(b[k], b.mats[k])));
+  if (lying) { g.rotation.z = Math.PI / 2; g.position.y = .033; }
+  return propShadows(g);
 }
 
 function buildProps() {
@@ -154,14 +176,14 @@ function buildProps() {
   const s2 = makeSack(false, sack); s2.position.set(-2.9, 0, z0 + .45); s2.rotation.y = 1.35; hall.add(s2);
   const s3 = makeSack(false, sack); s3.position.set(-2.92, .2, z0 + .4); s3.rotation.set(0, 1.6, .08); s3.scale.setScalar(.9); hall.add(s3);
   // lado derecho: canastas de cerveza apiladas y botellas regadas
-  const crates = [
-    ['#b52d24', 0, 2.3, z0 - .35, .05], ['#b52d24', 0, 2.3, z0 - .35, .28, -.04], ['#2f6b3a', .95, 2.3, z0 - .35, .56, .03],
-    ['#2f6b3a', 0, 2.92, z0 + .15, .4], ['#b52d24', .7, 2.92, z0 + .15, .68, .06],
-    ['#b52d24', .8, 2.08, z0 + .55, 1.45]];
+  const crates = [   // [botellas, x, z, giro, giro extra]
+    [.97, 2.3, z0 - .35, .05], [.97, 2.3, z0 - .35, .28, -.04], [.95, 2.3, z0 - .35, .51, .03],
+    [.97, 2.92, z0 + .15, .4], [.7, 2.92, z0 + .15, .68, .06],
+    [.8, 2.08, z0 + .55, 1.45]];
   const lv = {};
-  crates.forEach(([col, fill, x, z, ry, dry = 0]) => {
-    const key = x + ',' + z, y = (lv[key] || 0) * .285; lv[key] = (lv[key] || 0) + 1;
-    const c = makeCrate(col, fill); c.position.set(x, y, z); c.rotation.y = ry + dry; hall.add(c);
+  crates.forEach(([fill, x, z, ry, dry = 0]) => {
+    const key = x + ',' + z, y = (lv[key] || 0) * .252; lv[key] = (lv[key] || 0) + 1;
+    const c = makeCrate(fill); c.position.set(x, y, z); c.rotation.y = ry + dry; hall.add(c);
   });
   [[1.92, z0 + .95, 0], [2.02, z0 + 1.02, 0], [2.4, z0 + .85, 1]].forEach(([x, z, lying]) => { const b = makeBottle(lying); b.position.x = x; b.position.z = z; if (lying) b.rotation.y = .7; hall.add(b); });
   // la pala recostada en la tabla, por fuera
