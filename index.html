@@ -58,7 +58,15 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 #hud{position:fixed;inset:0;pointer-events:none;}
 #board{position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);
   left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));
-  display:flex;gap:6px;align-items:stretch;}
+  display:flex;flex-wrap:wrap;gap:6px;align-items:stretch;}
+#board.many .chip{flex:0 0 calc((100% - 12px) / 3);padding:5px 8px 6px;}
+#board.many .chip .bar{display:none;}
+#board.many .chip .sc{font-size:18px;}
+.chip .mb{display:flex;gap:3px;flex-wrap:wrap;}
+.chip .mb img{width:15px;height:15px;border-radius:50%;opacity:.5;}
+.chip .mb img.on{opacity:1;box-shadow:0 0 0 1.5px var(--paper);}
+.seg button[hidden]{display:none!important;}
+.seg button:disabled{cursor:default;}
 .chip{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px;padding:7px 9px 8px;
   background:rgba(22,16,11,.82);border:1px solid rgba(245,237,221,.10);border-radius:4px;position:relative;overflow:hidden;
   transition:transform .25s ease, border-color .25s ease;}
@@ -74,11 +82,11 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 @keyframes bump{30%{transform:scale(1.35);color:var(--yellow);}}
 
 #lupa{position:absolute;right:max(12px,env(safe-area-inset-right,0px));
-  top:calc(env(safe-area-inset-top,0px) + 78px);width:min(40vw,190px);aspect-ratio:1/1;
+  top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 18px);width:min(40vw,190px);aspect-ratio:1/1;
   border:3px solid var(--yellow);box-shadow:0 0 0 3px var(--ink),0 8px 24px rgba(0,0,0,.5);}
 #lupa span{position:absolute;left:-3px;top:-3px;transform:translateY(-100%);background:var(--yellow);color:var(--ink);
   font:800 10px/1 var(--body);letter-spacing:.14em;padding:4px 6px 3px;}
-#turn{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 80px);
+#turn{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 20px);
   max-width:calc(100% - min(40vw,190px) - 48px);display:flex;flex-direction:column;gap:2px;}
 #turn .who{font-family:var(--display);font-size:20px;line-height:1.05;text-shadow:0 2px 0 var(--ink);}
 #turn .meta{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-shadow:0 1px 2px var(--ink);}
@@ -224,7 +232,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 .pk[aria-pressed="true"] span{color:var(--paper);}
 .pk:disabled{opacity:.35;cursor:not-allowed;}
 @media (prefers-reduced-motion:reduce){#announce.show{animation-duration:1.4s;}.chip.bump .sc{animation:none;}#flash.go{animation:none;}}
-@media (min-width:760px){#turn .who{font-size:26px;}.chip .sc{font-size:26px;}#lupa{width:220px;top:calc(env(safe-area-inset-top,0px) + 86px);}#turn{top:calc(env(safe-area-inset-top,0px) + 90px);}}
+@media (min-width:760px){#turn .who{font-size:26px;}.chip .sc{font-size:26px;}#lupa{width:220px;}}
 </style>
 
 <canvas id="gl" aria-label="Cancha de tejo en 3D"></canvas>
@@ -265,8 +273,12 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     </div>
     <div class="group" id="grpNames">
       <h3 id="lblNames">Jugadores</h3>
-      <div class="seg" id="segCount"><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button></div>
+      <div class="seg" id="segCount"><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button><button data-v="6">6</button></div>
       <div class="names" id="names"></div>
+    </div>
+    <div class="group" id="grpTeams" hidden>
+      <h3>Forma de juego</h3>
+      <div class="seg" id="segTeams"><button data-v="0">Individual</button><button data-v="2">2 equipos<small>al azar</small></button><button data-v="3">3 equipos<small>al azar</small></button></div>
     </div>
     <div class="group" id="grpOnline" hidden>
       <h3>Unirme a una sala</h3>
@@ -299,7 +311,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.20</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.21</span></div>
   </div></div>
 </section>
 
@@ -318,6 +330,11 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     <button class="myDz" id="myDz" type="button"><img id="myDzImg" alt=""><span><small>TU GRABADO</small><b id="myDzName"></b></span><em>Cambiar</em></button>
     <div class="row"><h3>En la sala</h3><button class="mini" id="btnRefresh">Actualizar</button></div>
     <ul class="seats" id="salaList"></ul>
+    <div class="group" id="salaTeams" hidden>
+      <h3>Forma de juego</h3>
+      <div class="seg" id="segSalaTeams"><button data-v="0">Individual</button><button data-v="2">2 equipos<small>al azar</small></button><button data-v="3">3 equipos<small>al azar</small></button></div>
+      <p class="prose" id="salaTeamsNote"></p>
+    </div>
     <p class="prose" id="salaRules"></p>
     <div class="cta">
       <button class="btn" id="btnStart" hidden>Empezar partida</button>
@@ -340,10 +357,11 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     <p class="prose"><b>Nulo:</b> si el tejo pega primero en el marco, el tablero o el piso, no cuenta. Solo vale lo que cae en la greda.</p>
     <p class="prose"><b>Ronda:</b> cada jugador lanza un tejo por ronda. Una mecha reventada queda reventada hasta que empiece la siguiente ronda. Gana quien llegue primero a la meta.</p>
     <p class="prose"><b>Choques:</b> si tu tejo le pega a otro, lo corre en la greda. Tus puntos se cuentan donde quede tu tejo, y los tejos corridos pelean la mano desde su nuevo lugar. Si caes casi encima de otro tejo, el tuyo rebota en el metal: si se sale de la greda es nulo.</p>
+    <p class="prose"><b>Equipos:</b> con 4 o más jugadores se puede jugar en 2 equipos (o en 3 con 6 jugadores). Se arman al azar, los turnos se alternan entre equipos y los puntos de cada jugador suman para su equipo.</p>
     <p class="prose"><b>Reto:</b> 10 tejos para hacer el mayor puntaje posible. La mano no cuenta.</p>
     <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
     <p class="prose"><b>Tiempo en salas:</b> tienes 15 segundos para lanzar. Si no lanzas, tu tiro es nulo y pasa el turno.</p>
-    <p class="prose"><b>Salas:</b> uno crea la sala y pasa el código de 4 números; hasta 4 jugadores, cada uno en su celular. Si alguien no está cuando le toca, pierde el turno.</p>
+    <p class="prose"><b>Salas:</b> uno crea la sala y pasa el código de 4 números; hasta 6 jugadores, cada uno en su celular. Si alguien no está cuando le toca, pierde el turno.</p>
     <div class="cta"><button class="btn" id="btnRulesBack">Entendido</button></div>
   </div></div>
 </section>
@@ -377,7 +395,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.20";
+const GAME_VERSION = "1.21";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -419,7 +437,9 @@ const MECHA_HIT = 0.045;    // distancia tejo–mecha para reventarla
 const MECHA_ANG = [45, 135, 225, 315].map(a => a * Math.PI / 180);
 const THETA = 0.6;          // ángulo de salida del lanzamiento (rad)
 const REL = { x: 0, y: 1.0, z: -0.25 }; // punto donde se suelta el tejo
-const COLORS = ['#d8392d', '#2565b3', '#2f915c', '#f3c22f'];
+const COLORS = ['#d8392d', '#2565b3', '#2f915c', '#f3c22f', '#e8772e', '#8a4fc7'];
+const TEAM_COLORS = ['#f3c22f', '#2f6fd1', '#d8392d'], TEAM_NAMES = ['Amarillo', 'Azul', 'Rojo'];
+const MAX_PLAYERS = 6;
 const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
@@ -1236,12 +1256,41 @@ function buzz(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['Javi', 'Pacho', 'Mafe', 'Leo'], designs: ['sol', 'condor', 'colibri', 'cafe'], diff: 1, dist: 18.5, goal: 27, aimHelp: true, muted: false };
+const settings = { mode: 'cpu', count: 2, names: ['Javi', 'Pacho', 'Mafe', 'Leo', 'Caro', 'Nico'], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, muted: false };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
   const used = [];
-  for (let i = 0; i < 4; i++) { let d = settings.designs[i]; if (!DESIGN_IDS.includes(d) || used.includes(d)) d = freeDesign(['sol', 'condor', 'colibri', 'cafe'], used); settings.designs[i] = d; used.push(d); }
+  if (!Array.isArray(settings.names)) settings.names = [];
+  ['Javi', 'Pacho', 'Mafe', 'Leo', 'Caro', 'Nico'].forEach((n, i) => { if (settings.names[i] === undefined) settings.names[i] = n; });
+  for (let i = 0; i < MAX_PLAYERS; i++) { let d = settings.designs[i]; if (!DESIGN_IDS.includes(d) || used.includes(d)) d = freeDesign(['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], used); settings.designs[i] = d; used.push(d); }
+}
+/* ---------- Equipos ---------- */
+function teamsAllowed(n) { return n >= 6 ? [0, 2, 3] : n >= 4 ? [0, 2] : [0]; }
+/* Reparte al azar y ordena los turnos alternando equipos: A1, B1, A2, B2… */
+function makeTeams(list, n) {
+  const sh = list.slice();
+  for (let i = sh.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [sh[i], sh[j]] = [sh[j], sh[i]]; }
+  const T = Array.from({ length: n }, () => []); sh.forEach((x, k) => T[k % n].push(x));
+  const out = [];
+  for (let r = 0; r < T[0].length; r++) T.forEach((t, ti) => { if (t[r] !== undefined) out.push({ item: t[r], team: ti }); });
+  return out;
+}
+function applyTeams(players, n) {
+  if (!n || players.some(p => typeof p.team !== 'number')) { players.forEach(p => delete p.team); return null; }
+  const teams = Array.from({ length: n }, (_, t) => ({ name: TEAM_NAMES[t], color: TEAM_COLORS[t], members: [] }));
+  players.forEach((p, i) => { teams[p.team].members.push(i); p.color = TEAM_COLORS[p.team]; });
+  return teams;
+}
+function teamScore(t) { return t.members.reduce((s, i) => s + game.players[i].score, 0); }
+function teamOf(p) { return game.teams && typeof p.team === 'number' ? game.teams[p.team] : null; }
+/* Quién ganó: el equipo (o jugador) que llegó a la meta; si llegaron varios en la misma ronda, el de más puntos */
+function winnerNow() {
+  if (game.teams) {
+    const b = game.teams.map((t, i) => ({ t, i, s: teamScore(t) })).filter(x => x.s >= game.goal).sort((a, b) => b.s - a.s)[0];
+    return b ? { team: true, idx: b.i, name: 'el equipo ' + b.t.name, score: b.s, color: b.t.color } : null;
+  }
+  return game.players.filter(p => p.score >= game.goal).sort((a, b) => b.score - a.score)[0] || null;
 }
 const RETO_THROWS = 10;
 let game = null;
@@ -1272,9 +1321,15 @@ function startGame() {
   fixLocalDesigns();
   const D = settings.designs;
   if (settings.mode === 'cpu') players = [newPlayer(settings.names[0] || 'Tú', 0, false, D[0]), newPlayer('Don Chepe', 1, true, freeDesign(['sombrero', 'condor', 'sol'], [D[0]]))];
-  else if (settings.mode === 'local') players = settings.names.slice(0, settings.count).map((n, i) => newPlayer(n || `Jugador ${i + 1}`, i, false, D[i]));
+  else if (settings.mode === 'local') {
+    const nT = teamsAllowed(settings.count).includes(settings.teams) ? settings.teams : 0;
+    const idx = Array.from({ length: settings.count }, (_, i) => i);
+    const plan = nT ? makeTeams(idx, nT) : idx.map(i => ({ item: i }));
+    players = plan.map(x => { const i = x.item, p = newPlayer(settings.names[i] || `Jugador ${i + 1}`, i, false, D[i]); if (nT) p.team = x.team; return p; });
+  }
   else players = [newPlayer(settings.names[0] || 'Tú', 0, false, D[0])];
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: settings.goal, mode: settings.mode, thrown: 0, over: false };
+  game.teams = applyTeams(players, settings.mode === 'local' && players[0].team !== undefined ? settings.teams : 0);
   lastP = {};
   clearFeed();
   showScreen(null); setHud(true);
@@ -1484,7 +1539,7 @@ function finishFlight() {
 
 function advance() {
   if (phase === 'over') return;
-  const leader = game.players.find(p => p.score >= game.goal);
+  const leader = winnerNow();
   if (game.mode !== 'reto' && leader) return gameOver(leader);
   if (game.mode === 'reto') {
     if (game.thrown >= RETO_THROWS) return gameOver(game.players[0]);
@@ -1504,9 +1559,9 @@ function endRound() {
   p.score += 1; p.st.manos++;
   manoRing = new THREE.Mesh(new THREE.RingGeometry(RT * 1.25, RT * 1.6, 40), new THREE.MeshBasicMaterial({ color: p.color, transparent: true, depthWrite: false }));
   manoRing.position.set(best.u, best.v, .006); manoRing.renderOrder = 6; cancha.add(manoRing);
-  toast(`Mano para ${p.name} +1`); feed(p, 'Mano +1'); bumpChip(best.owner); renderBoard(); A.tick();
+  toast(`Mano para ${p.name}${teamOf(p) ? ' (' + teamOf(p).name + ')' : ''} +1`); feed(p, 'Mano +1'); bumpChip(best.owner); renderBoard(); A.tick();
   closeup = { u: best.u, v: best.v };
-  later(1.9, () => { closeup = null; const leader = game.players.find(q => q.score >= game.goal); if (leader) gameOver(leader); else startRound(); });
+  later(1.9, () => { closeup = null; const leader = winnerNow(); if (leader) gameOver(leader); else startRound(); });
 }
 
 function gameOver(winner) {
@@ -2185,7 +2240,7 @@ function hostDuties(peers) {
   const g = NET.g, here = presentPids(peers);
   if (g.phase === 'lobby') {
     let seats = g.seats.filter(s => here.has(s.pid)).map(s => ({ pid: s.pid, name: String(here.get(s.pid).name || s.name).slice(0, 14) }));
-    here.forEach((pr, pid) => { if (seats.length < 4 && !seats.some(s => s.pid === pid) && pr.name) seats.push({ pid, name: String(pr.name).slice(0, 14) }); });
+    here.forEach((pr, pid) => { if (seats.length < MAX_PLAYERS && !seats.some(s => s.pid === pid) && pr.name) seats.push({ pid, name: String(pr.name).slice(0, 14) }); });
     const used = [];
     seats = seats.map(s => { const want = here.get(s.pid) && here.get(s.pid).design; const d = DESIGN_IDS.includes(want) && !used.includes(want) ? want : null; if (d) used.push(d); return { ...s, design: d }; });
     if (JSON.stringify(seats) !== JSON.stringify(g.seats)) publishG({ ...g, seats, ver: g.ver + 1 });
@@ -2257,8 +2312,10 @@ function buildOnlineGame(g) {
   if (game) clearCancha();
   if (Math.abs(W.D - st.dist) > .01) { setDistance(st.dist); buildHall(); }
   computeDvdP();
-  const players = st.players.map((s, i) => { const p = newPlayer(String(s.name).slice(0, 14), i, false, DESIGN_IDS.includes(s.design) ? s.design : null); p.pid = s.pid; return p; });
+  const nT = [2, 3].includes(st.teams) ? st.teams : 0;
+  const players = st.players.slice(0, MAX_PLAYERS).map((s, i) => { const p = newPlayer(String(s.name).slice(0, 14), i, false, DESIGN_IDS.includes(s.design) ? s.design : null); p.pid = s.pid; if (nT && Number.isInteger(s.team) && s.team >= 0 && s.team < nT) p.team = s.team; return p; });
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: st.goal, mode: 'online', gid: g.gid, aimHelp: !!st.aimHelp, thrown: 0, over: false };
+  game.teams = applyTeams(players, nT);
   NET.pending = {}; lastP = {}; clearFeed(); paused = false;
   showScreen(null); setHud(true);
 }
@@ -2342,10 +2399,12 @@ function netRematch() {
   if (!amHost() || !NET.g || !NET.g.setup) return;
   const g = NET.g, here = presentPids(NET.sala.peers());
   let players = g.setup.players.filter(s => here.has(s.pid));
-  here.forEach((pr, pid) => { if (players.length < 4 && !players.some(s => s.pid === pid) && pr.name) players.push({ pid, name: String(pr.name).slice(0, 14) }); });
+  here.forEach((pr, pid) => { if (players.length < MAX_PLAYERS && !players.some(s => s.pid === pid) && pr.name) players.push({ pid, name: String(pr.name).slice(0, 14) }); });
   if (players.length > 1) players = [...players.slice(1), players[0]]; // empieza otro
   players = withDesigns(players.map(s => ({ ...s, design: here.get(s.pid) && DESIGN_IDS.includes(here.get(s.pid).design) ? here.get(s.pid).design : s.design })));
-  publishG({ ...g, phase: 'play', gid: rid(), setup: { ...g.setup, players }, snap: null, last: null, ver: g.ver + 1 });
+  const nT = teamsAllowed(players.length).includes(g.teams || 0) ? (g.teams || 0) : 0;   // equipos nuevos al azar en cada revancha
+  players = nT ? makeTeams(players, nT).map(x => ({ ...x.item, team: x.team })) : players.map(s => { const c = { ...s }; delete c.team; return c; });
+  publishG({ ...g, phase: 'play', gid: rid(), setup: { ...g.setup, players, teams: nT }, snap: null, last: null, ver: g.ver + 1 });
   applyG();
 }
 function withDesigns(list) {
@@ -2355,9 +2414,11 @@ function withDesigns(list) {
 function netStart() {
   if (!amHost()) return;
   const g = NET.g, here = presentPids(NET.sala.peers());
-  const players = withDesigns(g.seats.filter(s => here.has(s.pid))); if (players.length < 2) return;
+  let players = withDesigns(g.seats.filter(s => here.has(s.pid))); if (players.length < 2) return;
+  const nT = teamsAllowed(players.length).includes(g.teams || 0) ? (g.teams || 0) : 0;
+  if (nT) players = makeTeams(players, nT).map(x => ({ ...x.item, team: x.team }));
   A.init(); A.tick();
-  publishG({ ...g, phase: 'play', gid: rid(), setup: { players, dist: g.dist, goal: g.goal, aimHelp: g.aimHelp }, snap: null, last: null, ver: g.ver + 1 });
+  publishG({ ...g, phase: 'play', gid: rid(), setup: { players, dist: g.dist, goal: g.goal, aimHelp: g.aimHelp, teams: nT }, snap: null, last: null, ver: g.ver + 1 });
   applyG();
 }
 
@@ -2450,22 +2511,31 @@ function renderSala() {
     const b = document.createElement('b'); b.textContent = name; li.appendChild(b);
     const s = document.createElement('span'); s.textContent = tags; li.appendChild(s); list.appendChild(li);
   };
-  seats.forEach((s, i) => add(s.name, COLORS[i], [s.pid === NET.pid ? 'tú' : '', g && g.host === s.pid ? 'anfitrión' : '', here.has(s.pid) ? '' : 'fuera'].filter(Boolean).join(' · '), !here.has(s.pid), s.design));
+  seats.forEach((s, i) => add(s.name, g && g.setup && g.phase !== 'lobby' && Number.isInteger(s.team) ? TEAM_COLORS[s.team] : COLORS[i], [s.pid === NET.pid ? 'tú' : '', g && g.host === s.pid ? 'anfitrión' : '', here.has(s.pid) ? '' : 'fuera'].filter(Boolean).join(' · '), !here.has(s.pid), s.design));
   here.forEach((pr, pid) => { if (!seats.some(s => s.pid === pid)) add(String(pr.name || 'Alguien').slice(0, 14), '#8e7d66', (pid === NET.pid ? 'tú · ' : '') + 'mirando', false, pr.design); });
   renderMyDesign(g, seats);
   const info = $('salaInfo'), host = amHost();
   if (!g) info.textContent = NET.creator ? 'Abriendo la sala…' : 'Buscando la sala…';
   const started = !!(g && g.phase !== 'lobby' && g.setup);
   const inGame = started && g.setup.players.some(s => s.pid === NET.pid);
-  const full = !!(g && g.phase === 'lobby' && !seats.some(s => s.pid === NET.pid) && seats.length >= 4);
+  const full = !!(g && g.phase === 'lobby' && !seats.some(s => s.pid === NET.pid) && seats.length >= MAX_PLAYERS);
   $('btnWatch').hidden = !(started && !inGame);
   if (!g) { }
   else if (started && !inGame) info.textContent = `La partida de la sala ${NET.code} ya empezó, así que no puedes entrar a jugar. Si hay cupo, entras en la revancha cuando el anfitrión la inicie. Mientras tanto puedes mirarla.`;
   else if (started) info.textContent = 'La partida ya empezó.';
-  else if (full) info.textContent = 'La sala está llena: ya hay 4 jugadores. Si alguien sale, entras de una; si no, crea otra sala.';
+  else if (full) info.textContent = `La sala está llena: ya hay ${MAX_PLAYERS} jugadores. Si alguien sale, entras de una; si no, crea otra sala.`;
   else if (host) info.textContent = seats.length < 2 ? 'Pásale el código a tus amigos. Cuando entren, aparecen aquí.' : 'Están listos. Empieza cuando quieras.';
   else info.textContent = 'Esperando a que el anfitrión empiece la partida.';
-  $('salaRules').textContent = g ? `${fmtD(g.dist)} · partida a ${g.goal} · mira ${g.aimHelp ? 'activada' : 'apagada'} · hasta 4 jugadores` : '';
+  $('salaRules').textContent = g ? `${fmtD(g.dist)} · partida a ${g.goal} · mira ${g.aimHelp ? 'activada' : 'apagada'} · hasta ${MAX_PLAYERS} jugadores` : '';
+  // forma de juego: la escoge el anfitrión; los equipos se arman al azar al empezar
+  const lobby = !!(g && g.phase === 'lobby'), nHere = seats.filter(s => here.has(s.pid)).length, allowed = teamsAllowed(nHere), want = (g && g.teams) || 0;
+  $('salaTeams').hidden = !lobby;
+  if (lobby) {
+    setSeg('segSalaTeams', want);
+    $('segSalaTeams').querySelectorAll('button').forEach(b => { b.disabled = !host; b.hidden = b.dataset.v === '3' && nHere < 6 && want !== 3; });
+    $('salaTeamsNote').textContent = want && !allowed.includes(want) ? `Para ${want} equipos se necesitan al menos ${want === 3 ? 6 : 4} jugadores; si no completan, se juega individual.`
+      : want ? 'Los equipos se arman al azar al empezar, y se revuelven en cada revancha.' : host ? 'Con 4 o más jugadores pueden jugar por equipos.' : '';
+  }
   $('btnStart').hidden = !host || !g || g.phase !== 'lobby';
   $('btnStart').disabled = seats.filter(s => here.has(s.pid)).length < 2;
 }
@@ -2499,6 +2569,10 @@ function netBindUI() {
   $('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') netJoinClick(); });
   $('btnStart').addEventListener('click', netStart);
   $('btnLeave').addEventListener('click', () => showMenu());
+  $('segSalaTeams').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || !amHost() || !NET.g || NET.g.phase !== 'lobby') return;
+    publishG({ ...NET.g, teams: Number(b.dataset.v), ver: NET.g.ver + 1 }); A.tick(); renderSala();
+  });
   $('btnRefresh').addEventListener('click', netRefresh);
   $('btnSkip').addEventListener('click', netSkip);
   $('btnWatch').addEventListener('click', () => { NET.watching = true; applyG(); });
@@ -2536,7 +2610,7 @@ function feed(p, text) {
   const el = document.createElement('div'); el.style.setProperty('--c', p.color); el.textContent = `${p.name} · ${text}`;
   const f = $('feed'); f.appendChild(el); while (f.children.length > 3) f.removeChild(f.firstChild);
 }
-function bumpChip(i) { const c = $('board').children[i]; if (!c) return; c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
+function bumpChip(i) { if (game && game.teams && game.players[i]) i = game.players[i].team; const c = $('board').children[i]; if (!c) return; c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
 function setGauge(P, last) {
   $('gaugeFill').style.height = (clamp(P, 0, 1) * 100) + '%';
   const l = $('gaugeLast'); if (last === undefined) l.style.display = 'none'; else { l.style.display = 'block'; l.style.bottom = (last * 100) + '%'; }
@@ -2545,6 +2619,8 @@ function renderBoard() {
   if (!game) return;
   const cur = (phase === 'over' || !game.order.length) ? -1 : game.order[game.idx];
   const b = $('board'); b.innerHTML = '';
+  if (game.teams) { renderTeamBoard(b, cur); return; }
+  b.classList.toggle('many', game.players.length > 4);
   game.players.forEach((p, i) => {
     const away = online() && NET.sala && p.pid !== NET.pid && !presentPids(NET.sala.peers()).has(p.pid);
     const c = document.createElement('div'); c.className = 'chip' + (i === cur ? ' on' : '') + (away ? ' off' : ''); c.style.setProperty('--c', p.color);
@@ -2559,18 +2635,38 @@ function renderBoard() {
     const c = document.createElement('div'); c.className = 'chip'; c.style.setProperty('--c', '#f5eddd');
     c.innerHTML = `<div class="nm">Récord · ${fmtD(settings.dist)}</div><div class="sc">${r ?? '—'}<small>pts</small></div>`; b.appendChild(c);
   }
+  boardHeight();
 }
+/* Marcador por equipos: puntos sumados y los grabados de sus jugadores (el que lanza, resaltado) */
+function renderTeamBoard(b, cur) {
+  b.classList.remove('many');
+  const curTeam = cur >= 0 ? game.players[cur].team : -1;
+  game.teams.forEach((t, ti) => {
+    const s = teamScore(t);
+    const c = document.createElement('div'); c.className = 'chip' + (ti === curTeam ? ' on' : ''); c.style.setProperty('--c', t.color);
+    c.innerHTML = `<div class="nm"></div><div class="sc">${s}<small>/ ${game.goal}</small></div><div class="mb"></div><div class="bar"><i style="width:${Math.min(100, s / game.goal * 100)}%"></i></div>`;
+    c.querySelector('.nm').textContent = 'Equipo ' + t.name + (online() && t.members.some(i => game.players[i].pid === NET.pid) ? ' · tú' : '');
+    const mb = c.querySelector('.mb');
+    t.members.forEach(i => { const p = game.players[i]; const im = document.createElement('img'); im.alt = p.name; im.title = p.name; im.src = designIcon(p.design, p.color, p.name); if (i === cur) im.className = 'on'; mb.appendChild(im); });
+    b.appendChild(c);
+  });
+  boardHeight();
+}
+function boardHeight() { try { document.documentElement.style.setProperty('--bh', $('board').offsetHeight + 'px'); } catch (e) { } }
 function renderTurn() {
   const p = current();
   $('turnWho').textContent = game.mode === 'reto' ? `Tejo ${game.thrown + 1} de ${RETO_THROWS}` : (p.cpu ? 'Lanza Don Chepe' : (online() && p.pid === NET.pid) ? 'Te toca' : `Lanza ${p.name}`);
   $('turnWho').style.color = p.color === COLORS[3] ? 'var(--yellow)' : '';
-  $('turnMeta').textContent = game.mode === 'reto' ? `${fmtD(W.D)} · mecha 3 · embocinada 6 · moñona 9` : `${online() ? 'Sala ' + NET.code + ' · ' : ''}Ronda ${game.round} · ${fmtD(W.D)} · partida a ${game.goal}`;
+  const tm = teamOf(p);
+  $('turnMeta').textContent = game.mode === 'reto' ? `${fmtD(W.D)} · mecha 3 · embocinada 6 · moñona 9` : `${tm ? 'Equipo ' + tm.name + ' · ' : ''}${online() ? 'Sala ' + NET.code + ' · ' : ''}Ronda ${game.round} · ${fmtD(W.D)} · partida a ${game.goal}`;
 }
 function renderOver(winner) {
   const tbl = $('overStats');
-  const rows = [...game.players].map((p, i) => ({ p, i })).sort((a, b) => b.p.score - a.p.score);
+  const ts = p => teamOf(p) ? teamScore(teamOf(p)) : 0;
+  const rows = [...game.players].map((p, i) => ({ p, i })).sort((a, b) => (ts(b.p) - ts(a.p)) || (b.p.score - a.p.score));
+  const won = p => game.mode !== 'reto' && (winner.team ? p.team === winner.idx : p === winner);
   tbl.innerHTML = `<tr><th>Jugador</th><th>Pts</th><th>Mecha</th><th>Emboc.</th><th>Moñona</th><th>Mano</th><th>Nulo</th></tr>` +
-    rows.map(({ p }) => `<tr class="${p === winner && game.mode !== 'reto' ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.mechas}</td><td>${p.st.emb}</td><td>${p.st.mon}</td><td>${p.st.manos}</td><td>${p.st.nulos}</td></tr>`).join('');
+    rows.map(({ p }) => `<tr class="${won(p) ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.mechas}</td><td>${p.st.emb}</td><td>${p.st.mon}</td><td>${p.st.manos}</td><td>${p.st.nulos}</td></tr>`).join('');
   [...tbl.querySelectorAll('tr')].slice(1).forEach((tr, k) => tr.firstChild.textContent = rows[k].p.name);
   if (game.mode === 'reto') {
     const recs = records(), prev = recs[settings.dist], sc = winner.score;
@@ -2579,6 +2675,13 @@ function renderOver(winner) {
     $('overWinner').textContent = `${sc} puntos`;
     $('overLine').textContent = isNew ? (prev === undefined ? 'Primer récord a esta distancia.' : `¡Nuevo récord! El anterior era ${prev}.`) : `Tu récord a esta distancia es ${prev}.`;
     $('btnAgain').textContent = 'Otra vez';
+  } else if (winner.team) {
+    const t = game.teams[winner.idx], names = t.members.map(i => game.players[i].name);
+    const others = game.teams.filter((x, i) => i !== winner.idx).map(teamScore);
+    $('overEyebrow').textContent = `Partida a ${game.goal} por equipos · ${fmtD(settings.dist)}`;
+    $('overWinner').textContent = `Ganó el equipo ${t.name}`;
+    $('overLine').textContent = `${names.slice(0, -1).join(', ')}${names.length > 1 ? ' y ' : ''}${names[names.length - 1]}: ${winner.score} a ${others.join(' a ')} en ${game.round} ${game.round === 1 ? 'ronda' : 'rondas'}.`;
+    $('btnAgain').textContent = 'Revancha';
   } else {
     const others = rows.filter(r => r.p !== winner).map(r => r.p.score);
     $('overEyebrow').textContent = `Partida a ${game.goal} · ${fmtD(settings.dist)}`;
@@ -2602,6 +2705,11 @@ function renderMenu() {
   $('grpDiff').hidden = settings.mode !== 'cpu';
   $('grpGoal').hidden = settings.mode === 'reto';
   $('segCount').hidden = settings.mode !== 'local';
+  const allowed = teamsAllowed(settings.count);
+  $('grpTeams').hidden = settings.mode !== 'local' || allowed.length < 2;
+  if (!allowed.includes(settings.teams)) settings.teams = 0;
+  setSeg('segTeams', settings.teams);
+  $('segTeams').querySelector('[data-v="3"]').hidden = !allowed.includes(3);
   $('grpOnline').hidden = settings.mode !== 'online';
   $('btnPlay').textContent = settings.mode === 'online' ? 'Crear sala' : 'A jugar';
   $('btnPlay').disabled = settings.mode === 'online' && !NET.room;
@@ -2708,7 +2816,7 @@ function bindInput() {
 
 function bindUI() {
   bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
-  bindSeg('segDist', 'dist', Number); bindSeg('segGoal', 'goal', Number);
+  bindSeg('segDist', 'dist', Number); bindSeg('segGoal', 'goal', Number); bindSeg('segTeams', 'teams', Number);
   $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; saveSettings(); renderMenu(); });
   $('btnPlay').addEventListener('click', () => { A.init(); A.tick(); if (settings.mode === 'online') netCreate(); else startGame(); });
   $('btnRules').addEventListener('click', () => showScreen('rules'));
@@ -2738,7 +2846,7 @@ function snapshot() {
   return {
     ...base, lastP, pending: phase === 'result' || phase === 'roundEnd',
     game: {
-      players: game.players, round: game.round, order: game.order, idx: game.idx, goal: game.goal, mode: game.mode, thrown: game.thrown, scored: game.scored,
+      players: game.players, teamsN: game.teams ? game.teams.length : 0, round: game.round, order: game.order, idx: game.idx, goal: game.goal, mode: game.mode, thrown: game.thrown, scored: game.scored,
       mk: mechaMeshes.map(m => m.userData.alive ? 1 : 0),
       tejos: game.tejos.map(t => ({ owner: t.owner, valid: t.valid, d: isFinite(t.d) ? t.d : null, u: t.u, v: t.v, p: t.mesh.position.toArray(), q: t.mesh.quaternion.toArray() }))
     }
@@ -2749,6 +2857,7 @@ function restore(data) {
   try {
     const g = data.game;
     game = { ...g, tejos: [], over: false };
+    game.teams = applyTeams(game.players, g.teamsN || 0);
     g.tejos.forEach(t => {
       const pl = game.players[t.owner]; const m = makeTejo(pl.color, pl.design, pl.name); m.position.fromArray(t.p); m.quaternion.fromArray(t.q); scene.add(m);
       game.tejos.push({ ...t, d: t.d == null ? Infinity : t.d, mesh: m });

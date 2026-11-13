@@ -27,7 +27,7 @@ function feed(p, text) {
   const el = document.createElement('div'); el.style.setProperty('--c', p.color); el.textContent = `${p.name} · ${text}`;
   const f = $('feed'); f.appendChild(el); while (f.children.length > 3) f.removeChild(f.firstChild);
 }
-function bumpChip(i) { const c = $('board').children[i]; if (!c) return; c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
+function bumpChip(i) { if (game && game.teams && game.players[i]) i = game.players[i].team; const c = $('board').children[i]; if (!c) return; c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
 function setGauge(P, last) {
   $('gaugeFill').style.height = (clamp(P, 0, 1) * 100) + '%';
   const l = $('gaugeLast'); if (last === undefined) l.style.display = 'none'; else { l.style.display = 'block'; l.style.bottom = (last * 100) + '%'; }
@@ -36,6 +36,8 @@ function renderBoard() {
   if (!game) return;
   const cur = (phase === 'over' || !game.order.length) ? -1 : game.order[game.idx];
   const b = $('board'); b.innerHTML = '';
+  if (game.teams) { renderTeamBoard(b, cur); return; }
+  b.classList.toggle('many', game.players.length > 4);
   game.players.forEach((p, i) => {
     const away = online() && NET.sala && p.pid !== NET.pid && !presentPids(NET.sala.peers()).has(p.pid);
     const c = document.createElement('div'); c.className = 'chip' + (i === cur ? ' on' : '') + (away ? ' off' : ''); c.style.setProperty('--c', p.color);
@@ -50,18 +52,38 @@ function renderBoard() {
     const c = document.createElement('div'); c.className = 'chip'; c.style.setProperty('--c', '#f5eddd');
     c.innerHTML = `<div class="nm">Récord · ${fmtD(settings.dist)}</div><div class="sc">${r ?? '—'}<small>pts</small></div>`; b.appendChild(c);
   }
+  boardHeight();
 }
+/* Marcador por equipos: puntos sumados y los grabados de sus jugadores (el que lanza, resaltado) */
+function renderTeamBoard(b, cur) {
+  b.classList.remove('many');
+  const curTeam = cur >= 0 ? game.players[cur].team : -1;
+  game.teams.forEach((t, ti) => {
+    const s = teamScore(t);
+    const c = document.createElement('div'); c.className = 'chip' + (ti === curTeam ? ' on' : ''); c.style.setProperty('--c', t.color);
+    c.innerHTML = `<div class="nm"></div><div class="sc">${s}<small>/ ${game.goal}</small></div><div class="mb"></div><div class="bar"><i style="width:${Math.min(100, s / game.goal * 100)}%"></i></div>`;
+    c.querySelector('.nm').textContent = 'Equipo ' + t.name + (online() && t.members.some(i => game.players[i].pid === NET.pid) ? ' · tú' : '');
+    const mb = c.querySelector('.mb');
+    t.members.forEach(i => { const p = game.players[i]; const im = document.createElement('img'); im.alt = p.name; im.title = p.name; im.src = designIcon(p.design, p.color, p.name); if (i === cur) im.className = 'on'; mb.appendChild(im); });
+    b.appendChild(c);
+  });
+  boardHeight();
+}
+function boardHeight() { try { document.documentElement.style.setProperty('--bh', $('board').offsetHeight + 'px'); } catch (e) { } }
 function renderTurn() {
   const p = current();
   $('turnWho').textContent = game.mode === 'reto' ? `Tejo ${game.thrown + 1} de ${RETO_THROWS}` : (p.cpu ? 'Lanza Don Chepe' : (online() && p.pid === NET.pid) ? 'Te toca' : `Lanza ${p.name}`);
   $('turnWho').style.color = p.color === COLORS[3] ? 'var(--yellow)' : '';
-  $('turnMeta').textContent = game.mode === 'reto' ? `${fmtD(W.D)} · mecha 3 · embocinada 6 · moñona 9` : `${online() ? 'Sala ' + NET.code + ' · ' : ''}Ronda ${game.round} · ${fmtD(W.D)} · partida a ${game.goal}`;
+  const tm = teamOf(p);
+  $('turnMeta').textContent = game.mode === 'reto' ? `${fmtD(W.D)} · mecha 3 · embocinada 6 · moñona 9` : `${tm ? 'Equipo ' + tm.name + ' · ' : ''}${online() ? 'Sala ' + NET.code + ' · ' : ''}Ronda ${game.round} · ${fmtD(W.D)} · partida a ${game.goal}`;
 }
 function renderOver(winner) {
   const tbl = $('overStats');
-  const rows = [...game.players].map((p, i) => ({ p, i })).sort((a, b) => b.p.score - a.p.score);
+  const ts = p => teamOf(p) ? teamScore(teamOf(p)) : 0;
+  const rows = [...game.players].map((p, i) => ({ p, i })).sort((a, b) => (ts(b.p) - ts(a.p)) || (b.p.score - a.p.score));
+  const won = p => game.mode !== 'reto' && (winner.team ? p.team === winner.idx : p === winner);
   tbl.innerHTML = `<tr><th>Jugador</th><th>Pts</th><th>Mecha</th><th>Emboc.</th><th>Moñona</th><th>Mano</th><th>Nulo</th></tr>` +
-    rows.map(({ p }) => `<tr class="${p === winner && game.mode !== 'reto' ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.mechas}</td><td>${p.st.emb}</td><td>${p.st.mon}</td><td>${p.st.manos}</td><td>${p.st.nulos}</td></tr>`).join('');
+    rows.map(({ p }) => `<tr class="${won(p) ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.mechas}</td><td>${p.st.emb}</td><td>${p.st.mon}</td><td>${p.st.manos}</td><td>${p.st.nulos}</td></tr>`).join('');
   [...tbl.querySelectorAll('tr')].slice(1).forEach((tr, k) => tr.firstChild.textContent = rows[k].p.name);
   if (game.mode === 'reto') {
     const recs = records(), prev = recs[settings.dist], sc = winner.score;
@@ -70,6 +92,13 @@ function renderOver(winner) {
     $('overWinner').textContent = `${sc} puntos`;
     $('overLine').textContent = isNew ? (prev === undefined ? 'Primer récord a esta distancia.' : `¡Nuevo récord! El anterior era ${prev}.`) : `Tu récord a esta distancia es ${prev}.`;
     $('btnAgain').textContent = 'Otra vez';
+  } else if (winner.team) {
+    const t = game.teams[winner.idx], names = t.members.map(i => game.players[i].name);
+    const others = game.teams.filter((x, i) => i !== winner.idx).map(teamScore);
+    $('overEyebrow').textContent = `Partida a ${game.goal} por equipos · ${fmtD(settings.dist)}`;
+    $('overWinner').textContent = `Ganó el equipo ${t.name}`;
+    $('overLine').textContent = `${names.slice(0, -1).join(', ')}${names.length > 1 ? ' y ' : ''}${names[names.length - 1]}: ${winner.score} a ${others.join(' a ')} en ${game.round} ${game.round === 1 ? 'ronda' : 'rondas'}.`;
+    $('btnAgain').textContent = 'Revancha';
   } else {
     const others = rows.filter(r => r.p !== winner).map(r => r.p.score);
     $('overEyebrow').textContent = `Partida a ${game.goal} · ${fmtD(settings.dist)}`;
@@ -93,6 +122,11 @@ function renderMenu() {
   $('grpDiff').hidden = settings.mode !== 'cpu';
   $('grpGoal').hidden = settings.mode === 'reto';
   $('segCount').hidden = settings.mode !== 'local';
+  const allowed = teamsAllowed(settings.count);
+  $('grpTeams').hidden = settings.mode !== 'local' || allowed.length < 2;
+  if (!allowed.includes(settings.teams)) settings.teams = 0;
+  setSeg('segTeams', settings.teams);
+  $('segTeams').querySelector('[data-v="3"]').hidden = !allowed.includes(3);
   $('grpOnline').hidden = settings.mode !== 'online';
   $('btnPlay').textContent = settings.mode === 'online' ? 'Crear sala' : 'A jugar';
   $('btnPlay').disabled = settings.mode === 'online' && !NET.room;
@@ -199,7 +233,7 @@ function bindInput() {
 
 function bindUI() {
   bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
-  bindSeg('segDist', 'dist', Number); bindSeg('segGoal', 'goal', Number);
+  bindSeg('segDist', 'dist', Number); bindSeg('segGoal', 'goal', Number); bindSeg('segTeams', 'teams', Number);
   $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; saveSettings(); renderMenu(); });
   $('btnPlay').addEventListener('click', () => { A.init(); A.tick(); if (settings.mode === 'online') netCreate(); else startGame(); });
   $('btnRules').addEventListener('click', () => showScreen('rules'));
@@ -229,7 +263,7 @@ function snapshot() {
   return {
     ...base, lastP, pending: phase === 'result' || phase === 'roundEnd',
     game: {
-      players: game.players, round: game.round, order: game.order, idx: game.idx, goal: game.goal, mode: game.mode, thrown: game.thrown, scored: game.scored,
+      players: game.players, teamsN: game.teams ? game.teams.length : 0, round: game.round, order: game.order, idx: game.idx, goal: game.goal, mode: game.mode, thrown: game.thrown, scored: game.scored,
       mk: mechaMeshes.map(m => m.userData.alive ? 1 : 0),
       tejos: game.tejos.map(t => ({ owner: t.owner, valid: t.valid, d: isFinite(t.d) ? t.d : null, u: t.u, v: t.v, p: t.mesh.position.toArray(), q: t.mesh.quaternion.toArray() }))
     }
@@ -240,6 +274,7 @@ function restore(data) {
   try {
     const g = data.game;
     game = { ...g, tejos: [], over: false };
+    game.teams = applyTeams(game.players, g.teamsN || 0);
     g.tejos.forEach(t => {
       const pl = game.players[t.owner]; const m = makeTejo(pl.color, pl.design, pl.name); m.position.fromArray(t.p); m.quaternion.fromArray(t.q); scene.add(m);
       game.tejos.push({ ...t, d: t.d == null ? Infinity : t.d, mesh: m });

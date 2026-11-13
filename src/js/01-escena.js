@@ -13,7 +13,9 @@ const MECHA_HIT = 0.045;    // distancia tejo–mecha para reventarla
 const MECHA_ANG = [45, 135, 225, 315].map(a => a * Math.PI / 180);
 const THETA = 0.6;          // ángulo de salida del lanzamiento (rad)
 const REL = { x: 0, y: 1.0, z: -0.25 }; // punto donde se suelta el tejo
-const COLORS = ['#d8392d', '#2565b3', '#2f915c', '#f3c22f'];
+const COLORS = ['#d8392d', '#2565b3', '#2f915c', '#f3c22f', '#e8772e', '#8a4fc7'];
+const TEAM_COLORS = ['#f3c22f', '#2f6fd1', '#d8392d'], TEAM_NAMES = ['Amarillo', 'Azul', 'Rojo'];
+const MAX_PLAYERS = 6;
 const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);

@@ -1,12 +1,41 @@
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['Javi', 'Pacho', 'Mafe', 'Leo'], designs: ['sol', 'condor', 'colibri', 'cafe'], diff: 1, dist: 18.5, goal: 27, aimHelp: true, muted: false };
+const settings = { mode: 'cpu', count: 2, names: ['Javi', 'Pacho', 'Mafe', 'Leo', 'Caro', 'Nico'], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, muted: false };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
   const used = [];
-  for (let i = 0; i < 4; i++) { let d = settings.designs[i]; if (!DESIGN_IDS.includes(d) || used.includes(d)) d = freeDesign(['sol', 'condor', 'colibri', 'cafe'], used); settings.designs[i] = d; used.push(d); }
+  if (!Array.isArray(settings.names)) settings.names = [];
+  ['Javi', 'Pacho', 'Mafe', 'Leo', 'Caro', 'Nico'].forEach((n, i) => { if (settings.names[i] === undefined) settings.names[i] = n; });
+  for (let i = 0; i < MAX_PLAYERS; i++) { let d = settings.designs[i]; if (!DESIGN_IDS.includes(d) || used.includes(d)) d = freeDesign(['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], used); settings.designs[i] = d; used.push(d); }
+}
+/* ---------- Equipos ---------- */
+function teamsAllowed(n) { return n >= 6 ? [0, 2, 3] : n >= 4 ? [0, 2] : [0]; }
+/* Reparte al azar y ordena los turnos alternando equipos: A1, B1, A2, B2… */
+function makeTeams(list, n) {
+  const sh = list.slice();
+  for (let i = sh.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [sh[i], sh[j]] = [sh[j], sh[i]]; }
+  const T = Array.from({ length: n }, () => []); sh.forEach((x, k) => T[k % n].push(x));
+  const out = [];
+  for (let r = 0; r < T[0].length; r++) T.forEach((t, ti) => { if (t[r] !== undefined) out.push({ item: t[r], team: ti }); });
+  return out;
+}
+function applyTeams(players, n) {
+  if (!n || players.some(p => typeof p.team !== 'number')) { players.forEach(p => delete p.team); return null; }
+  const teams = Array.from({ length: n }, (_, t) => ({ name: TEAM_NAMES[t], color: TEAM_COLORS[t], members: [] }));
+  players.forEach((p, i) => { teams[p.team].members.push(i); p.color = TEAM_COLORS[p.team]; });
+  return teams;
+}
+function teamScore(t) { return t.members.reduce((s, i) => s + game.players[i].score, 0); }
+function teamOf(p) { return game.teams && typeof p.team === 'number' ? game.teams[p.team] : null; }
+/* Quién ganó: el equipo (o jugador) que llegó a la meta; si llegaron varios en la misma ronda, el de más puntos */
+function winnerNow() {
+  if (game.teams) {
+    const b = game.teams.map((t, i) => ({ t, i, s: teamScore(t) })).filter(x => x.s >= game.goal).sort((a, b) => b.s - a.s)[0];
+    return b ? { team: true, idx: b.i, name: 'el equipo ' + b.t.name, score: b.s, color: b.t.color } : null;
+  }
+  return game.players.filter(p => p.score >= game.goal).sort((a, b) => b.score - a.score)[0] || null;
 }
 const RETO_THROWS = 10;
 let game = null;
@@ -37,9 +66,15 @@ function startGame() {
   fixLocalDesigns();
   const D = settings.designs;
   if (settings.mode === 'cpu') players = [newPlayer(settings.names[0] || 'Tú', 0, false, D[0]), newPlayer('Don Chepe', 1, true, freeDesign(['sombrero', 'condor', 'sol'], [D[0]]))];
-  else if (settings.mode === 'local') players = settings.names.slice(0, settings.count).map((n, i) => newPlayer(n || `Jugador ${i + 1}`, i, false, D[i]));
+  else if (settings.mode === 'local') {
+    const nT = teamsAllowed(settings.count).includes(settings.teams) ? settings.teams : 0;
+    const idx = Array.from({ length: settings.count }, (_, i) => i);
+    const plan = nT ? makeTeams(idx, nT) : idx.map(i => ({ item: i }));
+    players = plan.map(x => { const i = x.item, p = newPlayer(settings.names[i] || `Jugador ${i + 1}`, i, false, D[i]); if (nT) p.team = x.team; return p; });
+  }
   else players = [newPlayer(settings.names[0] || 'Tú', 0, false, D[0])];
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: settings.goal, mode: settings.mode, thrown: 0, over: false };
+  game.teams = applyTeams(players, settings.mode === 'local' && players[0].team !== undefined ? settings.teams : 0);
   lastP = {};
   clearFeed();
   showScreen(null); setHud(true);
@@ -249,7 +284,7 @@ function finishFlight() {
 
 function advance() {
   if (phase === 'over') return;
-  const leader = game.players.find(p => p.score >= game.goal);
+  const leader = winnerNow();
   if (game.mode !== 'reto' && leader) return gameOver(leader);
   if (game.mode === 'reto') {
     if (game.thrown >= RETO_THROWS) return gameOver(game.players[0]);
@@ -269,9 +304,9 @@ function endRound() {
   p.score += 1; p.st.manos++;
   manoRing = new THREE.Mesh(new THREE.RingGeometry(RT * 1.25, RT * 1.6, 40), new THREE.MeshBasicMaterial({ color: p.color, transparent: true, depthWrite: false }));
   manoRing.position.set(best.u, best.v, .006); manoRing.renderOrder = 6; cancha.add(manoRing);
-  toast(`Mano para ${p.name} +1`); feed(p, 'Mano +1'); bumpChip(best.owner); renderBoard(); A.tick();
+  toast(`Mano para ${p.name}${teamOf(p) ? ' (' + teamOf(p).name + ')' : ''} +1`); feed(p, 'Mano +1'); bumpChip(best.owner); renderBoard(); A.tick();
   closeup = { u: best.u, v: best.v };
-  later(1.9, () => { closeup = null; const leader = game.players.find(q => q.score >= game.goal); if (leader) gameOver(leader); else startRound(); });
+  later(1.9, () => { closeup = null; const leader = winnerNow(); if (leader) gameOver(leader); else startRound(); });
 }
 
 function gameOver(winner) {

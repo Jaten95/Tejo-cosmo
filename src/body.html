@@ -37,8 +37,12 @@
     </div>
     <div class="group" id="grpNames">
       <h3 id="lblNames">Jugadores</h3>
-      <div class="seg" id="segCount"><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button></div>
+      <div class="seg" id="segCount"><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button><button data-v="6">6</button></div>
       <div class="names" id="names"></div>
+    </div>
+    <div class="group" id="grpTeams" hidden>
+      <h3>Forma de juego</h3>
+      <div class="seg" id="segTeams"><button data-v="0">Individual</button><button data-v="2">2 equipos<small>al azar</small></button><button data-v="3">3 equipos<small>al azar</small></button></div>
     </div>
     <div class="group" id="grpOnline" hidden>
       <h3>Unirme a una sala</h3>
@@ -90,6 +94,11 @@
     <button class="myDz" id="myDz" type="button"><img id="myDzImg" alt=""><span><small>TU GRABADO</small><b id="myDzName"></b></span><em>Cambiar</em></button>
     <div class="row"><h3>En la sala</h3><button class="mini" id="btnRefresh">Actualizar</button></div>
     <ul class="seats" id="salaList"></ul>
+    <div class="group" id="salaTeams" hidden>
+      <h3>Forma de juego</h3>
+      <div class="seg" id="segSalaTeams"><button data-v="0">Individual</button><button data-v="2">2 equipos<small>al azar</small></button><button data-v="3">3 equipos<small>al azar</small></button></div>
+      <p class="prose" id="salaTeamsNote"></p>
+    </div>
     <p class="prose" id="salaRules"></p>
     <div class="cta">
       <button class="btn" id="btnStart" hidden>Empezar partida</button>
@@ -112,10 +121,11 @@
     <p class="prose"><b>Nulo:</b> si el tejo pega primero en el marco, el tablero o el piso, no cuenta. Solo vale lo que cae en la greda.</p>
     <p class="prose"><b>Ronda:</b> cada jugador lanza un tejo por ronda. Una mecha reventada queda reventada hasta que empiece la siguiente ronda. Gana quien llegue primero a la meta.</p>
     <p class="prose"><b>Choques:</b> si tu tejo le pega a otro, lo corre en la greda. Tus puntos se cuentan donde quede tu tejo, y los tejos corridos pelean la mano desde su nuevo lugar. Si caes casi encima de otro tejo, el tuyo rebota en el metal: si se sale de la greda es nulo.</p>
+    <p class="prose"><b>Equipos:</b> con 4 o más jugadores se puede jugar en 2 equipos (o en 3 con 6 jugadores). Se arman al azar, los turnos se alternan entre equipos y los puntos de cada jugador suman para su equipo.</p>
     <p class="prose"><b>Reto:</b> 10 tejos para hacer el mayor puntaje posible. La mano no cuenta.</p>
     <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
     <p class="prose"><b>Tiempo en salas:</b> tienes 15 segundos para lanzar. Si no lanzas, tu tiro es nulo y pasa el turno.</p>
-    <p class="prose"><b>Salas:</b> uno crea la sala y pasa el código de 4 números; hasta 4 jugadores, cada uno en su celular. Si alguien no está cuando le toca, pierde el turno.</p>
+    <p class="prose"><b>Salas:</b> uno crea la sala y pasa el código de 4 números; hasta 6 jugadores, cada uno en su celular. Si alguien no está cuando le toca, pierde el turno.</p>
     <div class="cta"><button class="btn" id="btnRulesBack">Entendido</button></div>
   </div></div>
 </section>

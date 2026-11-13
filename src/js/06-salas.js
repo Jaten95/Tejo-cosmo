@@ -227,7 +227,7 @@ function hostDuties(peers) {
   const g = NET.g, here = presentPids(peers);
   if (g.phase === 'lobby') {
     let seats = g.seats.filter(s => here.has(s.pid)).map(s => ({ pid: s.pid, name: String(here.get(s.pid).name || s.name).slice(0, 14) }));
-    here.forEach((pr, pid) => { if (seats.length < 4 && !seats.some(s => s.pid === pid) && pr.name) seats.push({ pid, name: String(pr.name).slice(0, 14) }); });
+    here.forEach((pr, pid) => { if (seats.length < MAX_PLAYERS && !seats.some(s => s.pid === pid) && pr.name) seats.push({ pid, name: String(pr.name).slice(0, 14) }); });
     const used = [];
     seats = seats.map(s => { const want = here.get(s.pid) && here.get(s.pid).design; const d = DESIGN_IDS.includes(want) && !used.includes(want) ? want : null; if (d) used.push(d); return { ...s, design: d }; });
     if (JSON.stringify(seats) !== JSON.stringify(g.seats)) publishG({ ...g, seats, ver: g.ver + 1 });
@@ -299,8 +299,10 @@ function buildOnlineGame(g) {
   if (game) clearCancha();
   if (Math.abs(W.D - st.dist) > .01) { setDistance(st.dist); buildHall(); }
   computeDvdP();
-  const players = st.players.map((s, i) => { const p = newPlayer(String(s.name).slice(0, 14), i, false, DESIGN_IDS.includes(s.design) ? s.design : null); p.pid = s.pid; return p; });
+  const nT = [2, 3].includes(st.teams) ? st.teams : 0;
+  const players = st.players.slice(0, MAX_PLAYERS).map((s, i) => { const p = newPlayer(String(s.name).slice(0, 14), i, false, DESIGN_IDS.includes(s.design) ? s.design : null); p.pid = s.pid; if (nT && Number.isInteger(s.team) && s.team >= 0 && s.team < nT) p.team = s.team; return p; });
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: st.goal, mode: 'online', gid: g.gid, aimHelp: !!st.aimHelp, thrown: 0, over: false };
+  game.teams = applyTeams(players, nT);
   NET.pending = {}; lastP = {}; clearFeed(); paused = false;
   showScreen(null); setHud(true);
 }
@@ -384,10 +386,12 @@ function netRematch() {
   if (!amHost() || !NET.g || !NET.g.setup) return;
   const g = NET.g, here = presentPids(NET.sala.peers());
   let players = g.setup.players.filter(s => here.has(s.pid));
-  here.forEach((pr, pid) => { if (players.length < 4 && !players.some(s => s.pid === pid) && pr.name) players.push({ pid, name: String(pr.name).slice(0, 14) }); });
+  here.forEach((pr, pid) => { if (players.length < MAX_PLAYERS && !players.some(s => s.pid === pid) && pr.name) players.push({ pid, name: String(pr.name).slice(0, 14) }); });
   if (players.length > 1) players = [...players.slice(1), players[0]]; // empieza otro
   players = withDesigns(players.map(s => ({ ...s, design: here.get(s.pid) && DESIGN_IDS.includes(here.get(s.pid).design) ? here.get(s.pid).design : s.design })));
-  publishG({ ...g, phase: 'play', gid: rid(), setup: { ...g.setup, players }, snap: null, last: null, ver: g.ver + 1 });
+  const nT = teamsAllowed(players.length).includes(g.teams || 0) ? (g.teams || 0) : 0;   // equipos nuevos al azar en cada revancha
+  players = nT ? makeTeams(players, nT).map(x => ({ ...x.item, team: x.team })) : players.map(s => { const c = { ...s }; delete c.team; return c; });
+  publishG({ ...g, phase: 'play', gid: rid(), setup: { ...g.setup, players, teams: nT }, snap: null, last: null, ver: g.ver + 1 });
   applyG();
 }
 function withDesigns(list) {
@@ -397,9 +401,11 @@ function withDesigns(list) {
 function netStart() {
   if (!amHost()) return;
   const g = NET.g, here = presentPids(NET.sala.peers());
-  const players = withDesigns(g.seats.filter(s => here.has(s.pid))); if (players.length < 2) return;
+  let players = withDesigns(g.seats.filter(s => here.has(s.pid))); if (players.length < 2) return;
+  const nT = teamsAllowed(players.length).includes(g.teams || 0) ? (g.teams || 0) : 0;
+  if (nT) players = makeTeams(players, nT).map(x => ({ ...x.item, team: x.team }));
   A.init(); A.tick();
-  publishG({ ...g, phase: 'play', gid: rid(), setup: { players, dist: g.dist, goal: g.goal, aimHelp: g.aimHelp }, snap: null, last: null, ver: g.ver + 1 });
+  publishG({ ...g, phase: 'play', gid: rid(), setup: { players, dist: g.dist, goal: g.goal, aimHelp: g.aimHelp, teams: nT }, snap: null, last: null, ver: g.ver + 1 });
   applyG();
 }
 
@@ -492,22 +498,31 @@ function renderSala() {
     const b = document.createElement('b'); b.textContent = name; li.appendChild(b);
     const s = document.createElement('span'); s.textContent = tags; li.appendChild(s); list.appendChild(li);
   };
-  seats.forEach((s, i) => add(s.name, COLORS[i], [s.pid === NET.pid ? 'tú' : '', g && g.host === s.pid ? 'anfitrión' : '', here.has(s.pid) ? '' : 'fuera'].filter(Boolean).join(' · '), !here.has(s.pid), s.design));
+  seats.forEach((s, i) => add(s.name, g && g.setup && g.phase !== 'lobby' && Number.isInteger(s.team) ? TEAM_COLORS[s.team] : COLORS[i], [s.pid === NET.pid ? 'tú' : '', g && g.host === s.pid ? 'anfitrión' : '', here.has(s.pid) ? '' : 'fuera'].filter(Boolean).join(' · '), !here.has(s.pid), s.design));
   here.forEach((pr, pid) => { if (!seats.some(s => s.pid === pid)) add(String(pr.name || 'Alguien').slice(0, 14), '#8e7d66', (pid === NET.pid ? 'tú · ' : '') + 'mirando', false, pr.design); });
   renderMyDesign(g, seats);
   const info = $('salaInfo'), host = amHost();
   if (!g) info.textContent = NET.creator ? 'Abriendo la sala…' : 'Buscando la sala…';
   const started = !!(g && g.phase !== 'lobby' && g.setup);
   const inGame = started && g.setup.players.some(s => s.pid === NET.pid);
-  const full = !!(g && g.phase === 'lobby' && !seats.some(s => s.pid === NET.pid) && seats.length >= 4);
+  const full = !!(g && g.phase === 'lobby' && !seats.some(s => s.pid === NET.pid) && seats.length >= MAX_PLAYERS);
   $('btnWatch').hidden = !(started && !inGame);
   if (!g) { }
   else if (started && !inGame) info.textContent = `La partida de la sala ${NET.code} ya empezó, así que no puedes entrar a jugar. Si hay cupo, entras en la revancha cuando el anfitrión la inicie. Mientras tanto puedes mirarla.`;
   else if (started) info.textContent = 'La partida ya empezó.';
-  else if (full) info.textContent = 'La sala está llena: ya hay 4 jugadores. Si alguien sale, entras de una; si no, crea otra sala.';
+  else if (full) info.textContent = `La sala está llena: ya hay ${MAX_PLAYERS} jugadores. Si alguien sale, entras de una; si no, crea otra sala.`;
   else if (host) info.textContent = seats.length < 2 ? 'Pásale el código a tus amigos. Cuando entren, aparecen aquí.' : 'Están listos. Empieza cuando quieras.';
   else info.textContent = 'Esperando a que el anfitrión empiece la partida.';
-  $('salaRules').textContent = g ? `${fmtD(g.dist)} · partida a ${g.goal} · mira ${g.aimHelp ? 'activada' : 'apagada'} · hasta 4 jugadores` : '';
+  $('salaRules').textContent = g ? `${fmtD(g.dist)} · partida a ${g.goal} · mira ${g.aimHelp ? 'activada' : 'apagada'} · hasta ${MAX_PLAYERS} jugadores` : '';
+  // forma de juego: la escoge el anfitrión; los equipos se arman al azar al empezar
+  const lobby = !!(g && g.phase === 'lobby'), nHere = seats.filter(s => here.has(s.pid)).length, allowed = teamsAllowed(nHere), want = (g && g.teams) || 0;
+  $('salaTeams').hidden = !lobby;
+  if (lobby) {
+    setSeg('segSalaTeams', want);
+    $('segSalaTeams').querySelectorAll('button').forEach(b => { b.disabled = !host; b.hidden = b.dataset.v === '3' && nHere < 6 && want !== 3; });
+    $('salaTeamsNote').textContent = want && !allowed.includes(want) ? `Para ${want} equipos se necesitan al menos ${want === 3 ? 6 : 4} jugadores; si no completan, se juega individual.`
+      : want ? 'Los equipos se arman al azar al empezar, y se revuelven en cada revancha.' : host ? 'Con 4 o más jugadores pueden jugar por equipos.' : '';
+  }
   $('btnStart').hidden = !host || !g || g.phase !== 'lobby';
   $('btnStart').disabled = seats.filter(s => here.has(s.pid)).length < 2;
 }
@@ -541,6 +556,10 @@ function netBindUI() {
   $('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') netJoinClick(); });
   $('btnStart').addEventListener('click', netStart);
   $('btnLeave').addEventListener('click', () => showMenu());
+  $('segSalaTeams').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || !amHost() || !NET.g || NET.g.phase !== 'lobby') return;
+    publishG({ ...NET.g, teams: Number(b.dataset.v), ver: NET.g.ver + 1 }); A.tick(); renderSala();
+  });
   $('btnRefresh').addEventListener('click', netRefresh);
   $('btnSkip').addEventListener('click', netSkip);
   $('btnWatch').addEventListener('click', () => { NET.watching = true; applyG(); });
