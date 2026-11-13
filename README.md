@@ -20,9 +20,13 @@ src/
     05-brazo.js      brazo en primera persona, mano 3D y manilla
     06-salas.js      salas en línea (salas de Claude o Supabase Realtime)
     07-interfaz.js   menú, marcador, controles y arranque
+    08-ambiente.js   ambiente de cancha y música, sintetizados en el navegador
+    09-instalar.js   botón para instalar el juego en el celular
+  sw.js              service worker: instalar y jugar sin internet
   assets/
     mano-derecha.glb modelo de la mano (ver LICENSES/)
-build.py             une todo y genera index.html
+build.py             une todo y genera index.html y sw.js
+manifest.webmanifest e icon-*.png: datos para instalar el juego como app
 ```
 
 ## Generar una versión nueva
@@ -33,6 +37,10 @@ node --check build/juego.js   # revisa que el JavaScript no tenga errores de sin
 ```
 
 El número de versión sale en la esquina inferior derecha del menú; así se sabe si el celular ya tiene la última. `build/` no se sube al repo: ahí queda también `tejo-claude.html`, la versión que se publica dentro de Claude.
+
+## Instalar en el celular
+
+En GitHub Pages el juego se puede instalar: en Android sale el botón **Instalar en el celular** en el menú; en iPhone, el mismo botón explica cómo agregarlo desde Safari con Compartir → Agregar a inicio. Instalado, se juega sin internet contra Don Chepe, por turnos y en el reto; las salas necesitan conexión. El service worker pide la página a la red primero, así que las versiones nuevas llegan solas.
 
 ## Servicios
 

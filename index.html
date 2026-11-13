@@ -9,6 +9,11 @@
 <link rel="canonical" href="https://jaten95.github.io/Tejo-cosmo/">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tejo">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_CO">
 <meta property="og:site_name" content="Club de Tejo El Cosmo">
@@ -139,6 +144,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 #announce .p{font:800 16px/1 var(--body);letter-spacing:.08em;background:var(--ink);padding:7px 12px;border-top:4px solid var(--yellow);}
 #announce .s{height:12px;width:min(70vw,360px);background:var(--stripes);}
 @keyframes ann{0%{opacity:0;transform:scale(.6) rotate(-4deg);}12%{opacity:1;transform:scale(1.06) rotate(-2deg);}22%{transform:scale(1) rotate(-2deg);}80%{opacity:1;}100%{opacity:0;transform:scale(1) rotate(-2deg) translateY(-14px);}}
+.btn.wide{flex:none;width:100%;}
+.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.5;color:var(--muted);}
+.steps b{color:var(--paper);}
 #replayTag{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 20px);z-index:4;pointer-events:none;
   display:flex;align-items:center;gap:8px;background:var(--ink);color:var(--paper);font:400 16px/1 var(--display);letter-spacing:.08em;padding:8px 12px 7px;border-bottom:4px solid var(--red);}
 #replayTag i{width:10px;height:10px;border-radius:50%;background:var(--red);animation:rec 1s steps(1) infinite;}
@@ -343,7 +351,8 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.24</span></div>
+    <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.25</span></div>
   </div></div>
 </section>
 
@@ -373,6 +382,19 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnWatch" hidden>Mirar la partida</button>
       <button class="btn ghost" id="btnLeave">Salir de la sala</button>
     </div>
+  </div></div>
+</section>
+
+<section class="screen" id="installHelp" hidden>
+  <div class="panel"><div class="pin">
+    <h2>Instalar en el iPhone</h2>
+    <ol class="steps">
+      <li>Abre el juego en <b>Safari</b> y toca el botón <b>Compartir</b> (el cuadro con la flecha hacia arriba).</li>
+      <li>Baja y toca <b>Agregar a inicio</b>.</li>
+      <li>Toca <b>Agregar</b>. El Tejo queda en tu pantalla como una app.</li>
+    </ol>
+    <p class="prose">Ya instalado se abre en pantalla completa, y contra Don Chepe, por turnos y en el reto se puede jugar sin internet. Las salas sí necesitan conexión.</p>
+    <div class="cta"><button class="btn" id="btnInstallBack" type="button">Entendido</button></div>
   </div></div>
 </section>
 
@@ -435,7 +457,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.24";
+const GAME_VERSION = "1.25";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -2872,6 +2894,7 @@ function renderMenu() {
     });
     l.append(dz, inp); box.appendChild(l);
   }
+  try { renderInstall(); } catch (e) { }
   const r = records()[settings.dist];
   $('recordLine').textContent = r !== undefined ? `Tu récord en el reto a ${fmtD(settings.dist)}: ${r} puntos` : '';
 }
@@ -3118,6 +3141,28 @@ document.addEventListener('click', e => {
   settings[b.dataset.bg] = !settings[b.dataset.bg]; saveSettings(); A.init(); bgApply();
 });
 
+/* ================= Instalar en el celular =================
+   Solo en GitHub Pages (en Claude no aplica). Android/Chrome: el botón abre el aviso de instalar del navegador.
+   iPhone/Safari: el botón muestra cómo agregarlo a la pantalla de inicio. */
+const INSTALL = { prompt: null };
+function standalone() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
+function isIOS() { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+function canOfferInstall() { return !window.claude && 'serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost') && !standalone(); }
+function renderInstall() {
+  const b = document.getElementById('btnInstall'); if (!b) return;
+  b.hidden = !(canOfferInstall() && (INSTALL.prompt || isIOS()));
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); INSTALL.prompt = e; renderInstall(); });
+window.addEventListener('appinstalled', () => { INSTALL.prompt = null; renderInstall(); toast('Listo: el Tejo quedó en tu pantalla de inicio'); });
+document.addEventListener('click', async e => {
+  if (!e.target.closest) return;
+  if (e.target.closest('#btnInstallBack')) { showScreen('menu'); return; }
+  if (!e.target.closest('#btnInstall')) return;
+  if (INSTALL.prompt) { const p = INSTALL.prompt; INSTALL.prompt = null; try { await p.prompt(); await p.userChoice; } catch (er) { } renderInstall(); }
+  else showScreen('installHelp');
+});
+
 </script>
+<script>if ('serviceWorker' in navigator && !window.claude) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

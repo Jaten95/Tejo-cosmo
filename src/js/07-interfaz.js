@@ -150,6 +150,7 @@ function renderMenu() {
     });
     l.append(dz, inp); box.appendChild(l);
   }
+  try { renderInstall(); } catch (e) { }
   const r = records()[settings.dist];
   $('recordLine').textContent = r !== undefined ? `Tu récord en el reto a ${fmtD(settings.dist)}: ${r} puntos` : '';
 }

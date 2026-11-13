@@ -7,6 +7,7 @@ Genera:
   index.html              la página de GitHub Pages (con metadatos para compartir)
   build/tejo-claude.html  la versión que se publica como artifact en Claude
   build/juego.js          todo el JavaScript junto, para revisarlo con `node --check`
+  sw.js                   el service worker de GitHub Pages (instalar y jugar sin internet)
 """
 import base64
 import pathlib
@@ -57,6 +58,11 @@ pages_head = f'''<!doctype html>
 <link rel="canonical" href="{BASE}">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tejo">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_CO">
 <meta property="og:site_name" content="Club de Tejo El Cosmo">
@@ -77,5 +83,16 @@ pages_head = f'''<!doctype html>
 </head>
 <body>
 '''
-(ROOT / 'index.html').write_text(pages_head + page + '</body>\n</html>\n')
+SW_REGISTER = ("<script>if ('serviceWorker' in navigator && !window.claude) addEventListener('load', () => "
+               "navigator.serviceWorker.register('sw.js').catch(() => {}));</script>\n")
+(ROOT / 'index.html').write_text(pages_head + page + SW_REGISTER + '</body>\n</html>\n')
+
+# Service worker: la lista de lo que se guarda para jugar sin internet
+import json, re
+fonts = re.search(r'https://fonts\.googleapis\.com/css2[^"]+', (SRC / 'head.html').read_text()).group(0)
+precache = ['./', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon.png',
+            'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+            'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js', fonts.replace('&amp;', '&')]
+sw = (SRC / 'sw.js').read_text().replace('{{VERSION}}', VERSION).replace('{{PRECACHE}}', json.dumps(precache, indent=2))
+(ROOT / 'sw.js').write_text(sw)
 print(f'v{VERSION}: index.html y build/tejo-claude.html listos')
