@@ -138,8 +138,9 @@ function launch(a, opts) {
   const sim = simulate(V(REL.x, REL.y, REL.z), v0, false);
   const others = game.tejos.map((t, i) => ({ i, u: t.u, v: t.v, valid: t.valid })).filter(o => o.valid);
   const res = evaluate(sim, others);
+  const fsim = res.rebound ? joinRebound(sim, res.rebound) : sim;
   const mesh = makeTejo(p.color, p.design, p.name); mesh.position.copy(sim.path[0].p); scene.add(mesh);
-  flight = { timeout: !!(opts && opts.timeout), sim, res, mesh, t: 0, owner: game.order[game.idx], ev: 0, done: false, impactAt: sim.first === 'clay' ? sim.firstT : sim.duration, spin: rand(12, 18) * (Math.random() < .5 ? -1 : 1), tilt: V(rand(-.25, .25), 0, rand(-.25, .25)) };
+  flight = { timeout: !!(opts && opts.timeout), sim: fsim, res, mesh, t: 0, base: game.tejos.map(t => t.mesh.position.clone()), owner: game.order[game.idx], ev: 0, done: false, impactAt: fsim.first === 'clay' ? fsim.firstT : fsim.duration, spin: rand(12, 18) * (Math.random() < .5 ? -1 : 1), tilt: V(rand(-.25, .25), 0, rand(-.25, .25)) };
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
   game.thrown++;
   A.whoosh(); buzz(15);
@@ -179,15 +180,12 @@ function impactEvent(e, f) {
     A.thud(strong); buzz(30);
     dirt(fromUV(u, v, .02), W.n, r.valid ? 30 : 16);
     decal(u, v, T.crater, r.emb ? .1 : .14);
-    if (r.hits.length) {
+    if (r.landMoved.length) {
       // cae donde apuntó, choca y se corre; los golpeados se deslizan en la greda
       f.mesh.position.copy(fromUV(r.landU, r.landV, TT * .12));
       slideTo(f.mesh, pose.pos, .16);
-      r.moved.forEach(m => { const t = game.tejos[m.i]; if (!t) return;
-        const to = t.mesh.position.clone().addScaledVector(W.a, m.u - t.u).addScaledVector(W.s, m.v - t.v);
-        slideTo(t.mesh, to, .24); decal(m.u, m.v, T.crater, .12); });
-      const c = fromUV(r.contact.u, r.contact.v, .025);
-      burst(c, W.n, { count: 26, colors: ['#ffffff', '#ffe9b0', '#ffd27a'], speed: [.8, 2.4], grav: 4, life: .35, size: .022 });
+      r.landMoved.forEach(m => slideTejo(f, m, .24));
+      if (r.contact) sparks(fromUV(r.contact.u, r.contact.v, .025));
       A.hit(); buzz([20, 20, 40]);
     } else f.mesh.position.copy(pose.pos);
     if (f.res.valid && (f.res.ring || f.res.emb)) A.clank();
@@ -195,6 +193,11 @@ function impactEvent(e, f) {
     if (f.res.mechas && f.res.mechas.length) flashScreen();
     shake = Math.max(shake, reduceMotion ? 0 : .012);
     finishFlight();
+  } else if (e.kind === 'tejo') {   // pegó encima de otro tejo y rebota
+    const rb = f.res.rebound;
+    rb.moved.forEach(m => slideTejo(f, m, .2));
+    sparks(fromUV(rb.contact.u, rb.contact.v, .03), 40);
+    A.hit(); A.clank(); buzz([30, 20, 60]); shake = Math.max(shake, reduceMotion ? 0 : .01);
   } else if (e.kind === 'floor') { A.floor(); dirt(e.p, V(0, 1, 0), 10); }
   else { A.wood(); shake = Math.max(shake, reduceMotion ? 0 : .006); }
 }
@@ -215,7 +218,9 @@ function finishFlight() {
   game.tejos.push({ owner: f.owner, mesh: f.mesh, valid: r.valid, d: r.valid ? r.d : Infinity, u: r.u, v: r.v });
   const hitNames = (r.hits || []).map(i => game.tejos[i] && game.tejos[i].owner).filter(o => o !== undefined)
     .map(o => o === f.owner ? 'a su propio tejo' : `al tejo de ${game.players[o].name}`).filter((x, k, a) => a.indexOf(x) === k);
-  const hitText = hitNames.length ? `Le pegó ${hitNames.join(' y ')}` : '';
+  let hitText = hitNames.length ? `Le pegó ${hitNames.join(' y ')}` : '';
+  if (r.rebound) { const o = game.tejos[r.rebound.hit].owner; hitText = `Rebotó en ${o === f.owner ? 'su propio tejo' : 'el tejo de ' + game.players[o].name}`; }
+  const where = { floor: 'se fue al piso', frame: 'pegó en el marco', board: 'se fue al tablero', wall: 'se fue a la pared' }[r.why] || 'se salió';
   p.st.tiros++;
   phase = 'result'; resultAt = performance.now();
   const cm = r.valid ? Math.max(0, Math.round((r.d - RT) * 100)) : 0;
@@ -231,10 +236,11 @@ function finishFlight() {
     } else if (r.valid) {
       toast((hitText ? `¡${hitText}! ` : '') + (cm <= 1 ? 'Quedó pegadito al bocín' : `Quedó a ${cm} cm del bocín`)); feed(p, `Greda · ${cm} cm`);
     } else {
-      const why = f.timeout ? 'Se le acabó el tiempo' : nuloWhy(f.sim);
-      p.st.nulos++; announce('NULO', why.toUpperCase(), false, true); A.aww(); feed(p, `Nulo · ${why.toLowerCase()}`);
+      const why = f.timeout ? 'Se le acabó el tiempo' : r.rebound ? `Rebotó y ${where}` : nuloWhy(f.sim);
+      p.st.nulos++; announce('NULO', why.toUpperCase(), false, true); A.aww();
+      feed(p, r.rebound && !f.timeout ? `Nulo · ${hitText.charAt(0).toLowerCase() + hitText.slice(1)} y ${where}` : `Nulo · ${why.toLowerCase()}`);
     }
-    if (hitText) feed(p, hitText);
+    if (hitText && r.valid) feed(p, hitText);
     renderBoard();
   });
   flight = null;
@@ -366,4 +372,22 @@ function slideTo(mesh, to, dur) {
   const from = mesh.position.clone(); let t = 0;
   if (reduceMotion) { mesh.position.copy(to); return; }
   addFx({ update(dt) { t += dt; const k = Math.min(1, t / dur), e = 1 - Math.pow(1 - k, 3); mesh.position.lerpVectors(from, to, e); return k < 1; } });
+}
+
+/* Tejo golpeado: se desliza desde donde estaba al empezar el tiro hasta su nuevo lugar */
+function slideTejo(f, m, dur) {
+  const t = game.tejos[m.i]; if (!t || !f.base[m.i]) return;
+  const to = f.base[m.i].clone().addScaledVector(W.a, m.u - t.u).addScaledVector(W.s, m.v - t.v);
+  slideTo(t.mesh, to, dur); decal(m.u, m.v, T.crater, .12);
+}
+function sparks(p, n = 26) { burst(p, W.n, { count: n, colors: ['#ffffff', '#ffe9b0', '#ffd27a'], speed: [.8, 2.6], grav: 4, life: .38, size: .022 }); }
+/* Une el vuelo hasta el golpe con el vuelo del rebote */
+function joinRebound(sim, rb) {
+  const t1 = rb.t, s2 = rb.sim2, sh = e => Object.assign({}, e, { t: e.t + t1 });
+  return {
+    path: sim.path.filter(q => q.t <= t1).concat(s2.path.map(q => ({ t: q.t + t1, p: q.p }))),
+    events: [{ t: t1, kind: 'tejo', p: fromUV(rb.at.u, rb.at.v, .036), speed: sim.vEnd.length() }].concat(s2.events.map(sh)),
+    first: s2.first, firstT: s2.firstT + t1, firstP: s2.firstP, firstN: s2.firstN, clay: s2.clay, vEnd: s2.vEnd,
+    duration: s2.duration + t1, end: s2.end, onFloor: s2.onFloor, rebound: true
+  };
 }

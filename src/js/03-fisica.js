@@ -123,10 +123,40 @@ function resolveHits(u, v, vEnd, others) {
   return { u: P[0].u, v: P[0].v, moved, hits, contact };
 }
 
+/* ---------- Rebote: si cae casi encima de otro tejo, pega en el metal y sale rebotado ---------- */
+const REBOTE_D = RT * .7;
+function reboundSim(landU, landV, vEnd, tj) {
+  const ou = landU - tj.u, ov = landV - tj.v, od = Math.hypot(ou, ov);
+  const side = od > 1e-5 ? W.a.clone().multiplyScalar(ou / od).addScaledVector(W.s, ov / od) : V();
+  const n = W.n.clone().addScaledVector(side, Math.min(1, od / REBOTE_D) * .9).normalize();  // más de lado, más se desvía
+  const vn = vEnd.dot(n), vt = vEnd.clone().addScaledVector(n, -vn);
+  const v1 = vt.multiplyScalar(.6).addScaledVector(n, -vn * .38);
+  return simulate(fromUV(landU, landV, .036), v1, false);
+}
+
 function evaluate(sim, others) {
-  if (sim.first !== 'clay') return { valid: false, kind: 'nulo', why: sim.first, pts: 0, moved: [], hits: [] };
+  if (sim.first !== 'clay') return { valid: false, kind: 'nulo', why: sim.first, pts: 0, moved: [], hits: [], landMoved: [] };
+  others = others || [];
   const landU = R4(sim.clay.u), landV = R4(sim.clay.v);
-  const col = resolveHits(landU, landV, sim.vEnd, others || []);
+  let near = null, nd = REBOTE_D;
+  others.forEach(o => { const d = Math.hypot(o.u - landU, o.v - landV); if (d < nd) { nd = d; near = o; } });
+  if (!near) { const r = scoreAt(landU, landV, sim.vEnd, others); r.landMoved = r.moved; return r; }
+  // el golpe corre al otro tejo (menos que un choque normal: casi toda la fuerza se va en el rebote)
+  const col1 = resolveHits(landU, landV, sim.vEnd, others);
+  const mv1 = col1.moved.map(m => { const o = others.find(x => x.i === m.i); return { i: m.i, u: R4(o.u + (m.u - o.u) * .5), v: R4(o.v + (m.v - o.v) * .5) }; });
+  const others1 = others.map(o => mv1.find(x => x.i === o.i) || o);
+  const sim2 = reboundSim(landU, landV, sim.vEnd, near);
+  const rebound = { t: sim.firstT, sim2, at: { u: landU, v: landV }, contact: col1.contact || { u: landU, v: landV }, moved: mv1, hit: near.i };
+  if (sim2.first !== 'clay') return { valid: false, kind: 'nulo', why: sim2.first, pts: 0, moved: mv1, hits: [near.i], landMoved: [], rebound };
+  const r = scoreAt(R4(sim2.clay.u), R4(sim2.clay.v), sim2.vEnd, others1);
+  const merged = mv1.filter(m => !r.moved.some(x => x.i === m.i)).concat(r.moved);
+  r.landMoved = r.moved; r.moved = merged; r.hits = [near.i].concat(r.hits.filter(h => h !== near.i)); r.rebound = rebound;
+  return r;
+}
+
+/* Puntaje del tejo en la greda: primero se resuelven los choques, luego cuenta donde quedó */
+function scoreAt(landU, landV, vEnd, others) {
+  const col = resolveHits(landU, landV, vEnd, others);
   const u = col.u, v = col.v, d = Math.hypot(u, v);
   const mechas = mechaMeshes.filter(m => m.userData.alive && Math.hypot(m.userData.u - u, m.userData.v - v) < MECHA_HIT);
   const emb = d <= R_EMB;

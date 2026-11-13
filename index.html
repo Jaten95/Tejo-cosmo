@@ -299,7 +299,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.19</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.20</span></div>
   </div></div>
 </section>
 
@@ -339,7 +339,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     <p class="prose"><b>Lanzar:</b> pon el dedo en cualquier parte y arrástralo hacia abajo para cargar fuerza; muévelo a los lados para apuntar. Suelta para lanzar. Si te quedas mucho rato apuntando, el pulso empieza a temblar.</p>
     <p class="prose"><b>Nulo:</b> si el tejo pega primero en el marco, el tablero o el piso, no cuenta. Solo vale lo que cae en la greda.</p>
     <p class="prose"><b>Ronda:</b> cada jugador lanza un tejo por ronda. Una mecha reventada queda reventada hasta que empiece la siguiente ronda. Gana quien llegue primero a la meta.</p>
-    <p class="prose"><b>Choques:</b> si tu tejo le pega a otro, lo corre en la greda. Tus puntos se cuentan donde quede tu tejo, y los tejos corridos pelean la mano desde su nuevo lugar.</p>
+    <p class="prose"><b>Choques:</b> si tu tejo le pega a otro, lo corre en la greda. Tus puntos se cuentan donde quede tu tejo, y los tejos corridos pelean la mano desde su nuevo lugar. Si caes casi encima de otro tejo, el tuyo rebota en el metal: si se sale de la greda es nulo.</p>
     <p class="prose"><b>Reto:</b> 10 tejos para hacer el mayor puntaje posible. La mano no cuenta.</p>
     <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
     <p class="prose"><b>Tiempo en salas:</b> tienes 15 segundos para lanzar. Si no lanzas, tu tiro es nulo y pasa el turno.</p>
@@ -377,7 +377,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.19";
+const GAME_VERSION = "1.20";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -1064,10 +1064,40 @@ function resolveHits(u, v, vEnd, others) {
   return { u: P[0].u, v: P[0].v, moved, hits, contact };
 }
 
+/* ---------- Rebote: si cae casi encima de otro tejo, pega en el metal y sale rebotado ---------- */
+const REBOTE_D = RT * .7;
+function reboundSim(landU, landV, vEnd, tj) {
+  const ou = landU - tj.u, ov = landV - tj.v, od = Math.hypot(ou, ov);
+  const side = od > 1e-5 ? W.a.clone().multiplyScalar(ou / od).addScaledVector(W.s, ov / od) : V();
+  const n = W.n.clone().addScaledVector(side, Math.min(1, od / REBOTE_D) * .9).normalize();  // más de lado, más se desvía
+  const vn = vEnd.dot(n), vt = vEnd.clone().addScaledVector(n, -vn);
+  const v1 = vt.multiplyScalar(.6).addScaledVector(n, -vn * .38);
+  return simulate(fromUV(landU, landV, .036), v1, false);
+}
+
 function evaluate(sim, others) {
-  if (sim.first !== 'clay') return { valid: false, kind: 'nulo', why: sim.first, pts: 0, moved: [], hits: [] };
+  if (sim.first !== 'clay') return { valid: false, kind: 'nulo', why: sim.first, pts: 0, moved: [], hits: [], landMoved: [] };
+  others = others || [];
   const landU = R4(sim.clay.u), landV = R4(sim.clay.v);
-  const col = resolveHits(landU, landV, sim.vEnd, others || []);
+  let near = null, nd = REBOTE_D;
+  others.forEach(o => { const d = Math.hypot(o.u - landU, o.v - landV); if (d < nd) { nd = d; near = o; } });
+  if (!near) { const r = scoreAt(landU, landV, sim.vEnd, others); r.landMoved = r.moved; return r; }
+  // el golpe corre al otro tejo (menos que un choque normal: casi toda la fuerza se va en el rebote)
+  const col1 = resolveHits(landU, landV, sim.vEnd, others);
+  const mv1 = col1.moved.map(m => { const o = others.find(x => x.i === m.i); return { i: m.i, u: R4(o.u + (m.u - o.u) * .5), v: R4(o.v + (m.v - o.v) * .5) }; });
+  const others1 = others.map(o => mv1.find(x => x.i === o.i) || o);
+  const sim2 = reboundSim(landU, landV, sim.vEnd, near);
+  const rebound = { t: sim.firstT, sim2, at: { u: landU, v: landV }, contact: col1.contact || { u: landU, v: landV }, moved: mv1, hit: near.i };
+  if (sim2.first !== 'clay') return { valid: false, kind: 'nulo', why: sim2.first, pts: 0, moved: mv1, hits: [near.i], landMoved: [], rebound };
+  const r = scoreAt(R4(sim2.clay.u), R4(sim2.clay.v), sim2.vEnd, others1);
+  const merged = mv1.filter(m => !r.moved.some(x => x.i === m.i)).concat(r.moved);
+  r.landMoved = r.moved; r.moved = merged; r.hits = [near.i].concat(r.hits.filter(h => h !== near.i)); r.rebound = rebound;
+  return r;
+}
+
+/* Puntaje del tejo en la greda: primero se resuelven los choques, luego cuenta donde quedó */
+function scoreAt(landU, landV, vEnd, others) {
+  const col = resolveHits(landU, landV, vEnd, others);
   const u = col.u, v = col.v, d = Math.hypot(u, v);
   const mechas = mechaMeshes.filter(m => m.userData.alive && Math.hypot(m.userData.u - u, m.userData.v - v) < MECHA_HIT);
   const emb = d <= R_EMB;
@@ -1343,8 +1373,9 @@ function launch(a, opts) {
   const sim = simulate(V(REL.x, REL.y, REL.z), v0, false);
   const others = game.tejos.map((t, i) => ({ i, u: t.u, v: t.v, valid: t.valid })).filter(o => o.valid);
   const res = evaluate(sim, others);
+  const fsim = res.rebound ? joinRebound(sim, res.rebound) : sim;
   const mesh = makeTejo(p.color, p.design, p.name); mesh.position.copy(sim.path[0].p); scene.add(mesh);
-  flight = { timeout: !!(opts && opts.timeout), sim, res, mesh, t: 0, owner: game.order[game.idx], ev: 0, done: false, impactAt: sim.first === 'clay' ? sim.firstT : sim.duration, spin: rand(12, 18) * (Math.random() < .5 ? -1 : 1), tilt: V(rand(-.25, .25), 0, rand(-.25, .25)) };
+  flight = { timeout: !!(opts && opts.timeout), sim: fsim, res, mesh, t: 0, base: game.tejos.map(t => t.mesh.position.clone()), owner: game.order[game.idx], ev: 0, done: false, impactAt: fsim.first === 'clay' ? fsim.firstT : fsim.duration, spin: rand(12, 18) * (Math.random() < .5 ? -1 : 1), tilt: V(rand(-.25, .25), 0, rand(-.25, .25)) };
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
   game.thrown++;
   A.whoosh(); buzz(15);
@@ -1384,15 +1415,12 @@ function impactEvent(e, f) {
     A.thud(strong); buzz(30);
     dirt(fromUV(u, v, .02), W.n, r.valid ? 30 : 16);
     decal(u, v, T.crater, r.emb ? .1 : .14);
-    if (r.hits.length) {
+    if (r.landMoved.length) {
       // cae donde apuntó, choca y se corre; los golpeados se deslizan en la greda
       f.mesh.position.copy(fromUV(r.landU, r.landV, TT * .12));
       slideTo(f.mesh, pose.pos, .16);
-      r.moved.forEach(m => { const t = game.tejos[m.i]; if (!t) return;
-        const to = t.mesh.position.clone().addScaledVector(W.a, m.u - t.u).addScaledVector(W.s, m.v - t.v);
-        slideTo(t.mesh, to, .24); decal(m.u, m.v, T.crater, .12); });
-      const c = fromUV(r.contact.u, r.contact.v, .025);
-      burst(c, W.n, { count: 26, colors: ['#ffffff', '#ffe9b0', '#ffd27a'], speed: [.8, 2.4], grav: 4, life: .35, size: .022 });
+      r.landMoved.forEach(m => slideTejo(f, m, .24));
+      if (r.contact) sparks(fromUV(r.contact.u, r.contact.v, .025));
       A.hit(); buzz([20, 20, 40]);
     } else f.mesh.position.copy(pose.pos);
     if (f.res.valid && (f.res.ring || f.res.emb)) A.clank();
@@ -1400,6 +1428,11 @@ function impactEvent(e, f) {
     if (f.res.mechas && f.res.mechas.length) flashScreen();
     shake = Math.max(shake, reduceMotion ? 0 : .012);
     finishFlight();
+  } else if (e.kind === 'tejo') {   // pegó encima de otro tejo y rebota
+    const rb = f.res.rebound;
+    rb.moved.forEach(m => slideTejo(f, m, .2));
+    sparks(fromUV(rb.contact.u, rb.contact.v, .03), 40);
+    A.hit(); A.clank(); buzz([30, 20, 60]); shake = Math.max(shake, reduceMotion ? 0 : .01);
   } else if (e.kind === 'floor') { A.floor(); dirt(e.p, V(0, 1, 0), 10); }
   else { A.wood(); shake = Math.max(shake, reduceMotion ? 0 : .006); }
 }
@@ -1420,7 +1453,9 @@ function finishFlight() {
   game.tejos.push({ owner: f.owner, mesh: f.mesh, valid: r.valid, d: r.valid ? r.d : Infinity, u: r.u, v: r.v });
   const hitNames = (r.hits || []).map(i => game.tejos[i] && game.tejos[i].owner).filter(o => o !== undefined)
     .map(o => o === f.owner ? 'a su propio tejo' : `al tejo de ${game.players[o].name}`).filter((x, k, a) => a.indexOf(x) === k);
-  const hitText = hitNames.length ? `Le pegó ${hitNames.join(' y ')}` : '';
+  let hitText = hitNames.length ? `Le pegó ${hitNames.join(' y ')}` : '';
+  if (r.rebound) { const o = game.tejos[r.rebound.hit].owner; hitText = `Rebotó en ${o === f.owner ? 'su propio tejo' : 'el tejo de ' + game.players[o].name}`; }
+  const where = { floor: 'se fue al piso', frame: 'pegó en el marco', board: 'se fue al tablero', wall: 'se fue a la pared' }[r.why] || 'se salió';
   p.st.tiros++;
   phase = 'result'; resultAt = performance.now();
   const cm = r.valid ? Math.max(0, Math.round((r.d - RT) * 100)) : 0;
@@ -1436,10 +1471,11 @@ function finishFlight() {
     } else if (r.valid) {
       toast((hitText ? `¡${hitText}! ` : '') + (cm <= 1 ? 'Quedó pegadito al bocín' : `Quedó a ${cm} cm del bocín`)); feed(p, `Greda · ${cm} cm`);
     } else {
-      const why = f.timeout ? 'Se le acabó el tiempo' : nuloWhy(f.sim);
-      p.st.nulos++; announce('NULO', why.toUpperCase(), false, true); A.aww(); feed(p, `Nulo · ${why.toLowerCase()}`);
+      const why = f.timeout ? 'Se le acabó el tiempo' : r.rebound ? `Rebotó y ${where}` : nuloWhy(f.sim);
+      p.st.nulos++; announce('NULO', why.toUpperCase(), false, true); A.aww();
+      feed(p, r.rebound && !f.timeout ? `Nulo · ${hitText.charAt(0).toLowerCase() + hitText.slice(1)} y ${where}` : `Nulo · ${why.toLowerCase()}`);
     }
-    if (hitText) feed(p, hitText);
+    if (hitText && r.valid) feed(p, hitText);
     renderBoard();
   });
   flight = null;
@@ -1571,6 +1607,24 @@ function slideTo(mesh, to, dur) {
   const from = mesh.position.clone(); let t = 0;
   if (reduceMotion) { mesh.position.copy(to); return; }
   addFx({ update(dt) { t += dt; const k = Math.min(1, t / dur), e = 1 - Math.pow(1 - k, 3); mesh.position.lerpVectors(from, to, e); return k < 1; } });
+}
+
+/* Tejo golpeado: se desliza desde donde estaba al empezar el tiro hasta su nuevo lugar */
+function slideTejo(f, m, dur) {
+  const t = game.tejos[m.i]; if (!t || !f.base[m.i]) return;
+  const to = f.base[m.i].clone().addScaledVector(W.a, m.u - t.u).addScaledVector(W.s, m.v - t.v);
+  slideTo(t.mesh, to, dur); decal(m.u, m.v, T.crater, .12);
+}
+function sparks(p, n = 26) { burst(p, W.n, { count: n, colors: ['#ffffff', '#ffe9b0', '#ffd27a'], speed: [.8, 2.6], grav: 4, life: .38, size: .022 }); }
+/* Une el vuelo hasta el golpe con el vuelo del rebote */
+function joinRebound(sim, rb) {
+  const t1 = rb.t, s2 = rb.sim2, sh = e => Object.assign({}, e, { t: e.t + t1 });
+  return {
+    path: sim.path.filter(q => q.t <= t1).concat(s2.path.map(q => ({ t: q.t + t1, p: q.p }))),
+    events: [{ t: t1, kind: 'tejo', p: fromUV(rb.at.u, rb.at.v, .036), speed: sim.vEnd.length() }].concat(s2.events.map(sh)),
+    first: s2.first, firstT: s2.firstT + t1, firstP: s2.firstP, firstN: s2.firstN, clay: s2.clay, vEnd: s2.vEnd,
+    duration: s2.duration + t1, end: s2.end, onFloor: s2.onFloor, rebound: true
+  };
 }
 
 /* ================= Brazo en primera persona =================
