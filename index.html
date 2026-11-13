@@ -113,7 +113,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 @keyframes tick{50%{transform:scale(1.08);}}
 .skipBtn{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 70px);pointer-events:auto;font:800 14px var(--body);color:var(--ink);background:var(--yellow);padding:10px 16px;border-radius:3px;box-shadow:3px 3px 0 var(--red);white-space:nowrap;}
 .chip.off{opacity:.5;}
-#feed{position:absolute;left:calc(max(12px,env(safe-area-inset-left,0px)) + 52px);bottom:calc(env(safe-area-inset-bottom,0px) + 72px);
+#feed{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 72px);
   display:flex;flex-direction:column;gap:4px;max-width:62vw;}
 #feed div{font-size:12px;font-weight:600;background:rgba(22,16,11,.72);padding:4px 8px;border-left:3px solid var(--c);
   border-radius:2px;animation:feedin .3s ease;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -136,7 +136,8 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 .hudBtns{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;gap:8px;pointer-events:auto;}
 .iconBtn{width:42px;height:42px;display:grid;place-items:center;background:rgba(22,16,11,.82);border:1px solid rgba(245,237,221,.18);border-radius:50%;}
 .iconBtn svg{width:18px;height:18px;fill:none;stroke:var(--paper);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
-#zoomBtns{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 72px);display:flex;flex-direction:column;gap:10px;pointer-events:auto;}
+#zoomBtns{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 64px);display:flex;flex-direction:column;gap:10px;pointer-events:auto;}
+#zoomBtns.underLupa{top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 36px + min(40vw,190px));}
 #zoomBtns .iconBtn:disabled{opacity:.35;}
 .iconBtn.muted .wave{display:none;} .iconBtn:not(.muted) .x{display:none;}
 
@@ -272,7 +273,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 .pk[aria-pressed="true"] span{color:var(--paper);}
 .pk:disabled{opacity:.35;cursor:not-allowed;}
 @media (prefers-reduced-motion:reduce){#announce.show{animation-duration:1.4s;}.chip.bump .sc{animation:none;}#flash.go{animation:none;}}
-@media (min-width:760px){#turn .who{font-size:26px;}.chip .sc{font-size:26px;}#lupa{width:220px;}}
+@media (min-width:760px){#turn .who{font-size:26px;}.chip .sc{font-size:26px;}#lupa{width:220px;}#zoomBtns.underLupa{top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 36px + 220px);}}
 </style>
 
 <canvas id="gl" aria-label="Cancha de tejo en 3D"></canvas>
@@ -369,7 +370,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.40</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.41</span></div>
   </div></div>
 </section>
 
@@ -466,7 +467,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.40";
+const GAME_VERSION = "1.41";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -2192,7 +2193,8 @@ function render() {
   renderer.setScissorTest(false); renderer.setViewport(0, 0, w, h); renderer.clear(); renderer.render(scene, cam); renderArm(w, h);
   const el = document.getElementById('lupa'); const show = lupaOn();
   el.style.visibility = show ? 'visible' : 'hidden';
-  document.getElementById('zoomBtns').style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay ? 'visible' : 'hidden';
+  const zb = document.getElementById('zoomBtns');   // arriba a la derecha; si la lupa está, debajo de ella
+  zb.style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay ? 'visible' : 'hidden'; zb.classList.toggle('underLupa', show);
   if (show) {
     const r = el.getBoundingClientRect(), b = 3;
     const x = r.left + b, y = h - (r.bottom - b), s = r.width - b * 2;

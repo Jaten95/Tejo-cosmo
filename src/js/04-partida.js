@@ -445,7 +445,8 @@ function render() {
   renderer.setScissorTest(false); renderer.setViewport(0, 0, w, h); renderer.clear(); renderer.render(scene, cam); renderArm(w, h);
   const el = document.getElementById('lupa'); const show = lupaOn();
   el.style.visibility = show ? 'visible' : 'hidden';
-  document.getElementById('zoomBtns').style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay ? 'visible' : 'hidden';
+  const zb = document.getElementById('zoomBtns');   // arriba a la derecha; si la lupa está, debajo de ella
+  zb.style.visibility = (phase === 'aim' || phase === 'cpu' || phase === 'wait') && !replay ? 'visible' : 'hidden'; zb.classList.toggle('underLupa', show);
   if (show) {
     const r = el.getBoundingClientRect(), b = 3;
     const x = r.left + b, y = h - (r.bottom - b), s = r.width - b * 2;
