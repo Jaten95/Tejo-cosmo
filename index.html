@@ -374,7 +374,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.49</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.50</span></div>
   </div></div>
 </section>
 
@@ -433,6 +433,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     <p class="prose"><b>Nulo:</b> si el tejo pega primero en el marco, el tablero o el piso, no cuenta. Solo vale lo que cae en la greda.</p>
     <p class="prose"><b>Ronda:</b> cada jugador lanza un tejo por ronda. Una mecha reventada queda reventada hasta que empiece la siguiente ronda. Si nadie hizo puntos, el que quedó más cerca (la mano) lanza primero en la siguiente ronda; si no, la salida va rotando. Gana quien llegue primero a la meta.</p>
     <p class="prose"><b>Choques:</b> si tu tejo le pega a otro, lo corre en la greda. Tus puntos se cuentan donde quede tu tejo, y los tejos corridos pelean la mano desde su nuevo lugar. Si caes casi encima de otro tejo, el tuyo rebota en el metal: si se sale de la greda es nulo.</p>
+    <p class="prose"><b>Bocín:</b> si el tejo cae encima del aro de metal y no revienta mecha, a veces se resbala: cuenta donde quede en la greda, y si se sale es nulo.</p>
     <p class="prose"><b>Equipos:</b> con 4 o más jugadores se puede jugar en 2 equipos (o en 3 con 6 jugadores). Se arman al azar, los turnos se alternan entre equipos y los puntos de cada jugador suman para su equipo.</p>
     <p class="prose"><b>Reto:</b> 10 tejos para hacer el mayor puntaje posible. La mano no cuenta.</p>
     <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
@@ -472,7 +473,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.49";
+const GAME_VERSION = "1.50";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -1628,12 +1629,37 @@ function reboundSim(landU, landV, vEnd, tj) {
   return simulate(fromUV(landU, landV, .036), v1, false);
 }
 
+/* ---------- Resbalón en el bocín: si cae encima del aro de metal (sin pegarle a una mecha), a veces se resbala:
+   casi siempre queda más allá en la greda, a veces se sale. Sale igual en todos los celulares (sin azar de verdad). ---------- */
+const RING_SLIP = .5;   // probabilidad de resbalar cuando cae sobre el aro
+function ringSlip(landU, landV) {
+  const d = Math.hypot(landU, landV);
+  if (d <= R_EMB || d >= RB + RT * .6) return false;
+  if (mechaMeshes.some(m => m.userData.alive && Math.hypot(m.userData.u - landU, m.userData.v - landV) < MECHA_HIT)) return false;
+  return seeded(landU, landV, 7) < RING_SLIP;
+}
+function ringSlipSim(landU, landV, vEnd) {
+  const d = Math.hypot(landU, landV) || 1, side = W.a.clone().multiplyScalar(landU / d).addScaledVector(W.s, landV / d);
+  const k = seeded(landU, landV, 8) ** 1.6;   // casi siempre un resbalón corto; a veces sale con fuerza
+  const n = W.n.clone().addScaledVector(side, lerp(.8, .68, k)).normalize();   // el metal lo empuja hacia afuera del bocín
+  const vn = vEnd.dot(n), vt = vEnd.clone().addScaledVector(n, -vn);
+  const v1 = vt.multiplyScalar(lerp(.14, .2, k)).addScaledVector(n, -vn * lerp(.08, .135, k));
+  return simulate(fromUV(landU, landV, .03), v1, false);
+}
+
 function evaluate(sim, others) {
   if (sim.first !== 'clay') return { valid: false, kind: 'nulo', why: sim.first, pts: 0, moved: [], hits: [], landMoved: [] };
   others = others || [];
   const landU = R4(sim.clay.u), landV = R4(sim.clay.v);
   let near = null, nd = REBOTE_D;
   others.forEach(o => { const d = Math.hypot(o.u - landU, o.v - landV); if (d < nd) { nd = d; near = o; } });
+  if (!near && ringSlip(landU, landV)) {
+    const d = Math.hypot(landU, landV) || 1, sim2 = ringSlipSim(landU, landV, sim.vEnd);
+    const rebound = { t: sim.firstT, sim2, at: { u: landU, v: landV }, contact: { u: R4(landU / d * RB), v: R4(landV / d * RB) }, moved: [], hit: -1, ring: true };
+    if (sim2.first !== 'clay') return { valid: false, kind: 'nulo', why: sim2.first, pts: 0, moved: [], hits: [], landMoved: [], rebound };
+    const r = scoreAt(R4(sim2.clay.u), R4(sim2.clay.v), sim2.vEnd, others); r.landMoved = r.moved; r.rebound = rebound;
+    return r;
+  }
   if (!near) { const r = scoreAt(landU, landV, sim.vEnd, others); r.landMoved = r.moved; return r; }
   // el golpe corre al otro tejo (menos que un choque normal: casi toda la fuerza se va en el rebote)
   const col1 = resolveHits(landU, landV, sim.vEnd, others);
@@ -1668,7 +1694,7 @@ function seeded(u, v, k) { const x = Math.sin(u * 127.1 + v * 311.7 + k * 74.7) 
 /* Cómo queda clavado el tejo: acostado, inclinado o de canto, siempre medio hundido y con la cara hacia el que lanza */
 function embedPose(u, v, vEnd, emb) {
   const r1 = seeded(u, v, 1), r2 = seeded(u, v, 2), r3 = seeded(u, v, 3);
-  const tilt = r1 < .35 ? lerp(.06, .28, r2) : r1 < .75 ? lerp(.34, .58, r2) : lerp(.64, .86, r2);   // fracción de 90°
+  const tilt = r1 < .5 ? lerp(0, .1, r2) : r1 < .8 ? lerp(.3, .55, r2) : lerp(.62, .85, r2);   // fracción de 90°: la mitad acostados del todo
   const th = tilt * Math.PI / 2;
   const toward = W.s.clone().negate().applyAxisAngle(W.n, (r3 - .5) * .9);   // hacia abajo de la pendiente, un poco de lado
   const axis = W.n.clone().multiplyScalar(Math.cos(th)).addScaledVector(toward, Math.sin(th)).normalize();
@@ -2069,7 +2095,7 @@ function impactEvent(e, f) {
     if (f.res.mechas && f.res.mechas.length) flashScreen();
     shake = Math.max(shake, reduceMotion ? 0 : .012);
     finishFlight();
-  } else if (e.kind === 'tejo') {   // pegó encima de otro tejo y rebota
+  } else if (e.kind === 'tejo') {   // pegó encima de otro tejo (o en el aro del bocín) y rebota
     const rb = f.res.rebound;
     rb.moved.forEach(m => slideTejo(f, m, .2));
     sparks(fromUV(rb.contact.u, rb.contact.v, .03), 40);
@@ -2095,7 +2121,8 @@ function finishFlight() {
   const hitNames = (r.hits || []).map(i => game.tejos[i] && game.tejos[i].owner).filter(o => o !== undefined)
     .map(o => o === f.owner ? 'a su propio tejo' : `al tejo de ${game.players[o].name}`).filter((x, k, a) => a.indexOf(x) === k);
   let hitText = hitNames.length ? `Le pegó ${hitNames.join(' y ')}` : '';
-  if (r.rebound) { const o = game.tejos[r.rebound.hit].owner; hitText = `Rebotó en ${o === f.owner ? 'su propio tejo' : 'el tejo de ' + game.players[o].name}`; }
+  if (r.rebound && r.rebound.ring) hitText = 'Se resbaló en el bocín';
+  else if (r.rebound) { const o = game.tejos[r.rebound.hit].owner; hitText = `Rebotó en ${o === f.owner ? 'su propio tejo' : 'el tejo de ' + game.players[o].name}`; }
   const where = { floor: 'se fue al piso', frame: 'pegó en el marco', board: 'se fue al tablero', wall: 'se fue a la pared' }[r.why] || 'se salió';
   p.st.tiros++;
   phase = 'result'; resultAt = performance.now();
@@ -2112,7 +2139,7 @@ function finishFlight() {
     } else if (r.valid) {
       toast((hitText ? `¡${hitText}! ` : '') + (cm <= 1 ? 'Quedó pegadito al bocín' : `Quedó a ${cm} cm del bocín`)); feed(p, `Greda · ${cm} cm`);
     } else {
-      const why = f.timeout ? 'Se le acabó el tiempo' : r.rebound ? `Rebotó y ${where}` : nuloWhy(f.sim);
+      const why = f.timeout ? 'Se le acabó el tiempo' : r.rebound ? `${r.rebound.ring ? 'Se resbaló en el bocín' : 'Rebotó'} y ${where}` : nuloWhy(f.sim);
       p.st.nulos++; announce('NULO', why.toUpperCase(), false, true); A.aww();
       feed(p, r.rebound && !f.timeout ? `Nulo · ${hitText.charAt(0).toLowerCase() + hitText.slice(1)} y ${where}` : `Nulo · ${why.toLowerCase()}`);
     }

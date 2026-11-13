@@ -243,7 +243,7 @@ function impactEvent(e, f) {
     if (f.res.mechas && f.res.mechas.length) flashScreen();
     shake = Math.max(shake, reduceMotion ? 0 : .012);
     finishFlight();
-  } else if (e.kind === 'tejo') {   // pegó encima de otro tejo y rebota
+  } else if (e.kind === 'tejo') {   // pegó encima de otro tejo (o en el aro del bocín) y rebota
     const rb = f.res.rebound;
     rb.moved.forEach(m => slideTejo(f, m, .2));
     sparks(fromUV(rb.contact.u, rb.contact.v, .03), 40);
@@ -269,7 +269,8 @@ function finishFlight() {
   const hitNames = (r.hits || []).map(i => game.tejos[i] && game.tejos[i].owner).filter(o => o !== undefined)
     .map(o => o === f.owner ? 'a su propio tejo' : `al tejo de ${game.players[o].name}`).filter((x, k, a) => a.indexOf(x) === k);
   let hitText = hitNames.length ? `Le pegó ${hitNames.join(' y ')}` : '';
-  if (r.rebound) { const o = game.tejos[r.rebound.hit].owner; hitText = `Rebotó en ${o === f.owner ? 'su propio tejo' : 'el tejo de ' + game.players[o].name}`; }
+  if (r.rebound && r.rebound.ring) hitText = 'Se resbaló en el bocín';
+  else if (r.rebound) { const o = game.tejos[r.rebound.hit].owner; hitText = `Rebotó en ${o === f.owner ? 'su propio tejo' : 'el tejo de ' + game.players[o].name}`; }
   const where = { floor: 'se fue al piso', frame: 'pegó en el marco', board: 'se fue al tablero', wall: 'se fue a la pared' }[r.why] || 'se salió';
   p.st.tiros++;
   phase = 'result'; resultAt = performance.now();
@@ -286,7 +287,7 @@ function finishFlight() {
     } else if (r.valid) {
       toast((hitText ? `¡${hitText}! ` : '') + (cm <= 1 ? 'Quedó pegadito al bocín' : `Quedó a ${cm} cm del bocín`)); feed(p, `Greda · ${cm} cm`);
     } else {
-      const why = f.timeout ? 'Se le acabó el tiempo' : r.rebound ? `Rebotó y ${where}` : nuloWhy(f.sim);
+      const why = f.timeout ? 'Se le acabó el tiempo' : r.rebound ? `${r.rebound.ring ? 'Se resbaló en el bocín' : 'Rebotó'} y ${where}` : nuloWhy(f.sim);
       p.st.nulos++; announce('NULO', why.toUpperCase(), false, true); A.aww();
       feed(p, r.rebound && !f.timeout ? `Nulo · ${hitText.charAt(0).toLowerCase() + hitText.slice(1)} y ${where}` : `Nulo · ${why.toLowerCase()}`);
     }

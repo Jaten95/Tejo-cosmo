@@ -133,12 +133,37 @@ function reboundSim(landU, landV, vEnd, tj) {
   return simulate(fromUV(landU, landV, .036), v1, false);
 }
 
+/* ---------- Resbalón en el bocín: si cae encima del aro de metal (sin pegarle a una mecha), a veces se resbala:
+   casi siempre queda más allá en la greda, a veces se sale. Sale igual en todos los celulares (sin azar de verdad). ---------- */
+const RING_SLIP = .5;   // probabilidad de resbalar cuando cae sobre el aro
+function ringSlip(landU, landV) {
+  const d = Math.hypot(landU, landV);
+  if (d <= R_EMB || d >= RB + RT * .6) return false;
+  if (mechaMeshes.some(m => m.userData.alive && Math.hypot(m.userData.u - landU, m.userData.v - landV) < MECHA_HIT)) return false;
+  return seeded(landU, landV, 7) < RING_SLIP;
+}
+function ringSlipSim(landU, landV, vEnd) {
+  const d = Math.hypot(landU, landV) || 1, side = W.a.clone().multiplyScalar(landU / d).addScaledVector(W.s, landV / d);
+  const k = seeded(landU, landV, 8) ** 1.6;   // casi siempre un resbalón corto; a veces sale con fuerza
+  const n = W.n.clone().addScaledVector(side, lerp(.8, .68, k)).normalize();   // el metal lo empuja hacia afuera del bocín
+  const vn = vEnd.dot(n), vt = vEnd.clone().addScaledVector(n, -vn);
+  const v1 = vt.multiplyScalar(lerp(.14, .2, k)).addScaledVector(n, -vn * lerp(.08, .135, k));
+  return simulate(fromUV(landU, landV, .03), v1, false);
+}
+
 function evaluate(sim, others) {
   if (sim.first !== 'clay') return { valid: false, kind: 'nulo', why: sim.first, pts: 0, moved: [], hits: [], landMoved: [] };
   others = others || [];
   const landU = R4(sim.clay.u), landV = R4(sim.clay.v);
   let near = null, nd = REBOTE_D;
   others.forEach(o => { const d = Math.hypot(o.u - landU, o.v - landV); if (d < nd) { nd = d; near = o; } });
+  if (!near && ringSlip(landU, landV)) {
+    const d = Math.hypot(landU, landV) || 1, sim2 = ringSlipSim(landU, landV, sim.vEnd);
+    const rebound = { t: sim.firstT, sim2, at: { u: landU, v: landV }, contact: { u: R4(landU / d * RB), v: R4(landV / d * RB) }, moved: [], hit: -1, ring: true };
+    if (sim2.first !== 'clay') return { valid: false, kind: 'nulo', why: sim2.first, pts: 0, moved: [], hits: [], landMoved: [], rebound };
+    const r = scoreAt(R4(sim2.clay.u), R4(sim2.clay.v), sim2.vEnd, others); r.landMoved = r.moved; r.rebound = rebound;
+    return r;
+  }
   if (!near) { const r = scoreAt(landU, landV, sim.vEnd, others); r.landMoved = r.moved; return r; }
   // el golpe corre al otro tejo (menos que un choque normal: casi toda la fuerza se va en el rebote)
   const col1 = resolveHits(landU, landV, sim.vEnd, others);
@@ -173,7 +198,7 @@ function seeded(u, v, k) { const x = Math.sin(u * 127.1 + v * 311.7 + k * 74.7) 
 /* Cómo queda clavado el tejo: acostado, inclinado o de canto, siempre medio hundido y con la cara hacia el que lanza */
 function embedPose(u, v, vEnd, emb) {
   const r1 = seeded(u, v, 1), r2 = seeded(u, v, 2), r3 = seeded(u, v, 3);
-  const tilt = r1 < .35 ? lerp(.06, .28, r2) : r1 < .75 ? lerp(.34, .58, r2) : lerp(.64, .86, r2);   // fracción de 90°
+  const tilt = r1 < .5 ? lerp(0, .1, r2) : r1 < .8 ? lerp(.3, .55, r2) : lerp(.62, .85, r2);   // fracción de 90°: la mitad acostados del todo
   const th = tilt * Math.PI / 2;
   const toward = W.s.clone().negate().applyAxisAngle(W.n, (r3 - .5) * .9);   // hacia abajo de la pendiente, un poco de lado
   const axis = W.n.clone().multiplyScalar(Math.cos(th)).addScaledVector(toward, Math.sin(th)).normalize();
