@@ -184,7 +184,7 @@ function updateArm(dt, now) {
   ARM.root.scale.setScalar(a < 1 ? .9 : 1);
 }
 function renderArm(w, h) {
-  if (!ARM.root || !ARM.root.visible) return;
+  if (!ARM.root || !ARM.root.visible || !(w > 10 && h > 10)) return;
   ARM.cam.aspect = w / h; ARM.cam.updateProjectionMatrix();
   renderer.clearDepth(); renderer.render(ARM.scene, ARM.cam);
 }

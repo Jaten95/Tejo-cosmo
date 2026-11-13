@@ -370,7 +370,8 @@ function gameOver(winner) {
 const camCur = { pos: V(0, 2, 4), look: V(0, 1, -10), fov: 40 };
 let closeup = null, orbit = 0;
 function aimPose() {
-  const dist = W.D + 2.1, span = Math.max(2.7, 2.0 / cam.aspect);
+  const asp = isFinite(cam.aspect) && cam.aspect > 0 ? cam.aspect : .5;
+  const dist = W.D + 2.1, span = Math.max(2.7, 2.0 / asp);
   const t = performance.now() / 1000;
   return { pos: V(Math.sin(t * .5) * .02, 1.78 + Math.sin(t * .8) * .01, 2.1), look: V(0, CY - .1, -W.D), fov: 2 * Math.atan(span / 2 / dist) * 180 / Math.PI };
 }
@@ -447,12 +448,23 @@ function render() {
   }
 }
 function frame(now) {
-  const dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
-  if (!paused) { tickTimers(dt); updateGame(dt, now); updateFx(dt); }
-  updateArm(paused ? 0 : dt, now);
-  updateCamera(paused ? 0 : dt);
-  render();
+  const dt = clamp((now - lastT) / 1000, 0, .05); lastT = now;
+  try {
+    if (!paused) { tickTimers(dt); updateGame(dt, now); updateFx(dt); }
+    updateArm(paused ? 0 : dt, now);
+    updateCamera(paused ? 0 : dt);
+    camSafe();
+    render();
+  } catch (e) { console.error(e); }   // un error en un cuadro no puede congelar el juego
   requestAnimationFrame(frame);
+}
+/* Si la cámara quedó con valores inválidos (NaN), vuelve a la vista del lanzador en vez de quedarse en negro */
+function camSafe() {
+  const ok = v => isFinite(v.x) && isFinite(v.y) && isFinite(v.z);
+  if (ok(camCur.pos) && ok(camCur.look) && isFinite(camCur.fov) && camCur.fov > 1 && isFinite(cam.aspect) && cam.aspect > 0) return;
+  if (!(isFinite(cam.aspect) && cam.aspect > 0)) cam.aspect = (innerWidth > 10 && innerHeight > 10) ? innerWidth / innerHeight : .5;
+  const p = aimPose(); camCur.pos.copy(p.pos); camCur.look.copy(p.look); camCur.fov = p.fov;
+  cam.position.copy(p.pos); cam.fov = p.fov; cam.updateProjectionMatrix(); cam.lookAt(p.look);
 }
 
 /* Desliza un tejo hasta su nuevo lugar en la greda (solo se ve; la posición ya quedó calculada) */

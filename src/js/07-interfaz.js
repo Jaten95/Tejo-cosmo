@@ -256,6 +256,7 @@ function bindUI() {
 
 function resize() {
   const w = innerWidth, h = innerHeight;
+  if (!(w > 10 && h > 10)) return;   // al mandar la app a segundo plano el celular puede avisar un tamaño de 0
   renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix();
 }
 
@@ -301,6 +302,8 @@ async function boot(data) {
   buildRenderer(); buildTextures(); buildArm();
   setDistance(settings.dist); buildHall(); computeDvdP();
   resize(); addEventListener('resize', resize);
+  renderer.domElement.addEventListener('webglcontextrestored', () => { resize(); camSafe(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(resize, 300); });
   A.muted = settings.muted; updateSoundBtn(); netInit(); bindUI();
   ld.remove();
   if (!restore(data)) showMenu();

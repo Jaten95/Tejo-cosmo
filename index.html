@@ -349,7 +349,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.28</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" title="Versión del juego">v1.29</span></div>
   </div></div>
 </section>
 
@@ -446,7 +446,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.28";
+const GAME_VERSION = "1.29";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -1676,7 +1676,8 @@ function gameOver(winner) {
 const camCur = { pos: V(0, 2, 4), look: V(0, 1, -10), fov: 40 };
 let closeup = null, orbit = 0;
 function aimPose() {
-  const dist = W.D + 2.1, span = Math.max(2.7, 2.0 / cam.aspect);
+  const asp = isFinite(cam.aspect) && cam.aspect > 0 ? cam.aspect : .5;
+  const dist = W.D + 2.1, span = Math.max(2.7, 2.0 / asp);
   const t = performance.now() / 1000;
   return { pos: V(Math.sin(t * .5) * .02, 1.78 + Math.sin(t * .8) * .01, 2.1), look: V(0, CY - .1, -W.D), fov: 2 * Math.atan(span / 2 / dist) * 180 / Math.PI };
 }
@@ -1753,12 +1754,23 @@ function render() {
   }
 }
 function frame(now) {
-  const dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
-  if (!paused) { tickTimers(dt); updateGame(dt, now); updateFx(dt); }
-  updateArm(paused ? 0 : dt, now);
-  updateCamera(paused ? 0 : dt);
-  render();
+  const dt = clamp((now - lastT) / 1000, 0, .05); lastT = now;
+  try {
+    if (!paused) { tickTimers(dt); updateGame(dt, now); updateFx(dt); }
+    updateArm(paused ? 0 : dt, now);
+    updateCamera(paused ? 0 : dt);
+    camSafe();
+    render();
+  } catch (e) { console.error(e); }   // un error en un cuadro no puede congelar el juego
   requestAnimationFrame(frame);
+}
+/* Si la cámara quedó con valores inválidos (NaN), vuelve a la vista del lanzador en vez de quedarse en negro */
+function camSafe() {
+  const ok = v => isFinite(v.x) && isFinite(v.y) && isFinite(v.z);
+  if (ok(camCur.pos) && ok(camCur.look) && isFinite(camCur.fov) && camCur.fov > 1 && isFinite(cam.aspect) && cam.aspect > 0) return;
+  if (!(isFinite(cam.aspect) && cam.aspect > 0)) cam.aspect = (innerWidth > 10 && innerHeight > 10) ? innerWidth / innerHeight : .5;
+  const p = aimPose(); camCur.pos.copy(p.pos); camCur.look.copy(p.look); camCur.fov = p.fov;
+  cam.position.copy(p.pos); cam.fov = p.fov; cam.updateProjectionMatrix(); cam.lookAt(p.look);
 }
 
 /* Desliza un tejo hasta su nuevo lugar en la greda (solo se ve; la posición ya quedó calculada) */
@@ -1971,7 +1983,7 @@ function updateArm(dt, now) {
   ARM.root.scale.setScalar(a < 1 ? .9 : 1);
 }
 function renderArm(w, h) {
-  if (!ARM.root || !ARM.root.visible) return;
+  if (!ARM.root || !ARM.root.visible || !(w > 10 && h > 10)) return;
   ARM.cam.aspect = w / h; ARM.cam.updateProjectionMatrix();
   renderer.clearDepth(); renderer.render(ARM.scene, ARM.cam);
 }
@@ -2989,6 +3001,7 @@ function bindUI() {
 
 function resize() {
   const w = innerWidth, h = innerHeight;
+  if (!(w > 10 && h > 10)) return;   // al mandar la app a segundo plano el celular puede avisar un tamaño de 0
   renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix();
 }
 
@@ -3034,6 +3047,8 @@ async function boot(data) {
   buildRenderer(); buildTextures(); buildArm();
   setDistance(settings.dist); buildHall(); computeDvdP();
   resize(); addEventListener('resize', resize);
+  renderer.domElement.addEventListener('webglcontextrestored', () => { resize(); camSafe(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(resize, 300); });
   A.muted = settings.muted; updateSoundBtn(); netInit(); bindUI();
   ld.remove();
   if (!restore(data)) showMenu();
