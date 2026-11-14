@@ -15,7 +15,8 @@ const BOLO = {
   ZB: -20.76,                       // la cara de las tablas de atrás, delante del tablero del salón
   PH: .6, PR: .028, GAP: .2,        // palo: alto, radio y separación (en fila india)
   BR: .052,                         // radio de la bola
-  ROLL: 2.6,                        // freno de la tierra cuando la bola ya cayó y rueda (m/s²)
+  ROLL: 4.8,                        // freno de la tierra cuando la bola ya cayó y rueda (m/s²): es pesada y la tierra la agarra
+  KEEP: [.13, .22],                 // lo que le queda de velocidad al caer (se entierra un poco): rueda más entre más duro venga
   P0: .55, SPAN: 15,                // fuerza que llega a los palos y metros por unidad de fuerza
   THETA: .42,                       // ángulo de salida por el aire
   KNOCK: .45,                       // velocidad mínima para tumbar un palo (m/s)
@@ -83,7 +84,7 @@ function boloSimulate(aim, hand, k, withPins = true) {
     // toca el piso: la tierra se la traga un poco y sigue rodando
     if (mode === 'air' && p.y <= R) {
       p.y = R; mode = 'roll';
-      const keep = .42 + rnd(ri++) * .12;
+      const keep = BOLO.KEEP[0] + rnd(ri++) * (BOLO.KEEP[1] - BOLO.KEEP[0]);
       const a = (rnd(ri++) - .5) * .16, c = Math.cos(a), s = Math.sin(a), x = v.x * c - v.z * s, z = v.x * s + v.z * c;
       v.x = x * keep; v.z = z * keep; v.y = 0;
       if (!land) land = p.clone();
@@ -152,25 +153,12 @@ function makeBola() {
   plug.position.y = BOLO.BR - .0015; g.add(plug);
   return g;
 }
-function sandTex() {
-  const [c, g] = cnv(256, 512);
-  g.fillStyle = '#a88a64'; g.fillRect(0, 0, 256, 512);
-  for (let i = 0; i < 14000; i++) { const k = Math.random(); g.fillStyle = k < .4 ? 'rgba(60,40,20,.18)' : k < .8 ? 'rgba(255,240,210,.12)' : 'rgba(30,20,10,.3)'; g.fillRect(Math.random() * 256, Math.random() * 512, 1.6, 1.6); }
-  for (let i = 0; i < 40; i++) { g.strokeStyle = 'rgba(70,50,30,.12)'; g.lineWidth = 2; g.beginPath(); const x = Math.random() * 256; g.moveTo(x, 0); g.lineTo(x + (Math.random() - .5) * 30, 512); g.stroke(); }
-  const t = tex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
-}
 function buildBolo() {
   if (BOLO_M && BOLO_M.hall === hall) return;
   if (BOLO_M) BOLO_M.g.parent && BOLO_M.g.parent.remove(BOLO_M.g);
   const g = new THREE.Group(), wood = std({ map: T.woodPlain, roughness: .85 }), dark = std({ color: '#2a1d12', roughness: 1 });
-  // el carril de tierra hasta las tablas
-  const len = -BOLO.ZB + .2, st = sandTex(); st.repeat.set(1, len / 3);
-  const lane = new THREE.Mesh(new THREE.PlaneGeometry(1.5, len), std({ map: st, roughness: 1 }));
-  lane.rotation.x = -Math.PI / 2; lane.position.set(0, .003, -len / 2 + .2); lane.receiveShadow = true; g.add(lane);
-  // la tierra removida alrededor de los palos y un cuadro marcado con cal donde se paran
+  // el piso es el mismo del tejo; solo un cuadro marcado con cal donde se paran los palos
   const zp = BOLO.Z0 - BOLO.GAP;
-  const pit = new THREE.Mesh(new THREE.CircleGeometry(.75, 32), std({ map: st, color: '#8f7350', roughness: 1, transparent: true, opacity: .9 }));
-  pit.rotation.x = -Math.PI / 2; pit.scale.set(1, 1.6, 1); pit.position.set(0, .004, zp); pit.receiveShadow = true; g.add(pit);
   const lime = std({ color: '#efe6d2', roughness: 1 });
   [[.36, .02, 0, zp + .32], [.36, .02, 0, zp - .32], [.02, .66, -.17, zp], [.02, .66, .17, zp]].forEach(([w, h, x, z]) => {
     const l = new THREE.Mesh(new THREE.PlaneGeometry(w, h), lime); l.rotation.x = -Math.PI / 2; l.position.set(x, .005, z); g.add(l);

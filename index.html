@@ -399,7 +399,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <h3>Modo beta</h3>
       <div class="joinRow"><input id="betaIn" placeholder="Código beta" aria-label="Código del modo beta" autocomplete="off" autocapitalize="off"><button class="btn ghost" id="btnBeta" type="button">Activar</button></div>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.50.0</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.51.0</span></div>
   </div></div>
 </section>
 
@@ -475,7 +475,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <tr><td>¡Chuza!<span>Los tres palos de un solo tiro.</span></td><td>3</td></tr>
       <tr><td>No vale<span>Lo que tumbe por el otro lado o de rebote en las tablas de atrás.</span></td><td>0</td></tr>
     </table>
-    <p class="prose"><b>Bolo:</b> tres palos de pino de 60 cm en fila, a unos 20 m de la raya. Un tiro por turno, siempre por el aire y en el mismo orden. En el menú cada jugador dice si es derecho (D) o zurdo (Z). Partida a 15 o a lo que se escoja.</p>
+    <p class="prose"><b>Bolo:</b> tres palos de pino de 60 cm en fila, a unos 20 m de la raya. Un tiro por turno, siempre por el aire y en el mismo orden. La bola es pesada: al caer en la tierra rueda poco, más entre más duro la tires, y entre más fuerza le metas más difícil es que vaya derecha. En el menú cada jugador dice si es derecho (D) o zurdo (Z). Partida a 15 o a lo que se escoja.</p>
     <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
     <p class="prose"><b>Tiempo en salas:</b> tienes 20 segundos para lanzar. Si no lanzas, tu tiro es nulo y pasa el turno.</p>
     <p class="prose"><b>Configuración en salas:</b> la mira, la lupa, la barra de fuerza y el zoom de la cámara son los que tenga puestos quien creó la sala, para que todos jueguen igual.</p>
@@ -513,7 +513,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.50.0";
+const GAME_VERSION = "1.51.0";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -2447,7 +2447,10 @@ function showReticle(aim) {
 
 /* ---------- Lanzar ---------- */
 function finalAim(aim) {
-  if (isBolo()) return { L: aim.L + gauss() * .025, P: aim.P + gauss() * .3 / BOLO.SPAN };
+  if (isBolo()) {   // la bola es pesada: entre más fuerza, más se le va la mano (de lado y de largo)
+    const k = clamp(aim.P, 0, 1) ** 2;
+    return { L: aim.L + gauss() * (.018 + .06 * k), P: aim.P + gauss() * (.2 + .7 * k) / BOLO.SPAN };
+  }
   return isRana() ? { L: aim.L + gauss() * .03 / RANA.LX, P: aim.P + gauss() * .03 / RANA.SPAN } : { L: aim.L + gauss() * .012, P: aim.P + gauss() * .012 / dvdP }; }
 function launch(a, opts) {
   if (isRana()) return ranaLaunch(a, opts);
@@ -3304,7 +3307,8 @@ const BOLO = {
   ZB: -20.76,                       // la cara de las tablas de atrás, delante del tablero del salón
   PH: .6, PR: .028, GAP: .2,        // palo: alto, radio y separación (en fila india)
   BR: .052,                         // radio de la bola
-  ROLL: 2.6,                        // freno de la tierra cuando la bola ya cayó y rueda (m/s²)
+  ROLL: 4.8,                        // freno de la tierra cuando la bola ya cayó y rueda (m/s²): es pesada y la tierra la agarra
+  KEEP: [.13, .22],                 // lo que le queda de velocidad al caer (se entierra un poco): rueda más entre más duro venga
   P0: .55, SPAN: 15,                // fuerza que llega a los palos y metros por unidad de fuerza
   THETA: .42,                       // ángulo de salida por el aire
   KNOCK: .45,                       // velocidad mínima para tumbar un palo (m/s)
@@ -3372,7 +3376,7 @@ function boloSimulate(aim, hand, k, withPins = true) {
     // toca el piso: la tierra se la traga un poco y sigue rodando
     if (mode === 'air' && p.y <= R) {
       p.y = R; mode = 'roll';
-      const keep = .42 + rnd(ri++) * .12;
+      const keep = BOLO.KEEP[0] + rnd(ri++) * (BOLO.KEEP[1] - BOLO.KEEP[0]);
       const a = (rnd(ri++) - .5) * .16, c = Math.cos(a), s = Math.sin(a), x = v.x * c - v.z * s, z = v.x * s + v.z * c;
       v.x = x * keep; v.z = z * keep; v.y = 0;
       if (!land) land = p.clone();
@@ -3441,25 +3445,12 @@ function makeBola() {
   plug.position.y = BOLO.BR - .0015; g.add(plug);
   return g;
 }
-function sandTex() {
-  const [c, g] = cnv(256, 512);
-  g.fillStyle = '#a88a64'; g.fillRect(0, 0, 256, 512);
-  for (let i = 0; i < 14000; i++) { const k = Math.random(); g.fillStyle = k < .4 ? 'rgba(60,40,20,.18)' : k < .8 ? 'rgba(255,240,210,.12)' : 'rgba(30,20,10,.3)'; g.fillRect(Math.random() * 256, Math.random() * 512, 1.6, 1.6); }
-  for (let i = 0; i < 40; i++) { g.strokeStyle = 'rgba(70,50,30,.12)'; g.lineWidth = 2; g.beginPath(); const x = Math.random() * 256; g.moveTo(x, 0); g.lineTo(x + (Math.random() - .5) * 30, 512); g.stroke(); }
-  const t = tex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
-}
 function buildBolo() {
   if (BOLO_M && BOLO_M.hall === hall) return;
   if (BOLO_M) BOLO_M.g.parent && BOLO_M.g.parent.remove(BOLO_M.g);
   const g = new THREE.Group(), wood = std({ map: T.woodPlain, roughness: .85 }), dark = std({ color: '#2a1d12', roughness: 1 });
-  // el carril de tierra hasta las tablas
-  const len = -BOLO.ZB + .2, st = sandTex(); st.repeat.set(1, len / 3);
-  const lane = new THREE.Mesh(new THREE.PlaneGeometry(1.5, len), std({ map: st, roughness: 1 }));
-  lane.rotation.x = -Math.PI / 2; lane.position.set(0, .003, -len / 2 + .2); lane.receiveShadow = true; g.add(lane);
-  // la tierra removida alrededor de los palos y un cuadro marcado con cal donde se paran
+  // el piso es el mismo del tejo; solo un cuadro marcado con cal donde se paran los palos
   const zp = BOLO.Z0 - BOLO.GAP;
-  const pit = new THREE.Mesh(new THREE.CircleGeometry(.75, 32), std({ map: st, color: '#8f7350', roughness: 1, transparent: true, opacity: .9 }));
-  pit.rotation.x = -Math.PI / 2; pit.scale.set(1, 1.6, 1); pit.position.set(0, .004, zp); pit.receiveShadow = true; g.add(pit);
   const lime = std({ color: '#efe6d2', roughness: 1 });
   [[.36, .02, 0, zp + .32], [.36, .02, 0, zp - .32], [.02, .66, -.17, zp], [.02, .66, .17, zp]].forEach(([w, h, x, z]) => {
     const l = new THREE.Mesh(new THREE.PlaneGeometry(w, h), lime); l.rotation.x = -Math.PI / 2; l.position.set(x, .005, z); g.add(l);

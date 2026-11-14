@@ -197,7 +197,10 @@ function showReticle(aim) {
 
 /* ---------- Lanzar ---------- */
 function finalAim(aim) {
-  if (isBolo()) return { L: aim.L + gauss() * .025, P: aim.P + gauss() * .3 / BOLO.SPAN };
+  if (isBolo()) {   // la bola es pesada: entre más fuerza, más se le va la mano (de lado y de largo)
+    const k = clamp(aim.P, 0, 1) ** 2;
+    return { L: aim.L + gauss() * (.018 + .06 * k), P: aim.P + gauss() * (.2 + .7 * k) / BOLO.SPAN };
+  }
   return isRana() ? { L: aim.L + gauss() * .03 / RANA.LX, P: aim.P + gauss() * .03 / RANA.SPAN } : { L: aim.L + gauss() * .012, P: aim.P + gauss() * .012 / dvdP }; }
 function launch(a, opts) {
   if (isRana()) return ranaLaunch(a, opts);
