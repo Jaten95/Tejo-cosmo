@@ -15,8 +15,8 @@ const BOLO = {
   ZB: -20.76,                       // la cara de las tablas de atrás, delante del tablero del salón
   PH: .6, PR: .028, GAP: .2,        // palo: alto, radio y separación (en fila india)
   BR: .052,                         // radio de la bola
-  ROLL: 4.8,                        // freno de la tierra cuando la bola ya cayó y rueda (m/s²): es pesada y la tierra la agarra
-  KEEP: [.13, .22],                 // lo que le queda de velocidad al caer (se entierra un poco): rueda más entre más duro venga
+  ROLL: 2.6,                        // freno de la tierra cuando la bola ya cayó y rueda (m/s²)
+  KEEP: [.28, .36],                 // lo que le queda de velocidad al caer (se entierra un poco): rueda más entre más duro venga
   P0: .55, SPAN: 15,                // fuerza que llega a los palos y metros por unidad de fuerza
   THETA: .42,                       // ángulo de salida por el aire
   KNOCK: .45,                       // velocidad mínima para tumbar un palo (m/s)
@@ -85,7 +85,7 @@ function boloSimulate(aim, hand, k, withPins = true) {
     if (mode === 'air' && p.y <= R) {
       p.y = R; mode = 'roll';
       const keep = BOLO.KEEP[0] + rnd(ri++) * (BOLO.KEEP[1] - BOLO.KEEP[0]);
-      const a = (rnd(ri++) - .5) * .16, c = Math.cos(a), s = Math.sin(a), x = v.x * c - v.z * s, z = v.x * s + v.z * c;
+      const a = (rnd(ri++) - .5) * .06, c = Math.cos(a), s = Math.sin(a), x = v.x * c - v.z * s, z = v.x * s + v.z * c;
       v.x = x * keep; v.z = z * keep; v.y = 0;
       if (!land) land = p.clone();
       ev('cae', p);
@@ -383,8 +383,8 @@ function boloLupa() {   // la lupa mira los palos un poco de lado (por el lado d
 /* ---------- Don Chepe en el bolo ---------- */
 function boloPlanCpu(p) {
   const d = settings.diff, hand = handOf(p);
-  // le apunta al palo de adelante, un poquito por el lado de su mano, para que caiga encima o justo antes
-  const L = hand * (BOLO.BR + BOLO.PR) * (.25 + Math.random() * .25), P = BOLO.P0 - .2 / BOLO.SPAN + Math.random() * .04;
+  // le apunta un poquito por el lado de su mano: a veces para que caiga encima de los palos y a veces antes, para que llegue rodando
+  const L = hand * (BOLO.BR + BOLO.PR) * (.25 + Math.random() * .25), P = BOLO.P0 - (Math.random() < .5 ? .1 : 2.4 + Math.random() * .8) / BOLO.SPAN;
   const sx = [.22, .12, .065, .04][d], sp = [1.6, 1.0, .6, .4][d];
   const fin = { L: clamp(L + gauss() * sx, -AIM.L, AIM.L), P: clamp(P + gauss() * sp / BOLO.SPAN, .02, 1) };
   cpuAim = { from: { L: rand(-.5, .5), P: rand(.2, .45) }, to: fin, t: 0, dur: rand(1, 1.5) };

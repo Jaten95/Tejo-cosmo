@@ -143,6 +143,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.50.0 | Cambiado | bolo (beta): la bola solo se lanza por el aire (se quitó la opción de rodarla) |
 | — | 1.51.0 | Cambiado | bolo (beta): el piso es el mismo del tejo; la bola al caer rueda según la fuerza (la tierra la frena) y entre más fuerza, más difícil controlarla |
 | — | 1.51.1 | Arreglado | bolo (beta): las bolas se ven como las de verdad: aluminio fundido mate con anillos torneados y el huequito de lado |
+| — | 1.52.0 | Cambiado | bolo (beta): menos fricción: la bola rueda más después de caer (unos 3 m con fuerza media, más entre más duro) |
 
 </details>
 
