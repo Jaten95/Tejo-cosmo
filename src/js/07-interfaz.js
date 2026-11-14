@@ -144,10 +144,8 @@ function renderOver(winner) {
 function setSeg(id, val) { $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(val)))); }
 function renderMenu() {
   fixLocalDesigns();
-  // tejo, rana o bolo: la rana y el bolo no tienen reto ni distancias, y cada uno tiene su meta. El bolo es beta.
+  // tejo, rana o bolo: la rana y el bolo no tienen reto ni distancias, y cada uno tiene su meta.
   $('grpGame').hidden = false; $('verTag').textContent = 'v' + GAME_VERSION + (betaOn ? ' · beta' : '');
-  if (!betaOn && settings.game === 'bolo') settings.game = 'tejo';
-  $('segGame').querySelector('[data-v="bolo"]').hidden = !betaOn;
   const rana = settings.game === 'rana', bolo = settings.game === 'bolo';
   if ((rana || bolo) && settings.mode === 'reto') settings.mode = 'cpu';
   setSeg('segGame', settings.game);
@@ -226,7 +224,7 @@ function showMenu() {
   if (game) clearCancha(); game = null; reticle.visible = false;
   setHud(false); renderMenu(); showScreen('menu');
 }
-/* Modo beta: lo nuevo que se está probando solo sale en el celular donde se prende (ahora no hay nada en beta: la rana ya salió para todos).
+/* Modo beta: lo nuevo que se está probando solo sale en el celular donde se prende (ahora no hay nada en beta: la rana y el bolo ya salieron para todos).
    Se prende tocando 7 veces la versión del menú y escribiendo el código. No es seguridad (el código del juego es
    público): solo esconde lo que todavía se está probando. Se guarda en este celular; otras 7 veces la apagan. */
 const BETA_HASH = 'dcb67db02a0afe0fb52cbe5a5af52bde7c63e5192de4376a242c4a06504883ef';

@@ -5,7 +5,7 @@
    - La música de fondo también se descarga al instalar, pero en una caché aparte (MEDIA) que no se borra con cada versión:
      así suena sin internet y no se vuelve a bajar en cada actualización. Si algún día cambia el mp3, subir MEDIA a v2.
    - Las salas en línea necesitan internet: sus conexiones no pasan por aquí. */
-const VERSION = '1.55.1';
+const VERSION = '1.56.0';
 const CACHE = 'tejo-' + VERSION;
 const PRECACHE = [
   "./",
