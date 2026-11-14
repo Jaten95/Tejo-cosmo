@@ -6,6 +6,8 @@
    por el lado de la mano de quien lanza (al derecho, por la derecha; al zurdo, por la izquierda), y los que esos
    palos tumben al caer. Los que tumba por el otro lado o de rebote en las tablas no valen. Los tres de un tiro: ¡CHUZA!
    La física es propia y determinista (el aleatorio sale de una semilla), así en las salas todos ven lo mismo.
+   Si pasa el perro y la bola le pega, la bola se para ahí, el perro chilla y huye, y el que lanzó pierde un punto
+   por maltrato animal (si le pasa cerca, solo se asusta). En las salas de bolo no pasan perros.
    Estadísticas por jugador (en los mismos campos del tejo para que las salas no cambien):
    st.mechas = palos que valieron · st.mon = chuzas · st.manos = palos que no valieron · st.nulos = tiros en blanco · st.tiros = tiros. */
 
@@ -242,6 +244,7 @@ function boloFrame() {
 /* ---------- Turno, tiro y resultado ---------- */
 function boloPrepare() { game.kind = 'bolo'; buildBolo(); boloResetPins(); }
 function boloNewTurn() {
+  if (game) game.dogAt = null;
   if (bflight && bflight.mesh) scene.remove(bflight.mesh);
   if (game && game.ball) { scene.remove(game.ball); game.ball = null; }
   bflight = null; boloResetPins();
@@ -277,16 +280,39 @@ function boloBallAt(mesh, sim, t, rq) {
 }
 function boloUpdate(dt) {
   const f = bflight; if (!f || f.done) return;
-  f.t += dt; const sim = f.sim;
+  f.t += dt; const sim = f.sim, h = f.dog;
+  if (h) {   // le pegó al perro: rebota un poquito hacia atrás, cae y se queda ahí; los palos que no alcanzó no caen
+    const u = f.t - h.t, k = 1 - Math.exp(-u * 4);
+    f.mesh.position.copy(h.p).addScaledVector(h.back, k * .55); f.mesh.position.y = Math.max(BOLO.BR, h.p.y - 4.9 * u * u);
+    if (BOLO_M) BOLO_M.pins.forEach((m, i) => boloPinAt(m, i, sim.falls.find(x => x.i === i && x.t < h.t), f.t));
+    if (u >= h.end) boloFinish();
+    return;
+  }
   boloEvents(f, sim, f.t);
   boloBallAt(f.mesh, sim, f.t, f.roll);
   if (BOLO_M) BOLO_M.pins.forEach((m, i) => boloPinAt(m, i, sim.falls.find(x => x.i === i), f.t));
+  if (!online() && typeof petBallCheck === 'function') {
+    // el perro: si la bola le pega, golpe; si le pasa cerca, se asusta cuando ya pasó (o cuando la bola se queda quieta cerca)
+    const c = petBallCheck(f.mesh.position, BOLO.BR);
+    if (c && !c.hit) { if (f.near === undefined || c.d < f.near) f.near = c.d; else if (f.near < 1.3 && c.d > f.near + .05) petScare(f.mesh.position, false); }
+    if (c && !c.hit && f.t >= sim.ballEnd && f.near < 1.3) petScare(f.mesh.position, false);
+    if (c && c.hit) {
+      const b = f.mesh.position.clone(), next = samplePath(sim.path, Math.min(f.t + .05, sim.ballEnd)), back = b.clone().sub(next).setY(0);
+      if (back.lengthSq() < 1e-6) back.set(0, 0, 1); back.normalize();
+      const last = sim.falls.filter(x => x.t < f.t).reduce((m, x) => Math.max(m, x.t), 0);
+      f.dog = { t: f.t, p: b, back, end: Math.max(1.1, last + .7 - f.t) };
+      petScare(b, true); A.thud(.5); buzz([30, 40, 30]);
+    }
+  }
   if (f.t >= sim.duration) boloFinish();
 }
 function boloFinish() {
   const f = bflight; if (!f || f.done) return; f.done = true;
-  const p = game.players[f.owner], r = f.sim.res;
-  game.ball = f.mesh; bflight = null;
+  const p = game.players[f.owner];
+  // lo que valió: si le pegó al perro, solo los palos que cayeron antes
+  const falls = f.dog ? f.sim.falls.filter(x => x.t < f.dog.t) : f.sim.falls, nv = falls.filter(x => x.valid).length;
+  const r = { pts: nv, invalid: falls.length - nv, chuza: nv === 3 };
+  game.ball = f.mesh; bflight = null; game.dogAt = f.dog ? f.dog.p.clone() : null;
   game.lastSim = f.sim; game.lastOwner = f.owner;
   p.st.tiros++; p.st.manos += r.invalid;
   phase = 'result'; resultAt = performance.now();
@@ -299,12 +325,20 @@ function boloFinish() {
       feed(p, 'CHUZA +3');
     } else { toast(`${r.pts} ${r.pts === 1 ? 'palo' : 'palos'}${bad}`); A.tick(); feed(p, `${r.pts} ${r.pts === 1 ? 'palo' : 'palos'} +${r.pts}`); }
     bumpChip(f.owner);
+  } else if (f.dog) {
+    p.st.nulos++;
   } else {
     p.st.nulos++;
     const why = f.sim.falls.length ? (f.sim.falls.some(x => x.why === 'lado') ? 'Le pegó por el otro lado: no vale' : 'De rebote no vale') : f.timeout ? 'Se acabó el tiempo' : 'No tumbó nada';
     toast(why); feed(p, f.timeout ? 'Se le acabó el tiempo' : f.sim.falls.length ? `${f.sim.falls.length} sin valer` : 'En blanco');
   }
+  if (f.dog) {   // maltrato animal: pierde un punto (no baja de cero)
+    const lost = p.score > 0 ? 1 : 0; p.score -= lost; p.st.perros = (p.st.perros || 0) + 1;
+    announce('¡EL PERRO!', `${p.name.toUpperCase()} ${lost ? '−1 · ' : ''}MALTRATO ANIMAL`, true, true); flashScreen();
+    feed(p, lost ? 'Le pegó al perro −1' : 'Le pegó al perro'); bumpChip(f.owner);
+  }
   renderBoard();
+  if (f.dog) { later(2.6, advance); return; }
   if (r.chuza && !reduceMotion && !online()) later(1.6, () => boloStartReplay(f.sim, f.owner, advance));
   else later(r.chuza ? 2.4 : 1.4, advance);
 }
@@ -375,6 +409,12 @@ function boloCamPose() {
     return near ? { pos: V(1.25, .55, c.z + 1.1), look: c.clone().add(V(-.1, -.05, 0)), fov: 38, k: 6 }
       : { pos: g.clone().add(V(.35, .4, 1.4)), look: g.clone().lerp(c, .5), fov: 40, k: 8 };
   }
+  const dogCam = at => {   // le pegó al perro: se ve dónde quedó la bola y el perro saliendo a correr
+    const d = PETS && PETS.cur && PETS.cur.p.root.visible ? PETS.cur.p.root.position.clone().setY(.25) : at.clone();
+    return { pos: V(at.x * .4 + 1.5, 1.45, at.z + 3.4), look: d.lerp(at, .35), fov: 46, k: 3 };
+  };
+  if (phase === 'flight' && bflight && bflight.dog) return dogCam(bflight.dog.p);
+  if ((phase === 'result' || phase === 'roundEnd') && game.dogAt) return dogCam(game.dogAt);
   if (phase === 'flight' && bflight) {   // detrás de la bola y, ya cerca, de lado viendo caer los palos
     const f = bflight, b = f.mesh.position;
     if (b.z < BOLO.Z0 + 2.6 || f.hit) return { pos: V(1.15, .9, c.z + 1.9), look: c.clone().add(V(-.05, -.08, 0)), fov: 42, k: 4 };

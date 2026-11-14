@@ -3,7 +3,9 @@
    De vez en cuando un perro cruza el salón: entra por un lado, se mete hasta cerca de la cancha,
    cruza el carril y vuelve por el otro lado. En algún punto del camino se detiene a oler o a mirar y sigue.
    Modelos de Quaternius (CC0, ver LICENSES/quaternius-animales.md).
-   Es decoración: el tejo no choca con ellos y en las salas cada quien ve los suyos. */
+   Es decoración: el tejo no choca con ellos y en las salas cada quien ve los suyos.
+   En el bolo sí: si la bola le pasa cerca se asusta (brinca y sale corriendo) y si le pega, chilla y huye
+   (y el que lanzó pierde un punto, ver 04c-bolo.js). Por eso en las salas de bolo no pasan perros. */
 
 const PET_TIMING = { first: [20, 45], every: [45, 90] };   // segundos: primera visita y las siguientes
 const PET_SPEC = {   // qué tan seguido sale, escala, velocidad en m/s, ritmo de la caminada, qué hace al detenerse y sus colores
@@ -74,9 +76,34 @@ function endPet() {
   PETS.cur = null; PETS.wait = rand(...PET_TIMING.every);
 }
 
+/* Bolo: el perro y la bola. petBallCheck dice si la bola le pegó (hit) y a qué distancia le pasa por el piso (d) */
+const PET_RUN = 3.4;   // corriendo asustado: la caminada a este ritmo
+function petBody() {
+  const c = PETS && PETS.cur; if (!c || !c.p.root.visible) return null;
+  const r = c.p.root.position, fw = V(Math.sin(c.p.root.rotation.y), 0, Math.cos(c.p.root.rotation.y)), hl = .27 * c.p.spec.scale / .2;
+  return { a: r.clone().addScaledVector(fw, -hl).setY(.2), b: r.clone().addScaledVector(fw, hl).setY(.24), r: .13 * c.p.spec.scale / .2 };
+}
+function petBallCheck(ball, rad) {
+  const c = PETS && PETS.cur, body = petBody(); if (!c || !body || c.scared) return null;
+  const ab = body.b.clone().sub(body.a), u = clamp(ball.clone().sub(body.a).dot(ab) / ab.lengthSq(), 0, 1), q = body.a.clone().addScaledVector(ab, u);
+  return { hit: ball.distanceTo(q) < body.r + rad, d: ball.y < 1.4 ? Math.hypot(ball.x - q.x, ball.z - q.z) : 9 };
+}
+// Se asusta: brinca y sale corriendo por el lado contrario a la bola, de vuelta hacia atrás del salón
+function petScare(ball, hit) {
+  const c = PETS && PETS.cur; if (!c || c.scared) return;
+  const p0 = c.p.root.position.clone().setY(0), side = Math.sign(p0.x - ball.x) || (p0.x >= 0 ? 1 : -1), x = side * 2.95;
+  c.curve = new THREE.CatmullRomCurve3([p0, V((p0.x + x) / 2, 0, p0.z + .9), V(x, 0, p0.z + 3), V(x, 0, Math.min(1.5, p0.z + 9)), V(side * 3.1, 0, 2.7)], false, 'centripetal');
+  c.len = c.curve.getLength(); c.s = 0; c.yaw = null; c.stopDone = true;
+  c.scared = { t: 0, hit };
+  const walk = c.p.acts.Walk;
+  if (c.stopped && c.stopAct && c.stopAct !== walk) petFade(c.stopAct, walk, c.p.spec.walkRate * PET_RUN); else { walk.timeScale = c.p.spec.walkRate * PET_RUN; if (!walk.isRunning()) { walk.reset(); walk.play(); } }
+  c.stopped = false;
+  if (hit) { A.tone(1250, .13, { f1: 820, type: 'triangle', gain: .32 }); A.tone(1350, .16, { f1: 760, type: 'triangle', gain: .3, delay: .2 }); A.tone(1200, .2, { f1: 650, type: 'triangle', gain: .26, delay: .45 }); }   // ¡cain, cain!
+  else { A.tone(520, .09, { f1: 380, type: 'sawtooth', gain: .12 }); A.tone(560, .1, { f1: 400, type: 'sawtooth', gain: .12, delay: .15 }); }   // ¡guau!
+}
 function updatePets(dt) {
   if (!PETS) return;
-  if (isRana()) { if (PETS.cur) endPet(); return; }   // en la rana no pasan perros
+  if (isRana() || (isBolo() && online())) { if (PETS.cur) endPet(); return; }   // en la rana no pasan perros; en las salas de bolo tampoco (cada quien vería el suyo y un golpe cambiaría los puntos)
   const c = PETS.cur, inGame = phase !== 'menu' && phase !== 'boot';
   if (!c) {
     if (!inGame || !dt) return;
@@ -98,7 +125,12 @@ function updatePets(dt) {
   }
   // avanza al ritmo de la caminada: frena suave al detenerse y arranca suave al seguir
   const k = walk.isRunning() ? walk.getEffectiveWeight() : 0;
-  c.s += c.p.spec.speed * k * dt;
+  c.s += c.p.spec.speed * k * dt * (c.scared ? PET_RUN : 1);
   placePet(c, dt);
+  if (c.scared) {   // el brinco del susto (más alto si lo golpearon) y, si lo golpearon, se ladea un momento
+    const q = c.scared; q.t += dt; const h = q.hit ? .22 : .14, d = .38;
+    c.p.root.position.y = q.t < d ? Math.sin(Math.PI * q.t / d) * h : 0;
+    c.p.root.rotation.z = q.hit && q.t < .5 ? Math.sin(q.t * 30) * .25 * (1 - q.t / .5) : 0;
+  }
   if (c.s >= c.len) endPet();
 }

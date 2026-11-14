@@ -399,7 +399,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <h3>Modo beta</h3>
       <div class="joinRow"><input id="betaIn" placeholder="Código beta" aria-label="Código del modo beta" autocomplete="off" autocapitalize="off"><button class="btn ghost" id="btnBeta" type="button">Activar</button></div>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.54.0</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.55.0</span></div>
   </div></div>
 </section>
 
@@ -474,6 +474,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <tr><td>Palo<span>Cada palo que tumbe la bola pegándole por el lado de tu mano (derecho por la derecha, zurdo por la izquierda), o que tumbe otro palo al caer.</span></td><td>1</td></tr>
       <tr><td>¡Chuza!<span>Los tres palos de un solo tiro.</span></td><td>3</td></tr>
       <tr><td>No vale<span>Lo que tumbe por el otro lado o de rebote en las tablas de atrás.</span></td><td>0</td></tr>
+      <tr><td>El perro<span>Si la bola le pega al perro que pasa por el salón: maltrato animal. Contra Don Chepe y por turnos; en las salas no pasan perros.</span></td><td>−1</td></tr>
     </table>
     <p class="prose"><b>Bolo:</b> tres palos de pino de 60 cm en fila, a unos 20 m de la raya. Un tiro por turno, siempre por el aire y en el mismo orden. La bola es pesada: al caer en la tierra rueda poco, más entre más duro la tires, y entre más fuerza le metas más difícil es que vaya derecha. En el menú cada jugador dice si es derecho (D) o zurdo (Z). Partida a 15 o a lo que se escoja.</p>
     <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
@@ -513,7 +514,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.54.0";
+const GAME_VERSION = "1.55.0";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -1492,7 +1493,9 @@ function updateAmbience(dt) {
    De vez en cuando un perro cruza el salón: entra por un lado, se mete hasta cerca de la cancha,
    cruza el carril y vuelve por el otro lado. En algún punto del camino se detiene a oler o a mirar y sigue.
    Modelos de Quaternius (CC0, ver LICENSES/quaternius-animales.md).
-   Es decoración: el tejo no choca con ellos y en las salas cada quien ve los suyos. */
+   Es decoración: el tejo no choca con ellos y en las salas cada quien ve los suyos.
+   En el bolo sí: si la bola le pasa cerca se asusta (brinca y sale corriendo) y si le pega, chilla y huye
+   (y el que lanzó pierde un punto, ver 04c-bolo.js). Por eso en las salas de bolo no pasan perros. */
 
 const PET_TIMING = { first: [20, 45], every: [45, 90] };   // segundos: primera visita y las siguientes
 const PET_SPEC = {   // qué tan seguido sale, escala, velocidad en m/s, ritmo de la caminada, qué hace al detenerse y sus colores
@@ -1563,9 +1566,34 @@ function endPet() {
   PETS.cur = null; PETS.wait = rand(...PET_TIMING.every);
 }
 
+/* Bolo: el perro y la bola. petBallCheck dice si la bola le pegó (hit) y a qué distancia le pasa por el piso (d) */
+const PET_RUN = 3.4;   // corriendo asustado: la caminada a este ritmo
+function petBody() {
+  const c = PETS && PETS.cur; if (!c || !c.p.root.visible) return null;
+  const r = c.p.root.position, fw = V(Math.sin(c.p.root.rotation.y), 0, Math.cos(c.p.root.rotation.y)), hl = .27 * c.p.spec.scale / .2;
+  return { a: r.clone().addScaledVector(fw, -hl).setY(.2), b: r.clone().addScaledVector(fw, hl).setY(.24), r: .13 * c.p.spec.scale / .2 };
+}
+function petBallCheck(ball, rad) {
+  const c = PETS && PETS.cur, body = petBody(); if (!c || !body || c.scared) return null;
+  const ab = body.b.clone().sub(body.a), u = clamp(ball.clone().sub(body.a).dot(ab) / ab.lengthSq(), 0, 1), q = body.a.clone().addScaledVector(ab, u);
+  return { hit: ball.distanceTo(q) < body.r + rad, d: ball.y < 1.4 ? Math.hypot(ball.x - q.x, ball.z - q.z) : 9 };
+}
+// Se asusta: brinca y sale corriendo por el lado contrario a la bola, de vuelta hacia atrás del salón
+function petScare(ball, hit) {
+  const c = PETS && PETS.cur; if (!c || c.scared) return;
+  const p0 = c.p.root.position.clone().setY(0), side = Math.sign(p0.x - ball.x) || (p0.x >= 0 ? 1 : -1), x = side * 2.95;
+  c.curve = new THREE.CatmullRomCurve3([p0, V((p0.x + x) / 2, 0, p0.z + .9), V(x, 0, p0.z + 3), V(x, 0, Math.min(1.5, p0.z + 9)), V(side * 3.1, 0, 2.7)], false, 'centripetal');
+  c.len = c.curve.getLength(); c.s = 0; c.yaw = null; c.stopDone = true;
+  c.scared = { t: 0, hit };
+  const walk = c.p.acts.Walk;
+  if (c.stopped && c.stopAct && c.stopAct !== walk) petFade(c.stopAct, walk, c.p.spec.walkRate * PET_RUN); else { walk.timeScale = c.p.spec.walkRate * PET_RUN; if (!walk.isRunning()) { walk.reset(); walk.play(); } }
+  c.stopped = false;
+  if (hit) { A.tone(1250, .13, { f1: 820, type: 'triangle', gain: .32 }); A.tone(1350, .16, { f1: 760, type: 'triangle', gain: .3, delay: .2 }); A.tone(1200, .2, { f1: 650, type: 'triangle', gain: .26, delay: .45 }); }   // ¡cain, cain!
+  else { A.tone(520, .09, { f1: 380, type: 'sawtooth', gain: .12 }); A.tone(560, .1, { f1: 400, type: 'sawtooth', gain: .12, delay: .15 }); }   // ¡guau!
+}
 function updatePets(dt) {
   if (!PETS) return;
-  if (isRana()) { if (PETS.cur) endPet(); return; }   // en la rana no pasan perros
+  if (isRana() || (isBolo() && online())) { if (PETS.cur) endPet(); return; }   // en la rana no pasan perros; en las salas de bolo tampoco (cada quien vería el suyo y un golpe cambiaría los puntos)
   const c = PETS.cur, inGame = phase !== 'menu' && phase !== 'boot';
   if (!c) {
     if (!inGame || !dt) return;
@@ -1587,8 +1615,13 @@ function updatePets(dt) {
   }
   // avanza al ritmo de la caminada: frena suave al detenerse y arranca suave al seguir
   const k = walk.isRunning() ? walk.getEffectiveWeight() : 0;
-  c.s += c.p.spec.speed * k * dt;
+  c.s += c.p.spec.speed * k * dt * (c.scared ? PET_RUN : 1);
   placePet(c, dt);
+  if (c.scared) {   // el brinco del susto (más alto si lo golpearon) y, si lo golpearon, se ladea un momento
+    const q = c.scared; q.t += dt; const h = q.hit ? .22 : .14, d = .38;
+    c.p.root.position.y = q.t < d ? Math.sin(Math.PI * q.t / d) * h : 0;
+    c.p.root.rotation.z = q.hit && q.t < .5 ? Math.sin(q.t * 30) * .25 * (1 - q.t / .5) : 0;
+  }
   if (c.s >= c.len) endPet();
 }
 
@@ -3300,6 +3333,8 @@ function ranaPlanCpu(p) {
    por el lado de la mano de quien lanza (al derecho, por la derecha; al zurdo, por la izquierda), y los que esos
    palos tumben al caer. Los que tumba por el otro lado o de rebote en las tablas no valen. Los tres de un tiro: ¡CHUZA!
    La física es propia y determinista (el aleatorio sale de una semilla), así en las salas todos ven lo mismo.
+   Si pasa el perro y la bola le pega, la bola se para ahí, el perro chilla y huye, y el que lanzó pierde un punto
+   por maltrato animal (si le pasa cerca, solo se asusta). En las salas de bolo no pasan perros.
    Estadísticas por jugador (en los mismos campos del tejo para que las salas no cambien):
    st.mechas = palos que valieron · st.mon = chuzas · st.manos = palos que no valieron · st.nulos = tiros en blanco · st.tiros = tiros. */
 
@@ -3536,6 +3571,7 @@ function boloFrame() {
 /* ---------- Turno, tiro y resultado ---------- */
 function boloPrepare() { game.kind = 'bolo'; buildBolo(); boloResetPins(); }
 function boloNewTurn() {
+  if (game) game.dogAt = null;
   if (bflight && bflight.mesh) scene.remove(bflight.mesh);
   if (game && game.ball) { scene.remove(game.ball); game.ball = null; }
   bflight = null; boloResetPins();
@@ -3571,16 +3607,39 @@ function boloBallAt(mesh, sim, t, rq) {
 }
 function boloUpdate(dt) {
   const f = bflight; if (!f || f.done) return;
-  f.t += dt; const sim = f.sim;
+  f.t += dt; const sim = f.sim, h = f.dog;
+  if (h) {   // le pegó al perro: rebota un poquito hacia atrás, cae y se queda ahí; los palos que no alcanzó no caen
+    const u = f.t - h.t, k = 1 - Math.exp(-u * 4);
+    f.mesh.position.copy(h.p).addScaledVector(h.back, k * .55); f.mesh.position.y = Math.max(BOLO.BR, h.p.y - 4.9 * u * u);
+    if (BOLO_M) BOLO_M.pins.forEach((m, i) => boloPinAt(m, i, sim.falls.find(x => x.i === i && x.t < h.t), f.t));
+    if (u >= h.end) boloFinish();
+    return;
+  }
   boloEvents(f, sim, f.t);
   boloBallAt(f.mesh, sim, f.t, f.roll);
   if (BOLO_M) BOLO_M.pins.forEach((m, i) => boloPinAt(m, i, sim.falls.find(x => x.i === i), f.t));
+  if (!online() && typeof petBallCheck === 'function') {
+    // el perro: si la bola le pega, golpe; si le pasa cerca, se asusta cuando ya pasó (o cuando la bola se queda quieta cerca)
+    const c = petBallCheck(f.mesh.position, BOLO.BR);
+    if (c && !c.hit) { if (f.near === undefined || c.d < f.near) f.near = c.d; else if (f.near < 1.3 && c.d > f.near + .05) petScare(f.mesh.position, false); }
+    if (c && !c.hit && f.t >= sim.ballEnd && f.near < 1.3) petScare(f.mesh.position, false);
+    if (c && c.hit) {
+      const b = f.mesh.position.clone(), next = samplePath(sim.path, Math.min(f.t + .05, sim.ballEnd)), back = b.clone().sub(next).setY(0);
+      if (back.lengthSq() < 1e-6) back.set(0, 0, 1); back.normalize();
+      const last = sim.falls.filter(x => x.t < f.t).reduce((m, x) => Math.max(m, x.t), 0);
+      f.dog = { t: f.t, p: b, back, end: Math.max(1.1, last + .7 - f.t) };
+      petScare(b, true); A.thud(.5); buzz([30, 40, 30]);
+    }
+  }
   if (f.t >= sim.duration) boloFinish();
 }
 function boloFinish() {
   const f = bflight; if (!f || f.done) return; f.done = true;
-  const p = game.players[f.owner], r = f.sim.res;
-  game.ball = f.mesh; bflight = null;
+  const p = game.players[f.owner];
+  // lo que valió: si le pegó al perro, solo los palos que cayeron antes
+  const falls = f.dog ? f.sim.falls.filter(x => x.t < f.dog.t) : f.sim.falls, nv = falls.filter(x => x.valid).length;
+  const r = { pts: nv, invalid: falls.length - nv, chuza: nv === 3 };
+  game.ball = f.mesh; bflight = null; game.dogAt = f.dog ? f.dog.p.clone() : null;
   game.lastSim = f.sim; game.lastOwner = f.owner;
   p.st.tiros++; p.st.manos += r.invalid;
   phase = 'result'; resultAt = performance.now();
@@ -3593,12 +3652,20 @@ function boloFinish() {
       feed(p, 'CHUZA +3');
     } else { toast(`${r.pts} ${r.pts === 1 ? 'palo' : 'palos'}${bad}`); A.tick(); feed(p, `${r.pts} ${r.pts === 1 ? 'palo' : 'palos'} +${r.pts}`); }
     bumpChip(f.owner);
+  } else if (f.dog) {
+    p.st.nulos++;
   } else {
     p.st.nulos++;
     const why = f.sim.falls.length ? (f.sim.falls.some(x => x.why === 'lado') ? 'Le pegó por el otro lado: no vale' : 'De rebote no vale') : f.timeout ? 'Se acabó el tiempo' : 'No tumbó nada';
     toast(why); feed(p, f.timeout ? 'Se le acabó el tiempo' : f.sim.falls.length ? `${f.sim.falls.length} sin valer` : 'En blanco');
   }
+  if (f.dog) {   // maltrato animal: pierde un punto (no baja de cero)
+    const lost = p.score > 0 ? 1 : 0; p.score -= lost; p.st.perros = (p.st.perros || 0) + 1;
+    announce('¡EL PERRO!', `${p.name.toUpperCase()} ${lost ? '−1 · ' : ''}MALTRATO ANIMAL`, true, true); flashScreen();
+    feed(p, lost ? 'Le pegó al perro −1' : 'Le pegó al perro'); bumpChip(f.owner);
+  }
   renderBoard();
+  if (f.dog) { later(2.6, advance); return; }
   if (r.chuza && !reduceMotion && !online()) later(1.6, () => boloStartReplay(f.sim, f.owner, advance));
   else later(r.chuza ? 2.4 : 1.4, advance);
 }
@@ -3669,6 +3736,12 @@ function boloCamPose() {
     return near ? { pos: V(1.25, .55, c.z + 1.1), look: c.clone().add(V(-.1, -.05, 0)), fov: 38, k: 6 }
       : { pos: g.clone().add(V(.35, .4, 1.4)), look: g.clone().lerp(c, .5), fov: 40, k: 8 };
   }
+  const dogCam = at => {   // le pegó al perro: se ve dónde quedó la bola y el perro saliendo a correr
+    const d = PETS && PETS.cur && PETS.cur.p.root.visible ? PETS.cur.p.root.position.clone().setY(.25) : at.clone();
+    return { pos: V(at.x * .4 + 1.5, 1.45, at.z + 3.4), look: d.lerp(at, .35), fov: 46, k: 3 };
+  };
+  if (phase === 'flight' && bflight && bflight.dog) return dogCam(bflight.dog.p);
+  if ((phase === 'result' || phase === 'roundEnd') && game.dogAt) return dogCam(game.dogAt);
   if (phase === 'flight' && bflight) {   // detrás de la bola y, ya cerca, de lado viendo caer los palos
     const f = bflight, b = f.mesh.position;
     if (b.z < BOLO.Z0 + 2.6 || f.hit) return { pos: V(1.15, .9, c.z + 1.9), look: c.clone().add(V(-.05, -.08, 0)), fov: 42, k: 4 };
