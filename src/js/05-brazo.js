@@ -284,8 +284,9 @@ const HAND_POSE = {
   // la argolla la sostienen el pulgar y el índice (en C); corazón, anular y meñique van recogidos
   argolla: { index: [.45, 1, .8], middle: [1.25, 1.55, 1], ring: [1.35, 1.55, 1], pinky: [1.4, 1.5, 1], thumb: [[.1, -.7, 0], [.3, 0, 0], [.4, 0, 0]] },
   // bolo: la bola en la palma y los dedos abrazándola por delante y por los lados
-  // (cada dedo se dobló hasta tocar la bola sin meterse en ella; el meñique y el anular un poco abiertos para que se vea el meñique por el lado)
-  bola: { index: [.412, .802, .172], middle: [.495, .696, .442], ring: [[.473, .12, 0], .63, .334], pinky: [[.638, .35, 0], .183, .74], thumb: [[-.2, -.3, -.2], [.4, 0, 0], [.4, 0, 0]] }
+  // (cada dedo se dobló hasta tocar la bola sin meterse en ella; el meñique y el anular un poco abiertos para que se vea el meñique
+  // por el lado; el meñique se ajustó con la piel, no con los huesos, para que quede pegado a la bola)
+  bola: { index: [.412, .802, .172], middle: [.495, .696, .442], ring: [[.473, .12, 0], .63, .334], pinky: [[.678, .35, 0], .257, .665], thumb: [[-.2, -.3, -.2], [.4, 0, 0], [.4, 0, 0]] }
 };
 function poseModel(c) {
   // un nudillo puede ser un número (solo doblar) o [doblar, abrir de lado, girar]
