@@ -80,7 +80,7 @@ function buildArm() {
   loadHandModel();
 }
 function armSetPlayer(p) {
-  const key = [isRana() ? 'rana' : 'tejo', p.color, p.design, p.name].join('|');
+  const key = [game && game.kind || 'tejo', p.color, p.design, p.name, p.zurdo ? 'Z' : 'D'].join('|');
   if (key === ARM.key) return; ARM.key = key;
   if (ARM.tejo) ARM.slot.remove(ARM.tejo);
   if (isRana()) {   // en la rana la argolla se sostiene entre el pulgar y el índice; los otros tres dedos van recogidos
@@ -89,6 +89,9 @@ function armSetPlayer(p) {
     ARM.tejo.quaternion.setFromUnitVectors(V(0, 0, 1), V(...G.n).normalize()).multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), G.spin))
       .premultiply(new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), -ARM.slot.rotation.x));   // de la mano al soporte
     ARM.tejo.scale.setScalar(G.s);
+  }
+  else if (isBolo()) {   // la bola de aluminio en la palma, con los dedos cerrados por delante
+    ARM.tejo = makeBola(); ARM.tejo.position.set(...BOLA_GRIP.pos); ARM.tejo.scale.setScalar(BOLA_GRIP.s);
   }
   else ARM.tejo = makeTejo(p.color, p.design, p.name);
   ARM.tejo.castShadow = false; ARM.slot.add(ARM.tejo);
@@ -187,9 +190,11 @@ function updateArm(dt, now) {
   armFingers(ARM.curl);
   armPose(ARM.th, ARM.be);
   // acomodar el brazo a la pantalla (en vertical va más al centro) y subirlo/bajarlo al aparecer
-  const a = cam.aspect, kx = clamp(a / 1.25, .48, 1);
-  ARM.root.position.set(-.09 * (1 - kx) + .5 * oe, -.32 * (1 - ARM.vis) * (1 - oe * .7) - .1 * oe, 0);
-  ARM.root.scale.setScalar(a < 1 ? .9 : 1);
+  const a = cam.aspect, kx = clamp(a / 1.25, .48, 1), sc = a < 1 ? .9 : 1;
+  // zurdo en el bolo: el mismo brazo al espejo, al otro lado de la pantalla
+  const mir = isBolo() && game.order.length && current().zurdo ? -1 : 1;
+  ARM.root.position.set(mir * (-.09 * (1 - kx) + .5 * oe), -.32 * (1 - ARM.vis) * (1 - oe * .7) - .1 * oe, 0);
+  ARM.root.scale.set(sc * mir, sc, sc);
 }
 function renderArm(w, h) {
   if (!ARM.root || !ARM.root.visible || !(w > 10 && h > 10)) return;
@@ -269,6 +274,7 @@ function bendChain(J, angles, start) {
 const ARG_ARM = [45, 95];   // hombro y codo con la argolla en la mano
 const ARG_HAND = { roll: 1.9, yaw: 0, pitch: 0 };   // cuánto se voltea la mano (desde la muñeca)
 // dónde queda la argolla (coordenadas de la mano: palma +Y, dedos -Z, pulgar +X): entre la yema del índice y la del pulgar, de cara al jugador
+const BOLA_GRIP = { pos: [0, .045, 0], s: .9 };   // la bola en el soporte de la mano (sobre la palma)
 const ARG_GRIP = { pos: [.0314, .0784, -.0427], n: [.927, -.333, -.175], spin: .4, s: 1.1 };
 const HAND_POSE = {
   closed: { index: [.587, .701, .738], middle: [.647, .571, 1.037], ring: [.475, .818, .459], pinky: [.695, -.202, 1.276], thumb: [[-.719, -.86, -.578], [.664, .243, .16], [.944, -.076, -.134]] },

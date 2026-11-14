@@ -214,6 +214,7 @@ function buildBunting() {
   hall.add(im);
 }
 
+let tejoLeftProps = [];   // la pala, las mechas, los baldes y los bultos de greda (en el bolo se esconden)
 function buildProps() {
   // todo en la esquina izquierda, entre la tabla del costado de la cancha y la pared (ahí no llega el tejo)
   const z0 = -W.D, sack = std({ map: burlapTex(), roughness: 1, side: THREE.DoubleSide });
@@ -223,6 +224,7 @@ function buildProps() {
   const s1 = makeSack(true, sack); s1.position.set(-2.85, 0, z0 - .3); hall.add(s1);
   const s2 = makeSack(false, sack); s2.position.set(-2.9, 0, z0 + .45); s2.rotation.y = 1.35; hall.add(s2);
   const s3 = makeSack(false, sack); s3.position.set(-2.92, .2, z0 + .4); s3.rotation.set(0, 1.6, .08); s3.scale.setScalar(.9); hall.add(s3);
+  tejoLeftProps = [box, b1, b2, s1, s2, s3];
   // lado derecho: canastas de cerveza apiladas y botellas regadas
   const crates = [   // [botellas, x, z, giro, giro extra]
     [.97, 2.3, z0 - .35, .05], [.97, 2.3, z0 - .35, .28, -.04], [.95, 2.3, z0 - .35, .51, .03],
@@ -237,5 +239,5 @@ function buildProps() {
   buildBunting();
   buildAmbience();
   // la pala recostada en la tabla, por fuera
-  const shovel = makeShovel(); shovel.position.set(-1.95, 0, z0 + .85); shovel.rotation.set(0, -.25, -.17); hall.add(shovel);
+  const shovel = makeShovel(); shovel.position.set(-1.95, 0, z0 + .85); shovel.rotation.set(0, -.25, -.17); hall.add(shovel); tejoLeftProps.push(shovel);
 }

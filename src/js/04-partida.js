@@ -1,7 +1,7 @@
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, music: true, game: 'tejo', ranaGoal: 1000 };
+const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, music: true, game: 'tejo', ranaGoal: 1000, boloGoal: 15, hands: ['D', 'D', 'D', 'D', 'D', 'D'] };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
@@ -53,6 +53,7 @@ function tickTimers(dt) { for (let i = timers.length - 1; i >= 0; i--) { timers[
 
 function computeDvdP() {
   if (isRana() || (!game && settings.game === 'rana')) { dvdP = RANA.SPAN; return; }
+  if (isBolo() || (!game && settings.game === 'bolo')) { dvdP = BOLO.SPAN; return; }
   const a = predict({ L: 0, P: AIM.P0 - .03 }), b = predict({ L: 0, P: AIM.P0 + .03 });
   dvdP = (a && b) ? Math.max(.3, (toUV(b.p).v - toUV(a.p).v) / .06) : 1.4;
 }
@@ -61,7 +62,8 @@ function newPlayer(name, i, cpu, design) { return { name, color: COLORS[i], desi
 
 function startGame() {
   timers.length = 0; flight && flight.mesh && scene.remove(flight.mesh); flight = null; drag = null; cpuAim = null;
-  if (Math.abs(W.D - settings.dist) > .01 || !hall) { setDistance(settings.dist); buildHall(); }
+  const D0 = settings.game === 'bolo' ? BOLO.D : settings.dist;   // el bolo tiene su distancia
+  if (Math.abs(W.D - D0) > .01 || !hall) { setDistance(D0); buildHall(); }
   computeDvdP();
   let players;
   fixLocalDesigns();
@@ -91,6 +93,11 @@ function startGame() {
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: settings.goal, mode: settings.mode, thrown: 0, over: false };
   game.teams = applyTeams(players, players[0].team !== undefined ? nT : 0);
   if (settings.game === 'rana' && settings.mode !== 'reto') { ranaPrepare(); game.goal = clampRanaGoal(settings.ranaGoal); computeDvdP(); }
+  if (settings.game === 'bolo' && settings.mode !== 'reto') {
+    boloPrepare(); game.goal = clampBoloGoal(settings.boloGoal); computeDvdP();
+    // derecho o zurdo: cada quien lo escoge en el menú; de los bots, Rigo es zurdo
+    players.forEach((p, i) => { p.zurdo = p.cpu ? p.name === 'Rigo' : (settings.hands || [])[settings.mode === 'local' ? i : 0] === 'Z'; });
+  }
   lastP = {};
   clearFeed();
   showScreen(null); setHud(true);
@@ -121,6 +128,8 @@ function nextThrow() {
   renderBoard(); renderTurn();
   reticle.visible = false; setGauge(0, lastP[p.name]);
   if (isRana()) ranaBoardDraw();
+  if (isBolo()) boloNewTurn();   // el garitero para los palos y recoge la bola
+  renderStyleBtn();
   if (online()) return netTurn(p);
   if (p.cpu) {
     phase = 'cpu'; hint(`${p.name} está midiendo…`, true);
@@ -144,6 +153,7 @@ function aimForUV(tu, tv) {
 }
 function planCpu(p) {
   if (isRana()) return ranaPlanCpu(p);
+  if (isBolo()) return boloPlanCpu(p);
   const d = DIFF[settings.diff];
   let tu = 0, tv = 0;
   if (settings.diff >= 2 && Math.random() < (settings.diff === 3 ? .7 : .35)) { const a = MECHA_ANG[Math.floor(Math.random() * 4)]; tu = Math.cos(a) * .035; tv = Math.sin(a) * .035; }
@@ -173,6 +183,7 @@ function currentAim(now) {
 }
 function showReticle(aim) {
   if (isRana()) return ranaShowReticle(aim);
+  if (isBolo()) return boloShowReticle(aim);
   if (!aimHelpNow()) { reticle.visible = false; return; }
   const pr = predict(aim);
   if (!pr) { reticle.visible = false; return; }
@@ -186,9 +197,12 @@ function showReticle(aim) {
 }
 
 /* ---------- Lanzar ---------- */
-function finalAim(aim) { return isRana() ? { L: aim.L + gauss() * .03 / RANA.LX, P: aim.P + gauss() * .03 / RANA.SPAN } : { L: aim.L + gauss() * .012, P: aim.P + gauss() * .012 / dvdP }; }
+function finalAim(aim) {
+  if (isBolo()) return { L: aim.L + gauss() * .025, P: aim.P + gauss() * .3 / BOLO.SPAN, m: current().air ? 1 : 0 };   // m: 1 = por el aire, 0 = rodando
+  return isRana() ? { L: aim.L + gauss() * .03 / RANA.LX, P: aim.P + gauss() * .03 / RANA.SPAN } : { L: aim.L + gauss() * .012, P: aim.P + gauss() * .012 / dvdP }; }
 function launch(a, opts) {
   if (isRana()) return ranaLaunch(a, opts);
+  if (isBolo()) return boloLaunch(a, opts);
   const p = current();
   lastP[p.name] = a.P;
   const v0 = aimToVel(a);
@@ -364,6 +378,7 @@ function replayCamera(dt) {
 
 function advance() {
   if (isRana()) return ranaAdvance();
+  if (isBolo()) return boloAdvance();
   if (replay) { const r = replay; r.done = null; endReplay(); }
   if (phase === 'over') return;
   const leader = winnerNow();
@@ -445,7 +460,9 @@ function updateCamera(dt) {
     const r = 3.4, c = W.C;
     tgt = { pos: V(Math.sin(orbit) * r * .8, 1.5 + Math.sin(orbit * .7) * .3, c.z + Math.cos(orbit) * r * .6 + 2.2), look: c.clone().add(V(0, .1, 0)), fov: 42 }; k = 2;
     if (phase === 'over' ? isRana() : settings.game === 'rana') tgt = ranaMenuPose(orbit);
+    if (phase === 'over' ? isBolo() : settings.game === 'bolo') tgt = boloMenuPose(orbit);
   } else if (isRana()) { tgt = ranaCamPose(); k = 4;
+  } else if (isBolo()) { tgt = boloCamPose(); k = tgt.k;
   } else if (phase === 'flight' && flight) {
     const f = flight, p = f.mesh.position, remain = f.impactAt - f.t;
     const chase = { pos: p.clone().add(V(.15, .38, 1.35)), look: p.clone().lerp(W.C, .45), fov: 48 };
@@ -473,6 +490,7 @@ function updateCamera(dt) {
   const lc = fromUV(lupaCur.u, lupaCur.v);
   lupaCam.position.copy(lc).addScaledVector(W.n, 1.15); lupaCam.up.copy(W.s); lupaCam.lookAt(lc);
   if (isRana()) ranaLupa();
+  if (isBolo()) boloLupa();
 }
 const lupaCur = { u: 0, v: 0 };
 
@@ -487,8 +505,9 @@ function updateGame(dt, now) {
   }
   if (phase === 'wait') netWatch();
   if (phase === 'cpu') updateCpu(dt);
-  if (phase === 'flight') { if (isRana()) ranaUpdate(dt); else updateFlight(dt); }
+  if (phase === 'flight') { if (isRana()) ranaUpdate(dt); else if (isBolo()) boloUpdate(dt); else updateFlight(dt); }
   if (replay) updateReplay(dt);
+  if (breplay) boloUpdateReplay(dt);
   mechaMeshes.forEach(m => { if (m.userData.grow !== undefined) { m.userData.grow += dt * 3; const s = ease(clamp(m.userData.grow, 0, 1)); m.scale.setScalar(Math.max(.01, s)); if (m.userData.grow >= 1) delete m.userData.grow; } });
   if (manoRing) { const s = 1 + Math.sin(now / 160) * .12; manoRing.scale.set(s, s, 1); }
   if (reticle.visible) reticle.rotation.z += dt * .8;
@@ -516,7 +535,7 @@ function frame(now) {
     if (!paused) { tickTimers(dt); updateGame(dt, now); updateFx(dt); }
     updateAmbience(paused ? 0 : dt);
     updatePets(paused ? 0 : dt);
-    musicSync(); updateSpeakers(paused ? 0 : dt); ranaFrame();
+    musicSync(); updateSpeakers(paused ? 0 : dt); ranaFrame(); boloFrame();
     updateArm(paused ? 0 : dt, now);
     updateCamera(paused ? 0 : dt);
     camSafe();

@@ -139,6 +139,15 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 #zoomBtns{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 64px);display:flex;flex-direction:column;gap:10px;pointer-events:auto;}
 #zoomBtns.underLupa{top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 36px + min(40vw,190px));}
 #zoomBtns .iconBtn:disabled{opacity:.35;}
+.styleBtn{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 86px);pointer-events:auto;
+  display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:9px 12px 8px;border:2px solid var(--ink);background:var(--paper);color:var(--ink);
+  box-shadow:3px 3px 0 var(--ink);font:inherit;cursor:pointer;text-align:left;}
+.styleBtn b{font-family:var(--display);font-size:16px;letter-spacing:.04em;line-height:1;}
+.styleBtn small{font-size:11px;font-weight:600;opacity:.75;}
+.styleBtn.air{background:var(--yellow);}
+.styleBtn[hidden]{display:none!important;}
+.names label.withHand{grid-template-columns:auto 1fr auto;}
+.names .hand{width:34px;height:34px;align-self:center;margin-right:6px;border:2px solid var(--ink);background:var(--paper);color:var(--ink);font:400 16px/1 var(--display);cursor:pointer;}
 
 /* ---------- announcements ---------- */
 #announce{position:fixed;left:0;right:0;top:38%;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;opacity:0;}
@@ -303,6 +312,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
   <div id="rxTray" hidden></div>
   <div id="hint"><span id="hintText">Arrastra hacia abajo para cargar · suelta para lanzar</span><button id="hintClose" aria-label="Cerrar la ayuda en esta partida">×</button></div>
   <button class="skipBtn" id="btnSkip" hidden>Saltar turno</button>
+  <button class="styleBtn" id="btnStyle" type="button" hidden><b>RODANDO</b><small>toca para tirarla por el aire</small></button>
 </div>
 <div id="announce" aria-live="assertive"><div class="t" id="annT"></div><div class="s"></div><div class="p" id="annP"></div></div>
 <div id="toast"></div>
@@ -320,7 +330,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     </div>
     <div class="group" id="grpGame">
       <h3>Juego</h3>
-      <div class="seg" id="segGame"><button data-v="tejo">Tejo<small>greda y bocín</small></button><button data-v="rana">Rana<small>argollas</small></button></div>
+      <div class="seg" id="segGame"><button data-v="tejo">Tejo<small>greda y bocín</small></button><button data-v="rana">Rana<small>argollas</small></button><button data-v="bolo" hidden>Bolo<small>tres palos · beta</small></button></div>
     </div>
     <div class="group">
       <h3>Modo</h3>
@@ -397,7 +407,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <h3>Modo beta</h3>
       <div class="joinRow"><input id="betaIn" placeholder="Código beta" aria-label="Código del modo beta" autocomplete="off" autocapitalize="off"><button class="btn ghost" id="btnBeta" type="button">Activar</button></div>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.48.0</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.49.0</span></div>
   </div></div>
 </section>
 
@@ -467,6 +477,13 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <tr><td>Huecos<span>Cada hueco da lo que dice su cajón: 50, 45, 40, 30, 20 o 10.</span></td><td>10–50</td></tr>
     </table>
     <p class="prose"><b>Rana:</b> se lanza desde la raya, a 3,5 m de la mesa. Cada jugador tiene una tanda de 6 argollas, siempre en el mismo orden (cada ronda la empieza el mismo), y lo que entra se suma al momento; el tablero de arriba de la mesa va mostrando sus puntos. Si la argolla se queda en la tabla o se cae, no cuenta. Gana el primero que llegue a la meta.</p>
+    <h3 class="rulesH">Bolo criollo</h3>
+    <table class="rulesT">
+      <tr><td>Palo<span>Cada palo que tumbe la bola pegándole por el lado de tu mano (derecho por la derecha, zurdo por la izquierda), o que tumbe otro palo al caer.</span></td><td>1</td></tr>
+      <tr><td>¡Chuza!<span>Los tres palos de un solo tiro.</span></td><td>3</td></tr>
+      <tr><td>No vale<span>Lo que tumbe por el otro lado o de rebote en las tablas de atrás.</span></td><td>0</td></tr>
+    </table>
+    <p class="prose"><b>Bolo:</b> tres palos de pino de 60 cm en fila, a unos 20 m de la raya. Un tiro por turno, rodando o por el aire (lo escoges con el botón de abajo a la izquierda), siempre en el mismo orden. En el menú cada jugador dice si es derecho (D) o zurdo (Z). Partida a 15 o a lo que se escoja.</p>
     <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
     <p class="prose"><b>Tiempo en salas:</b> tienes 20 segundos para lanzar. Si no lanzas, tu tiro es nulo y pasa el turno.</p>
     <p class="prose"><b>Configuración en salas:</b> la mira, la lupa, la barra de fuerza y el zoom de la cámara son los que tenga puestos quien creó la sala, para que todos jueguen igual.</p>
@@ -504,7 +521,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.48.0";
+const GAME_VERSION = "1.49.0";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -1296,6 +1313,7 @@ function buildBunting() {
   hall.add(im);
 }
 
+let tejoLeftProps = [];   // la pala, las mechas, los baldes y los bultos de greda (en el bolo se esconden)
 function buildProps() {
   // todo en la esquina izquierda, entre la tabla del costado de la cancha y la pared (ahí no llega el tejo)
   const z0 = -W.D, sack = std({ map: burlapTex(), roughness: 1, side: THREE.DoubleSide });
@@ -1305,6 +1323,7 @@ function buildProps() {
   const s1 = makeSack(true, sack); s1.position.set(-2.85, 0, z0 - .3); hall.add(s1);
   const s2 = makeSack(false, sack); s2.position.set(-2.9, 0, z0 + .45); s2.rotation.y = 1.35; hall.add(s2);
   const s3 = makeSack(false, sack); s3.position.set(-2.92, .2, z0 + .4); s3.rotation.set(0, 1.6, .08); s3.scale.setScalar(.9); hall.add(s3);
+  tejoLeftProps = [box, b1, b2, s1, s2, s3];
   // lado derecho: canastas de cerveza apiladas y botellas regadas
   const crates = [   // [botellas, x, z, giro, giro extra]
     [.97, 2.3, z0 - .35, .05], [.97, 2.3, z0 - .35, .28, -.04], [.95, 2.3, z0 - .35, .51, .03],
@@ -1319,7 +1338,7 @@ function buildProps() {
   buildBunting();
   buildAmbience();
   // la pala recostada en la tabla, por fuera
-  const shovel = makeShovel(); shovel.position.set(-1.95, 0, z0 + .85); shovel.rotation.set(0, -.25, -.17); hall.add(shovel);
+  const shovel = makeShovel(); shovel.position.set(-1.95, 0, z0 + .85); shovel.rotation.set(0, -.25, -.17); hall.add(shovel); tejoLeftProps.push(shovel);
 }
 
 /* ================= Ambiente del salón =================
@@ -2240,7 +2259,7 @@ function updateSpeakers(dt) {
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, music: true, game: 'tejo', ranaGoal: 1000 };
+const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, music: true, game: 'tejo', ranaGoal: 1000, boloGoal: 15, hands: ['D', 'D', 'D', 'D', 'D', 'D'] };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
@@ -2292,6 +2311,7 @@ function tickTimers(dt) { for (let i = timers.length - 1; i >= 0; i--) { timers[
 
 function computeDvdP() {
   if (isRana() || (!game && settings.game === 'rana')) { dvdP = RANA.SPAN; return; }
+  if (isBolo() || (!game && settings.game === 'bolo')) { dvdP = BOLO.SPAN; return; }
   const a = predict({ L: 0, P: AIM.P0 - .03 }), b = predict({ L: 0, P: AIM.P0 + .03 });
   dvdP = (a && b) ? Math.max(.3, (toUV(b.p).v - toUV(a.p).v) / .06) : 1.4;
 }
@@ -2300,7 +2320,8 @@ function newPlayer(name, i, cpu, design) { return { name, color: COLORS[i], desi
 
 function startGame() {
   timers.length = 0; flight && flight.mesh && scene.remove(flight.mesh); flight = null; drag = null; cpuAim = null;
-  if (Math.abs(W.D - settings.dist) > .01 || !hall) { setDistance(settings.dist); buildHall(); }
+  const D0 = settings.game === 'bolo' ? BOLO.D : settings.dist;   // el bolo tiene su distancia
+  if (Math.abs(W.D - D0) > .01 || !hall) { setDistance(D0); buildHall(); }
   computeDvdP();
   let players;
   fixLocalDesigns();
@@ -2330,6 +2351,11 @@ function startGame() {
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: settings.goal, mode: settings.mode, thrown: 0, over: false };
   game.teams = applyTeams(players, players[0].team !== undefined ? nT : 0);
   if (settings.game === 'rana' && settings.mode !== 'reto') { ranaPrepare(); game.goal = clampRanaGoal(settings.ranaGoal); computeDvdP(); }
+  if (settings.game === 'bolo' && settings.mode !== 'reto') {
+    boloPrepare(); game.goal = clampBoloGoal(settings.boloGoal); computeDvdP();
+    // derecho o zurdo: cada quien lo escoge en el menú; de los bots, Rigo es zurdo
+    players.forEach((p, i) => { p.zurdo = p.cpu ? p.name === 'Rigo' : (settings.hands || [])[settings.mode === 'local' ? i : 0] === 'Z'; });
+  }
   lastP = {};
   clearFeed();
   showScreen(null); setHud(true);
@@ -2360,6 +2386,8 @@ function nextThrow() {
   renderBoard(); renderTurn();
   reticle.visible = false; setGauge(0, lastP[p.name]);
   if (isRana()) ranaBoardDraw();
+  if (isBolo()) boloNewTurn();   // el garitero para los palos y recoge la bola
+  renderStyleBtn();
   if (online()) return netTurn(p);
   if (p.cpu) {
     phase = 'cpu'; hint(`${p.name} está midiendo…`, true);
@@ -2383,6 +2411,7 @@ function aimForUV(tu, tv) {
 }
 function planCpu(p) {
   if (isRana()) return ranaPlanCpu(p);
+  if (isBolo()) return boloPlanCpu(p);
   const d = DIFF[settings.diff];
   let tu = 0, tv = 0;
   if (settings.diff >= 2 && Math.random() < (settings.diff === 3 ? .7 : .35)) { const a = MECHA_ANG[Math.floor(Math.random() * 4)]; tu = Math.cos(a) * .035; tv = Math.sin(a) * .035; }
@@ -2412,6 +2441,7 @@ function currentAim(now) {
 }
 function showReticle(aim) {
   if (isRana()) return ranaShowReticle(aim);
+  if (isBolo()) return boloShowReticle(aim);
   if (!aimHelpNow()) { reticle.visible = false; return; }
   const pr = predict(aim);
   if (!pr) { reticle.visible = false; return; }
@@ -2425,9 +2455,12 @@ function showReticle(aim) {
 }
 
 /* ---------- Lanzar ---------- */
-function finalAim(aim) { return isRana() ? { L: aim.L + gauss() * .03 / RANA.LX, P: aim.P + gauss() * .03 / RANA.SPAN } : { L: aim.L + gauss() * .012, P: aim.P + gauss() * .012 / dvdP }; }
+function finalAim(aim) {
+  if (isBolo()) return { L: aim.L + gauss() * .025, P: aim.P + gauss() * .3 / BOLO.SPAN, m: current().air ? 1 : 0 };   // m: 1 = por el aire, 0 = rodando
+  return isRana() ? { L: aim.L + gauss() * .03 / RANA.LX, P: aim.P + gauss() * .03 / RANA.SPAN } : { L: aim.L + gauss() * .012, P: aim.P + gauss() * .012 / dvdP }; }
 function launch(a, opts) {
   if (isRana()) return ranaLaunch(a, opts);
+  if (isBolo()) return boloLaunch(a, opts);
   const p = current();
   lastP[p.name] = a.P;
   const v0 = aimToVel(a);
@@ -2603,6 +2636,7 @@ function replayCamera(dt) {
 
 function advance() {
   if (isRana()) return ranaAdvance();
+  if (isBolo()) return boloAdvance();
   if (replay) { const r = replay; r.done = null; endReplay(); }
   if (phase === 'over') return;
   const leader = winnerNow();
@@ -2684,7 +2718,9 @@ function updateCamera(dt) {
     const r = 3.4, c = W.C;
     tgt = { pos: V(Math.sin(orbit) * r * .8, 1.5 + Math.sin(orbit * .7) * .3, c.z + Math.cos(orbit) * r * .6 + 2.2), look: c.clone().add(V(0, .1, 0)), fov: 42 }; k = 2;
     if (phase === 'over' ? isRana() : settings.game === 'rana') tgt = ranaMenuPose(orbit);
+    if (phase === 'over' ? isBolo() : settings.game === 'bolo') tgt = boloMenuPose(orbit);
   } else if (isRana()) { tgt = ranaCamPose(); k = 4;
+  } else if (isBolo()) { tgt = boloCamPose(); k = tgt.k;
   } else if (phase === 'flight' && flight) {
     const f = flight, p = f.mesh.position, remain = f.impactAt - f.t;
     const chase = { pos: p.clone().add(V(.15, .38, 1.35)), look: p.clone().lerp(W.C, .45), fov: 48 };
@@ -2712,6 +2748,7 @@ function updateCamera(dt) {
   const lc = fromUV(lupaCur.u, lupaCur.v);
   lupaCam.position.copy(lc).addScaledVector(W.n, 1.15); lupaCam.up.copy(W.s); lupaCam.lookAt(lc);
   if (isRana()) ranaLupa();
+  if (isBolo()) boloLupa();
 }
 const lupaCur = { u: 0, v: 0 };
 
@@ -2726,8 +2763,9 @@ function updateGame(dt, now) {
   }
   if (phase === 'wait') netWatch();
   if (phase === 'cpu') updateCpu(dt);
-  if (phase === 'flight') { if (isRana()) ranaUpdate(dt); else updateFlight(dt); }
+  if (phase === 'flight') { if (isRana()) ranaUpdate(dt); else if (isBolo()) boloUpdate(dt); else updateFlight(dt); }
   if (replay) updateReplay(dt);
+  if (breplay) boloUpdateReplay(dt);
   mechaMeshes.forEach(m => { if (m.userData.grow !== undefined) { m.userData.grow += dt * 3; const s = ease(clamp(m.userData.grow, 0, 1)); m.scale.setScalar(Math.max(.01, s)); if (m.userData.grow >= 1) delete m.userData.grow; } });
   if (manoRing) { const s = 1 + Math.sin(now / 160) * .12; manoRing.scale.set(s, s, 1); }
   if (reticle.visible) reticle.rotation.z += dt * .8;
@@ -2755,7 +2793,7 @@ function frame(now) {
     if (!paused) { tickTimers(dt); updateGame(dt, now); updateFx(dt); }
     updateAmbience(paused ? 0 : dt);
     updatePets(paused ? 0 : dt);
-    musicSync(); updateSpeakers(paused ? 0 : dt); ranaFrame();
+    musicSync(); updateSpeakers(paused ? 0 : dt); ranaFrame(); boloFrame();
     updateArm(paused ? 0 : dt, now);
     updateCamera(paused ? 0 : dt);
     camSafe();
@@ -3224,11 +3262,9 @@ function ranaLupa() {   // la lupa mira la tabla desde arriba, con la raya hacia
 }
 // La mesa solo se ve cuando se juega rana (o se escoge en el menú)
 function ranaFrame() {
-  const want = (phase === 'menu' || phase === 'boot') ? settings.game === 'rana' : isRana();
+  const want = shownGame() === 'rana';
   if (want && !RANA_M) buildRana();
   if (RANA_M) RANA_M.g.visible = want;
-  // la greda de tejo queda detrás de la caja y no se ve: en la rana no se dibuja (las tablas de los lados y el tablero sí se ven, esos quedan)
-  if (cancha && cancha.visible === want) { cancha.visible = !want; canchaFondo.forEach(o => o.visible = !want); }
 }
 
 /* ---------- Don Chepe en la rana ---------- */
@@ -3259,6 +3295,395 @@ function ranaPlanCpu(p) {
   }
   const fin = { L: ideal.L + gauss() * sd / RANA.LX, P: clamp(ideal.P + gauss() * sd / RANA.SPAN, .02, 1) };
   cpuAim = { from: { L: rand(-.5, .5), P: rand(.2, .45) }, to: fin, t: 0, dur: rand(.9, 1.3) };
+}
+
+/* ================= Bolo criollo =================
+   El juego santandereano de los tres palos: tres palos de pino de 60 cm en fila india (separados 20 cm) al fondo
+   del carril de tierra, donde estaba la greda, y detrás las tablas (los matacheros) donde rebota la bola.
+   Un tiro por turno, rodando o por el aire, con una bola de aluminio. Vale cada palo que la bola tumbe pegándole
+   por el lado de la mano de quien lanza (al derecho, por la derecha; al zurdo, por la izquierda), y los que esos
+   palos tumben al caer. Los que tumba por el otro lado o de rebote en las tablas no valen. Los tres de un tiro: ¡CHUZA!
+   La física es propia y determinista (el aleatorio sale de una semilla), así en las salas todos ven lo mismo.
+   Estadísticas por jugador (en los mismos campos del tejo para que las salas no cambien):
+   st.mechas = palos que valieron · st.mon = chuzas · st.manos = palos que no valieron · st.nulos = tiros en blanco · st.tiros = tiros. */
+
+const BOLO = {
+  D: 20.5,                          // largo del salón (donde estaba la greda); los palos quedan a unos 20 m de la raya
+  Z0: -19.55,                       // el palo de adelante (deja espacio para que los palos caigan antes de las tablas)
+  ZB: -20.76,                       // la cara de las tablas de atrás, delante del tablero del salón
+  PH: .6, PR: .028, GAP: .2,        // palo: alto, radio y separación (en fila india)
+  BR: .052,                         // radio de la bola
+  ROLL: 2.6,                        // freno de la tierra con la bola rodando (m/s²)
+  P0: .55, SPAN: 15,                // fuerza que llega a los palos y metros por unidad de fuerza
+  THETA: .42,                       // ángulo de salida por el aire
+  KNOCK: .45,                       // velocidad mínima para tumbar un palo (m/s)
+};
+const BOLO_GOAL = { presets: [15], min: 3, max: 99, step: 1 };
+function clampBoloGoal(v) { v = Math.round(+v); return isFinite(v) ? Math.min(BOLO_GOAL.max, Math.max(BOLO_GOAL.min, v)) : 15; }
+const boloPinPos = i => ({ x: 0, z: BOLO.Z0 - i * BOLO.GAP });
+
+let BOLO_M = null;    // los palos, las tablas y lo del lado izquierdo, en la escena
+let bflight = null;   // bola rodando o en el aire
+let breplay = null;   // repetición de la chuza
+function isBolo() { return !!(game && game.kind === 'bolo'); }
+// Qué juego se ve en el salón: en el menú el que está escogido; jugando, el de la partida
+function shownGame() { return (phase === 'menu' || phase === 'boot' || !game) ? settings.game : (game.kind || 'tejo'); }
+function handOf(p) { return p && p.zurdo ? -1 : 1; }   // 1 = derecho, -1 = zurdo
+
+/* ---------- Física de la bola y los palos ---------- */
+// Dónde sale la bola: el derecho lanza desde la derecha del carril, el zurdo desde la izquierda; rodando sale más abajo
+function boloStart(air, hand) { return V(hand * .32, air ? 1.0 : .32, air ? -.25 : -.45); }
+// Velocidad de salida: va derecho hacia el punto de los palos que se apunta (L = metros de lado en la fila de palos);
+// la fuerza dice hasta dónde llega: por el aire, dónde cae; rodando, dónde se pararía si no pegara en nada
+function boloVel(aim, air, hand) {
+  const s = boloStart(air, hand), tx = aim.L, tz = BOLO.Z0;
+  const dx = tx - s.x, dz = tz - s.z, d0 = Math.hypot(dx, dz), ux = dx / d0, uz = dz / d0;
+  const reach = Math.max(1.5, -BOLO.Z0 + (aim.P - BOLO.P0) * BOLO.SPAN + (air ? 0 : 1.9) + s.z);   // a lo largo de la dirección (rodando, con la fuerza del centro pasa los palos con ganas)
+  if (air) {
+    const c = Math.cos(BOLO.THETA), tn = Math.tan(BOLO.THETA), h = BOLO.BR - s.y;
+    const v = Math.sqrt(G * reach * reach / (2 * c * c * Math.max(.05, reach * tn - h)));
+    return V(ux * v * c, v * Math.sin(BOLO.THETA), uz * v * c);
+  }
+  const v = Math.sqrt(2 * BOLO.ROLL * reach);
+  return V(ux * v, -.6, uz * v);
+}
+
+/* Simula el tiro completo. k es el número del tiro: con él sale el aleatorio, igual en todos los celulares.
+   withPins = false sirve para la mira: dónde cae o se para la bola si no pega en nada. */
+function boloSimulate(aim, air, hand, k, withPins = true) {
+  const rnd = i => seeded(aim.L * 5.31 + i * .191, aim.P * 7.13 + k * .277, k * 2.3 + i + (air ? 7 : 0));
+  const p = boloStart(air, hand), v = boloVel(aim, air, hand), dt = 1 / 240, R = BOLO.BR;
+  const pins = [0, 1, 2].map(i => ({ i, ...boloPinPos(i), down: false }));
+  const path = [{ t: 0, p: p.clone() }], events = [], falls = [];
+  const drift = (rnd(0) - .5) * .012;   // la tierra no es pareja: la bola se va un poquito de lado al rodar
+  let t = 0, mode = 'air', rebound = false, land = null, ri = 1;
+  const ev = (kind, q, extra) => events.push({ t, kind, p: q.clone(), ...extra });
+  const fall = (pin, dir, at, valid, why) => {
+    pin.down = true; falls.push({ i: pin.i, t: at, dir: { x: dir.x, z: dir.z }, valid, why });
+    if (why === 'palo') events.push({ t: at, kind: 'palo', p: V(pin.x, .12, pin.z), chain: true });
+    events.push({ t: at + .36, kind: 'suelo', p: V(pin.x + dir.x * .3, .02, pin.z + dir.z * .3) });
+    // al caer tumba los que estén en su camino (un palo mide 60 cm y están a 20)
+    pins.forEach(o => {
+      if (o.down) return;
+      const rx = o.x - pin.x, rz = o.z - pin.z, pr = rx * dir.x + rz * dir.z, perp = Math.abs(rx * dir.z - rz * dir.x);
+      if (pr > 0 && pr < BOLO.PH * .92 && perp < BOLO.PR * 2 + .008) {
+        const n = Math.hypot(rx, rz), nd = V(dir.x * .8 + rx / n * .2, 0, dir.z * .8 + rz / n * .2).normalize();
+        fall(o, nd, at + .12 + .22 * pr / BOLO.PH, valid, 'palo');
+      }
+    });
+  };
+  for (let i = 0; i < 2400; i++) {
+    if (mode === 'air') { v.y -= G * dt; p.addScaledVector(v, dt); }
+    else {
+      const sp = Math.hypot(v.x, v.z), dec = BOLO.ROLL * dt;
+      if (sp <= dec) { v.set(0, 0, 0); break; }
+      v.x -= v.x / sp * dec; v.z -= v.z / sp * dec;
+      if (sp > .3) { const lat = drift * dt; v.x += -v.z / sp * lat; v.z += v.x / sp * lat; }
+      p.x += v.x * dt; p.z += v.z * dt;
+    }
+    t += dt;
+    // toca el piso: por el aire la tierra se la traga un poco y sigue rodando
+    if (mode === 'air' && p.y <= R) {
+      p.y = R; mode = 'roll';
+      const keep = air ? .42 + rnd(ri++) * .12 : .92;
+      const a = (rnd(ri++) - .5) * (air ? .16 : .004), c = Math.cos(a), s = Math.sin(a), x = v.x * c - v.z * s, z = v.x * s + v.z * c;
+      v.x = x * keep; v.z = z * keep; v.y = 0;
+      if (!land) land = p.clone();
+      ev(air ? 'cae' : 'rueda', p);
+    }
+    // los palos
+    if (withPins) pins.forEach(pin => {
+      if (pin.down) return;
+      const dx = pin.x - p.x, dz = pin.z - p.z, dh = Math.hypot(dx, dz);
+      if (dh >= R + BOLO.PR || p.y - R > BOLO.PH) return;
+      const sp3 = v.length(), spH = Math.hypot(v.x, v.z);
+      const n = dh > 1e-4 ? V(dx / dh, 0, dz / dh) : V(v.x / (spH || 1), 0, v.z / (spH || 1));
+      const vn = v.x * n.x + v.z * n.z;
+      if (vn <= 0 && mode !== 'air') { p.x = pin.x - n.x * (R + BOLO.PR + .001); p.z = pin.z - n.z * (R + BOLO.PR + .001); return; }
+      if (sp3 >= BOLO.KNOCK) {
+        // vale si le pega por el lado de la mano (o de frente) yendo hacia atrás, y sin haber rebotado en las tablas
+        const side = n.x * hand <= .12, front = mode === 'air' || v.z < 0;
+        const valid = side && front && !rebound, why = !side ? 'lado' : rebound ? 'rebote' : !front ? 'atras' : 'bola';
+        const vd = spH > 1e-3 ? V(v.x / spH, 0, v.z / spH) : n, j = (rnd(ri++) - .5) * .22;
+        const d = V(n.x * .7 + vd.x * .3, 0, n.z * .7 + vd.z * .3).normalize(), c = Math.cos(j), s = Math.sin(j);
+        fall(pin, V(d.x * c - d.z * s, 0, d.x * s + d.z * c), t, valid, why);
+        ev('palo', p, { i: pin.i });
+        v.x -= n.x * vn * .85; v.z -= n.z * vn * .85; v.multiplyScalar(.82);
+      } else {   // muy despacio: lo toca, el palo se mece y la bola se queda ahí
+        v.x -= n.x * vn * 1.5; v.z -= n.z * vn * 1.5; v.multiplyScalar(.4); ev('toque', p, { i: pin.i });
+      }
+      p.x = pin.x - n.x * (R + BOLO.PR + .001); p.z = pin.z - n.z * (R + BOLO.PR + .001);
+    });
+    // las tablas de atrás (matacheros): rebota hacia adelante; lo que tumbe de vuelta no vale
+    const zB = BOLO.ZB + R;
+    if (p.z < zB && p.y < .55 + R && Math.abs(p.x) < 1.62) { p.z = zB; v.z = Math.abs(v.z) * .35; v.x *= .7; if (v.y > 0) v.y *= .3; rebound = true; ev('tabla', p); }
+    // las tablas de los lados, junto a los palos
+    if (p.z < -BOLO.D + 1.1 && p.z > -BOLO.D - 1.3 && Math.abs(p.x) > 1.62 - R && Math.abs(p.x) < 1.75) { p.x = Math.sign(p.x) * (1.62 - R); v.x = -v.x * .4; ev('tabla', p); }
+    if (Math.abs(p.x) > 3.3) { p.x = Math.sign(p.x) * 3.3; v.x = 0; }
+    if (i % 2 === 0) path.push({ t, p: p.clone() });
+    if (t > 7) break;
+  }
+  path.push({ t, p: p.clone() });
+  events.sort((a, b) => a.t - b.t);
+  const lastFall = falls.reduce((m, f) => Math.max(m, f.t), 0);
+  const valid = falls.filter(f => f.valid).length;
+  return { path, events, falls, duration: Math.max(t, falls.length ? lastFall + .7 : 0) + .15, ballEnd: t, land: land || p.clone(), stop: p.clone(),
+    res: { pts: valid, invalid: falls.length - valid, chuza: valid === 3, air } };
+}
+
+/* ---------- La cancha de bolo ---------- */
+let PIN_GEO = null, PIN_MAT = null, BALL_GEO = null, BALL_MAT = null, BALL_PLUG = null;
+function makePalo() {
+  if (!PIN_GEO) {
+    // palo de pino torneado: base ancha, cuerpo derecho y cabeza redondeada
+    const R = BOLO.PR, H = BOLO.PH, pts = [[0, 0], [R * 1.05, 0], [R * 1.1, .02], [R, .08], [R * .92, H * .78], [R * .78, H * .9], [R * .82, H * .95], [R * .6, H * .99], [0, H]];
+    PIN_GEO = new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), 14);
+    PIN_MAT = std({ map: makeWoodTex('#e2c28c', null), roughness: .7 });
+  }
+  const m = new THREE.Mesh(PIN_GEO, PIN_MAT); m.castShadow = true; m.receiveShadow = true; return m;
+}
+function makeBola() {
+  if (!BALL_GEO) {
+    BALL_GEO = new THREE.SphereGeometry(BOLO.BR, 24, 16);
+    BALL_MAT = std({ color: '#c6c9cc', metalness: .85, roughness: .33 });
+    BALL_PLUG = std({ color: '#3a3632', metalness: .3, roughness: .8 });
+  }
+  const g = new THREE.Group(), b = new THREE.Mesh(BALL_GEO, BALL_MAT); b.castShadow = true; g.add(b);
+  // el hueco por donde se le echa la arena, tapado
+  const plug = new THREE.Mesh(new THREE.CylinderGeometry(BOLO.BR * .28, BOLO.BR * .28, .004, 14), BALL_PLUG);
+  plug.position.y = BOLO.BR - .0015; g.add(plug);
+  return g;
+}
+function sandTex() {
+  const [c, g] = cnv(256, 512);
+  g.fillStyle = '#a88a64'; g.fillRect(0, 0, 256, 512);
+  for (let i = 0; i < 14000; i++) { const k = Math.random(); g.fillStyle = k < .4 ? 'rgba(60,40,20,.18)' : k < .8 ? 'rgba(255,240,210,.12)' : 'rgba(30,20,10,.3)'; g.fillRect(Math.random() * 256, Math.random() * 512, 1.6, 1.6); }
+  for (let i = 0; i < 40; i++) { g.strokeStyle = 'rgba(70,50,30,.12)'; g.lineWidth = 2; g.beginPath(); const x = Math.random() * 256; g.moveTo(x, 0); g.lineTo(x + (Math.random() - .5) * 30, 512); g.stroke(); }
+  const t = tex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+}
+function buildBolo() {
+  if (BOLO_M && BOLO_M.hall === hall) return;
+  if (BOLO_M) BOLO_M.g.parent && BOLO_M.g.parent.remove(BOLO_M.g);
+  const g = new THREE.Group(), wood = std({ map: T.woodPlain, roughness: .85 }), dark = std({ color: '#2a1d12', roughness: 1 });
+  // el carril de tierra hasta las tablas
+  const len = -BOLO.ZB + .2, st = sandTex(); st.repeat.set(1, len / 3);
+  const lane = new THREE.Mesh(new THREE.PlaneGeometry(1.5, len), std({ map: st, roughness: 1 }));
+  lane.rotation.x = -Math.PI / 2; lane.position.set(0, .003, -len / 2 + .2); lane.receiveShadow = true; g.add(lane);
+  // la tierra removida alrededor de los palos y un cuadro marcado con cal donde se paran
+  const zp = BOLO.Z0 - BOLO.GAP;
+  const pit = new THREE.Mesh(new THREE.CircleGeometry(.75, 32), std({ map: st, color: '#8f7350', roughness: 1, transparent: true, opacity: .9 }));
+  pit.rotation.x = -Math.PI / 2; pit.scale.set(1, 1.6, 1); pit.position.set(0, .004, zp); pit.receiveShadow = true; g.add(pit);
+  const lime = std({ color: '#efe6d2', roughness: 1 });
+  [[.36, .02, 0, zp + .32], [.36, .02, 0, zp - .32], [.02, .66, -.17, zp], [.02, .66, .17, zp]].forEach(([w, h, x, z]) => {
+    const l = new THREE.Mesh(new THREE.PlaneGeometry(w, h), lime); l.rotation.x = -Math.PI / 2; l.position.set(x, .005, z); g.add(l);
+  });
+  // las tablas de atrás (matacheros), parados sobre el piso y con su refuerzo
+  const zB = BOLO.ZB;
+  for (let k = 0; k < 3; k++) { const b = new THREE.Mesh(new THREE.BoxGeometry(3.24, .17, .05), wood); b.position.set(0, .09 + k * .18, zB - .025); b.castShadow = b.receiveShadow = true; g.add(b); }
+  [-1.2, 0, 1.2].forEach(x => { const s = new THREE.Mesh(new THREE.BoxGeometry(.07, .6, .07), dark); s.position.set(x, .3, zB - .085); g.add(s); });
+  // los tres palos
+  const pins = [0, 1, 2].map(i => { const m = makePalo(), q = boloPinPos(i); m.position.set(q.x, 0, q.z); g.add(m); return m; });
+  // lado izquierdo (donde estaban la pala, las mechas y la greda): palos de repuesto y bolas
+  const side = new THREE.Group(); side.position.set(0, 0, -W.D); g.add(side);
+  [[-2.05, -.25, .16, 0], [-2.13, -.15, .2, .1], [-2.2, -.33, .18, -.1], [-2.28, -.2, .22, .06]].forEach(([x, z, lean, yaw]) => {   // recostados en la pared del cajón
+    const m = makePalo(); m.position.set(x, 0, z); m.rotation.set(0, yaw, lean); side.add(m);
+  });
+  [[-2.5, .55, 1.2], [-2.62, .42, 1.6]].forEach(([x, z, yaw]) => { const m = makePalo(); m.rotation.set(0, yaw, Math.PI / 2); m.position.set(x, BOLO.PR, z); side.add(m); });   // acostados en el piso
+  const rack = new THREE.Group(); rack.position.set(-2.1, 0, .45); rack.rotation.y = .25; side.add(rack);   // cajón con las bolas
+  [[.62, .04, .3, 0, .02, 0], [.62, .14, .02, 0, .09, .14], [.62, .14, .02, 0, .09, -.14], [.02, .14, .3, .3, .09, 0], [.02, .14, .3, -.3, .09, 0]]
+    .forEach(([w, h, d, x, y, z]) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wood); b.position.set(x, y, z); b.castShadow = b.receiveShadow = true; rack.add(b); });
+  [[-.2, 0, .9], [-.07, .02, .95], [.06, -.03, 1], [.2, .01, .85]].forEach(([x, z, s]) => { const b = makeBola(); b.scale.setScalar(s); b.position.set(x, .04 + BOLO.BR * s, z); b.rotation.set(x * 9, z * 7, 1); rack.add(b); });
+  const loose = makeBola(); loose.position.set(-1.9, BOLO.BR, .95); side.add(loose);
+  const bucket = makeBucket('#24519a', 'barro'); bucket.position.set(-2.45, 0, .05); bucket.rotation.y = -.4; side.add(bucket);   // la arena para llenar las bolas
+  g.visible = false; hall.add(g);
+  BOLO_M = { g, hall, pins };
+  boloResetPins();
+}
+// El garitero vuelve a parar los palos
+function boloResetPins() {
+  if (!BOLO_M) return;
+  BOLO_M.pins.forEach((m, i) => { const q = boloPinPos(i); m.position.set(q.x, 0, q.z); m.quaternion.identity(); m.userData.f = null; });
+}
+// Un palo cayendo: gira desde el borde de su base, en la dirección en que lo empujaron, y queda acostado
+function boloPinAt(m, i, f, tt) {
+  const q = boloPinPos(i);
+  if (!f || tt < f.t) { m.position.set(q.x, 0, q.z); m.quaternion.identity(); return; }
+  const u = tt - f.t, full = Math.PI / 2 - .04;
+  let a = Math.min(full, Math.pow(u / .36, 2) * full);
+  if (u > .36) a = full - Math.abs(Math.sin((u - .36) * 18)) * .1 * Math.exp(-(u - .36) * 7);   // rebotadita al caer
+  const d = V(f.dir.x, 0, f.dir.z), axis = V(0, 1, 0).cross(d).normalize();
+  const rq = new THREE.Quaternion().setFromAxisAngle(axis, a), piv = V(q.x, 0, q.z).addScaledVector(d, BOLO.PR);
+  m.quaternion.copy(rq); m.position.copy(piv).add(d.clone().multiplyScalar(-BOLO.PR).applyQuaternion(rq));
+}
+// Quita del salón lo del tejo que no va en el bolo (la greda con su cajón; la pala, las mechas y la arcilla del lado izquierdo)
+function boloFrame() {
+  const g = shownGame(), bolo = g === 'bolo';
+  if (bolo) buildBolo();
+  if (BOLO_M) BOLO_M.g.visible = bolo && BOLO_M.hall === hall;
+  const tejo = g === 'tejo';
+  if (cancha && cancha.visible !== tejo) { cancha.visible = tejo; canchaFondo.forEach(o => o.visible = tejo); }
+  tejoLeftProps.forEach(o => { if (o.visible === bolo) o.visible = !bolo; });
+}
+
+/* ---------- Turno, tiro y resultado ---------- */
+function boloPrepare() { game.kind = 'bolo'; buildBolo(); boloResetPins(); }
+function boloNewTurn() {
+  if (bflight && bflight.mesh) scene.remove(bflight.mesh);
+  if (game && game.ball) { scene.remove(game.ball); game.ball = null; }
+  bflight = null; boloResetPins();
+}
+function boloLaunch(a, opts) {
+  $('btnStyle').hidden = true;
+  const p = current(), air = a.m !== undefined ? !!a.m : !!p.air, hand = handOf(p);
+  lastP[p.name] = a.P;
+  const sim = boloSimulate(a, air, hand, game.thrown);
+  const mesh = makeBola(); mesh.position.copy(sim.path[0].p); scene.add(mesh);
+  bflight = { sim, mesh, t: 0, ev: 0, owner: game.order[game.idx], timeout: !!(opts && opts.timeout), done: false, hit: false, roll: new THREE.Quaternion() };
+  reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
+  game.thrown++;
+  A.whoosh(); buzz(15);
+}
+function boloEvents(f, sim, t) {
+  while (f.ev < sim.events.length && sim.events[f.ev].t <= t) {
+    const e = sim.events[f.ev++];
+    if (e.kind === 'palo') { A.wood(); if (!e.chain) dirt(e.p.clone().setY(.05), V(0, 1, 0), 8); f.hit = true; }
+    else if (e.kind === 'suelo') { A.floor(); dirt(e.p, V(0, 1, 0), 6); }
+    else if (e.kind === 'toque') A.wood();
+    else if (e.kind === 'tabla') { A.wood(); A.thud(.4); }
+    else if (e.kind === 'cae') { A.thud(.7); dirt(e.p.clone().setY(.02), V(0, 1, 0), 16); }
+  }
+}
+// Mueve la bola por el camino y la hace rodar según lo que avanzó
+function boloBallAt(mesh, sim, t, rq) {
+  const prev = mesh.position.clone(), p = samplePath(sim.path, Math.min(t, sim.ballEnd));
+  mesh.position.copy(p);
+  const d = p.clone().sub(prev); d.y = 0; const L = d.length();
+  if (L > 1e-5 && p.y <= BOLO.BR + .002) { const ax = V(0, 1, 0).cross(d).normalize(); rq.premultiply(new THREE.Quaternion().setFromAxisAngle(ax, L / BOLO.BR)); }
+  else if (L > 1e-5) rq.premultiply(new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), -L * 3));
+  mesh.quaternion.copy(rq);
+}
+function boloUpdate(dt) {
+  const f = bflight; if (!f || f.done) return;
+  f.t += dt; const sim = f.sim;
+  boloEvents(f, sim, f.t);
+  boloBallAt(f.mesh, sim, f.t, f.roll);
+  if (BOLO_M) BOLO_M.pins.forEach((m, i) => boloPinAt(m, i, sim.falls.find(x => x.i === i), f.t));
+  if (f.t >= sim.duration) boloFinish();
+}
+function boloFinish() {
+  const f = bflight; if (!f || f.done) return; f.done = true;
+  const p = game.players[f.owner], r = f.sim.res;
+  game.ball = f.mesh; bflight = null;
+  game.lastSim = f.sim; game.lastOwner = f.owner;
+  p.st.tiros++; p.st.manos += r.invalid;
+  phase = 'result'; resultAt = performance.now();
+  const bad = r.invalid ? ` · ${r.invalid} no ${r.invalid === 1 ? 'valió' : 'valieron'}` : '';
+  if (r.pts) {
+    p.score += r.pts; p.st.mechas += r.pts;
+    if (r.chuza) {
+      p.st.mon++;
+      announce('¡CHUZA!', `${p.name.toUpperCase()} +3`, true); A.cheer(); flashScreen(); buzz([40, 30, 80]);
+      feed(p, 'CHUZA +3');
+    } else { toast(`${r.pts} ${r.pts === 1 ? 'palo' : 'palos'}${bad}`); A.tick(); feed(p, `${r.pts} ${r.pts === 1 ? 'palo' : 'palos'} +${r.pts}`); }
+    bumpChip(f.owner);
+  } else {
+    p.st.nulos++;
+    const why = f.sim.falls.length ? (f.sim.falls.some(x => x.why === 'lado') ? 'Le pegó por el otro lado: no vale' : 'De rebote no vale') : f.timeout ? 'Se acabó el tiempo' : 'No tumbó nada';
+    toast(why); feed(p, f.timeout ? 'Se le acabó el tiempo' : f.sim.falls.length ? `${f.sim.falls.length} sin valer` : 'En blanco');
+  }
+  renderBoard();
+  if (r.chuza && !reduceMotion && !online()) later(1.6, () => boloStartReplay(f.sim, f.owner, advance));
+  else later(r.chuza ? 2.4 : 1.4, advance);
+}
+function boloAdvance() {
+  if (breplay) { const r = breplay; r.done = null; boloEndReplay(); }
+  if (phase === 'over') return;
+  const leader = winnerNow(); if (leader) return gameOver(leader);
+  game.idx++;
+  if (game.idx < game.order.length) return nextThrow();
+  startRound(game.order[0]);   // nueva ronda: siempre en el mismo orden
+}
+
+/* ---------- La chuza en cámara lenta ---------- */
+function boloStartReplay(sim, owner, done) {
+  if (!game || phase === 'over' || breplay) { done && done(); return; }
+  if (game.ball) game.ball.visible = false;
+  const ghost = makeBola(); scene.add(ghost);
+  const t0 = Math.max(0, (sim.falls.length ? Math.min(...sim.falls.map(x => x.t)) : sim.ballEnd) - 1.2);
+  breplay = { sim, ghost, done, t: t0, ev: sim.events.findIndex(e => e.t >= t0), roll: new THREE.Quaternion(), end: sim.duration };
+  if (breplay.ev < 0) breplay.ev = sim.events.length;
+  ghost.position.copy(samplePath(sim.path, t0));
+  $('replayTag').hidden = false; $('turn').style.visibility = 'hidden'; A.whoosh();
+}
+function boloUpdateReplay(dt) {
+  const r = breplay; if (!r) return;
+  r.t += dt * REPLAY_SPEED;
+  boloEvents(r, r.sim, r.t);
+  boloBallAt(r.ghost, r.sim, r.t, r.roll);
+  if (BOLO_M) BOLO_M.pins.forEach((m, i) => boloPinAt(m, i, r.sim.falls.find(x => x.i === i), r.t));
+  if (r.t >= r.end) boloEndReplay();
+}
+function boloEndReplay() {
+  const r = breplay; if (!r) return;
+  breplay = null; scene.remove(r.ghost); if (game && game.ball) game.ball.visible = true;
+  $('replayTag').hidden = true; $('turn').style.visibility = '';
+  if (r.done) r.done();
+}
+
+/* ---------- Puntería y cámaras ---------- */
+function boloAimInfo(aim) {
+  const p = current(), air = !!p.air, s = boloSimulate(aim, air, handOf(p), game.thrown, false);
+  return { at: air ? s.land : s.stop, air };
+}
+function boloShowReticle(aim) {
+  if (!aimHelpNow()) { reticle.visible = false; return; }
+  const i = boloAimInfo(aim), q = i.at;
+  // amarilla si la bola llega a los palos con fuerza y va por el lado de la mano
+  const hand = handOf(current()), x = aim.L * hand;
+  const good = q.z <= BOLO.Z0 + (i.air ? .4 : -.3) && q.z > BOLO.Z0 - 6 && x > -.02 && x < BOLO.BR + BOLO.PR * 2;
+  // en el piso casi no se vería desde la raya: va parada mirando a la cámara, con el borde de abajo tocando la tierra
+  const sc = 1.5 * (1 + (drag ? clamp(((performance.now() - drag.t0) / 1000 - 1.6) * .25, 0, .8) : 0));
+  reticle.visible = true; reticle.position.set(q.x, .066 * sc, q.z);
+  reticle.quaternion.copy(cam.quaternion);
+  reticleCore.color.set(good ? '#f3c22f' : '#d8392d');
+  reticle.scale.setScalar(sc);
+  reticle.userData.uv = null;
+}
+function boloPinsCenter() { return V(0, .3, BOLO.Z0 - BOLO.GAP); }
+function boloCamPose() {
+  const c = boloPinsCenter();
+  if (breplay) {   // la repetición: de lado y bajito, mirando los palos
+    const g = breplay.ghost.position, near = g.z < BOLO.Z0 + 3;
+    return near ? { pos: V(1.25, .55, c.z + 1.1), look: c.clone().add(V(-.1, -.05, 0)), fov: 38, k: 6 }
+      : { pos: g.clone().add(V(.35, .4, 1.4)), look: g.clone().lerp(c, .5), fov: 40, k: 8 };
+  }
+  if (phase === 'flight' && bflight) {   // detrás de la bola y, ya cerca, de lado viendo caer los palos
+    const f = bflight, b = f.mesh.position;
+    if (b.z < BOLO.Z0 + 2.6 || f.hit) return { pos: V(1.15, .9, c.z + 1.9), look: c.clone().add(V(-.05, -.08, 0)), fov: 42, k: 4 };
+    if (f.t < .12) return { ...aimPose(), k: 6 };
+    return { pos: b.clone().add(V(.15, .55, 1.7)).setY(Math.max(.6, b.y + .5)), look: b.clone().lerp(c, .55), fov: 46, k: 7 };
+  }
+  if (phase === 'result' || phase === 'roundEnd') return { pos: V(1.15, .95, c.z + 2.1), look: c.clone().add(V(-.05, -.1, 0)), fov: 42, k: 3 };
+  return { ...aimPose(), k: 5 };
+}
+function boloMenuPose(orbit) {
+  const c = boloPinsCenter(), a = Math.sin(orbit * .8) * .8, r = 2.4;
+  return { pos: V(Math.sin(a) * r, 1.15, c.z + Math.cos(a) * r), look: c, fov: 40 };
+}
+function boloLupa() {   // la lupa mira los palos un poco de lado (por el lado de la mano), así se ven los tres
+  const c = boloPinsCenter(), h = game && game.order.length ? handOf(current()) : 1;
+  lupaCam.up.set(0, 1, 0); lupaCam.position.set(h * .75, .55, c.z + 1.9); lupaCam.lookAt(c.x, .24, c.z);
+}
+
+/* ---------- Don Chepe en el bolo ---------- */
+function boloPlanCpu(p) {
+  const d = settings.diff, hand = handOf(p);
+  p.air = Math.random() < (d >= 2 ? .3 : .5);
+  // le apunta al palo de adelante, un poquito por el lado de su mano, con fuerza para que la bola siga hasta los de atrás
+  const L = hand * (BOLO.BR + BOLO.PR) * (.25 + Math.random() * .25), P = p.air ? BOLO.P0 - .2 / BOLO.SPAN + Math.random() * .04 : BOLO.P0 + (1.2 + Math.random() * 1.5) / BOLO.SPAN;
+  const sx = [.22, .12, .065, .04][d], sp = [1.6, 1.0, .6, .4][d];
+  const fin = { L: clamp(L + gauss() * sx, -AIM.L, AIM.L), P: clamp(P + gauss() * sp / BOLO.SPAN, .02, 1) };
+  cpuAim = { from: { L: rand(-.5, .5), P: rand(.2, .45) }, to: fin, t: 0, dur: rand(1, 1.5) };
 }
 
 /* ================= Brazo en primera persona =================
@@ -3342,7 +3767,7 @@ function buildArm() {
   loadHandModel();
 }
 function armSetPlayer(p) {
-  const key = [isRana() ? 'rana' : 'tejo', p.color, p.design, p.name].join('|');
+  const key = [game && game.kind || 'tejo', p.color, p.design, p.name, p.zurdo ? 'Z' : 'D'].join('|');
   if (key === ARM.key) return; ARM.key = key;
   if (ARM.tejo) ARM.slot.remove(ARM.tejo);
   if (isRana()) {   // en la rana la argolla se sostiene entre el pulgar y el índice; los otros tres dedos van recogidos
@@ -3351,6 +3776,9 @@ function armSetPlayer(p) {
     ARM.tejo.quaternion.setFromUnitVectors(V(0, 0, 1), V(...G.n).normalize()).multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), G.spin))
       .premultiply(new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), -ARM.slot.rotation.x));   // de la mano al soporte
     ARM.tejo.scale.setScalar(G.s);
+  }
+  else if (isBolo()) {   // la bola de aluminio en la palma, con los dedos cerrados por delante
+    ARM.tejo = makeBola(); ARM.tejo.position.set(...BOLA_GRIP.pos); ARM.tejo.scale.setScalar(BOLA_GRIP.s);
   }
   else ARM.tejo = makeTejo(p.color, p.design, p.name);
   ARM.tejo.castShadow = false; ARM.slot.add(ARM.tejo);
@@ -3449,9 +3877,11 @@ function updateArm(dt, now) {
   armFingers(ARM.curl);
   armPose(ARM.th, ARM.be);
   // acomodar el brazo a la pantalla (en vertical va más al centro) y subirlo/bajarlo al aparecer
-  const a = cam.aspect, kx = clamp(a / 1.25, .48, 1);
-  ARM.root.position.set(-.09 * (1 - kx) + .5 * oe, -.32 * (1 - ARM.vis) * (1 - oe * .7) - .1 * oe, 0);
-  ARM.root.scale.setScalar(a < 1 ? .9 : 1);
+  const a = cam.aspect, kx = clamp(a / 1.25, .48, 1), sc = a < 1 ? .9 : 1;
+  // zurdo en el bolo: el mismo brazo al espejo, al otro lado de la pantalla
+  const mir = isBolo() && game.order.length && current().zurdo ? -1 : 1;
+  ARM.root.position.set(mir * (-.09 * (1 - kx) + .5 * oe), -.32 * (1 - ARM.vis) * (1 - oe * .7) - .1 * oe, 0);
+  ARM.root.scale.set(sc * mir, sc, sc);
 }
 function renderArm(w, h) {
   if (!ARM.root || !ARM.root.visible || !(w > 10 && h > 10)) return;
@@ -3531,6 +3961,7 @@ function bendChain(J, angles, start) {
 const ARG_ARM = [45, 95];   // hombro y codo con la argolla en la mano
 const ARG_HAND = { roll: 1.9, yaw: 0, pitch: 0 };   // cuánto se voltea la mano (desde la muñeca)
 // dónde queda la argolla (coordenadas de la mano: palma +Y, dedos -Z, pulgar +X): entre la yema del índice y la del pulgar, de cara al jugador
+const BOLA_GRIP = { pos: [0, .045, 0], s: .9 };   // la bola en el soporte de la mano (sobre la palma)
 const ARG_GRIP = { pos: [.0314, .0784, -.0427], n: [.927, -.333, -.175], spin: .4, s: 1.1 };
 const HAND_POSE = {
   closed: { index: [.587, .701, .738], middle: [.647, .571, 1.037], ring: [.475, .818, .459], pinky: [.695, -.202, 1.276], thumb: [[-.719, -.86, -.578], [.664, .243, .16], [.944, -.076, -.134]] },
@@ -3735,7 +4166,11 @@ function renderMenuOnline() {
 /* Versiones: para jugar en una sala todos deben tener la misma MAYOR.MENOR (las reglas y la física iguales).
    Con distinto PARCHE sí se puede: los parches no cambian cómo se juega (ver README, «Versiones»). */
 // Qué se juega en la sala: tejo (con su distancia) o rana; la meta es la de ese juego
-function roomGame() { return settings.game === 'rana' ? { kind: 'rana', dist: settings.dist, goal: settings.ranaGoal } : { kind: 'tejo', dist: settings.dist, goal: settings.goal }; }
+function roomGame() {
+  if (settings.game === 'bolo') return { kind: 'bolo', dist: BOLO.D, goal: settings.boloGoal };
+  return settings.game === 'rana' ? { kind: 'rana', dist: settings.dist, goal: settings.ranaGoal } : { kind: 'tejo', dist: settings.dist, goal: settings.goal };
+}
+const roomKind = k => k === 'rana' || k === 'bolo' ? k : 'tejo';
 function sameGameVersion(v) { const mm = s => String(s || '').split('.').slice(0, 2).join('.'); return !!v && mm(v) === mm(GAME_VERSION); }
 function presentPids(peers) { const m = new Map(); peers.forEach(p => { const pr = p.presence || {}; if (typeof pr.pid === 'string') m.set(pr.pid, pr); }); return m; }
 function publishG(g) {
@@ -3754,7 +4189,7 @@ async function netEnter(code, create) {
     Object.assign(NET, { sala, code, g: null, lastG: null, myG: null, pending: {}, lostAt: 0, absent: {}, creator: create, watching: false, joinedAt: performance.now() });
     NET.unsub = sala.onPeers(netSync, netError);
     fixLocalDesigns();
-    const me = { v: 1, pid: NET.pid, name: myName(), design: settings.designs[0], gv: GAME_VERSION };
+    const me = { v: 1, pid: NET.pid, name: myName(), design: settings.designs[0], z: settings.hands[0] === 'Z' ? 1 : 0, gv: GAME_VERSION };
     if (create) me.g = { code, ver: 1, host: NET.pid, gv: GAME_VERSION, phase: 'lobby', seats: [{ pid: NET.pid, name: myName() }], ...roomGame(), ...hostRules() };
     if (me.g) { NET.g = NET.lastG = NET.myG = me.g; }
     await sala.presence(me);
@@ -3786,7 +4221,7 @@ async function netRejoin() {
     const sala = await NET.room.join('tejo-' + code);
     if (NET.code !== code) { try { await sala.leave(); } catch (e) { } return; }
     NET.sala = sala; NET.unsub = sala.onPeers(netSync, netError); NET.joinedAt = performance.now();
-    const me = { v: 1, pid: NET.pid, name: myName(), design: settings.designs[0], gv: GAME_VERSION };
+    const me = { v: 1, pid: NET.pid, name: myName(), design: settings.designs[0], z: settings.hands[0] === 'Z' ? 1 : 0, gv: GAME_VERSION };
     if (NET.lastT) me.t = NET.lastT;
     if (keepG && NET.lastG && NET.lastG.host === NET.pid) { me.g = NET.lastG; NET.myG = NET.g = me.g; }
     await sala.presence(me);
@@ -3840,7 +4275,7 @@ function hostDuties(peers) {
     let seats = g.seats.filter(s => here.has(s.pid)).map(s => ({ pid: s.pid, name: String(here.get(s.pid).name || s.name).slice(0, 14) }));
     here.forEach((pr, pid) => { if (seats.length < MAX_PLAYERS && !seats.some(s => s.pid === pid) && pr.name) seats.push({ pid, name: String(pr.name).slice(0, 14) }); });
     const used = [];
-    seats = seats.map(s => { const want = here.get(s.pid) && here.get(s.pid).design; const d = DESIGN_IDS.includes(want) && !used.includes(want) ? want : null; if (d) used.push(d); return { ...s, design: d }; });
+    seats = seats.map(s => { const want = here.get(s.pid) && here.get(s.pid).design; const d = DESIGN_IDS.includes(want) && !used.includes(want) ? want : null; if (d) used.push(d); return { ...s, design: d, z: here.get(s.pid) && here.get(s.pid).z ? 1 : 0 }; });
     if (JSON.stringify(seats) !== JSON.stringify(g.seats)) publishG({ ...g, seats, ver: g.ver + 1 });
   } else if (online() && game.gid === g.gid) hostCheckThrow(here);
 }
@@ -3849,7 +4284,7 @@ function hostCheckThrow(here) {
   const p = current(); if (p.pid === NET.pid) return;
   const t = here.get(p.pid) && here.get(p.pid).t;
   if (t && t.n === game.thrown && t.gid === game.gid && isFinite(t.L) && isFinite(t.P))
-    acceptThrow({ n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0 });
+    acceptThrow({ n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0, m: t.m ? 1 : 0 });
 }
 function acceptThrow(t) {
   const g = NET.g; if (!g) return;
@@ -3870,7 +4305,7 @@ function applyG() {
     game.players.forEach(p => {
       const pr = here.get(p.pid), t = pr && pr.t;
       if (t && t.gid === game.gid && typeof t.n === 'number' && t.n >= game.thrown && !NET.pending[t.n] && isFinite(t.L) && isFinite(t.P))
-        NET.pending[t.n] = { n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0 };
+        NET.pending[t.n] = { n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0, m: t.m ? 1 : 0 };
     });
   }
   tryConsume();
@@ -3900,7 +4335,7 @@ function tryConsume() {
   if (current().pid !== t.pid) return;
   drag = null;
   if (t.skip) toast(current().pid === NET.pid ? 'Se te acabó el tiempo: nulo' : `${current().name} no lanzó a tiempo: nulo`);
-  launch({ L: t.L, P: t.P }, { timeout: !!t.skip });
+  launch({ L: t.L, P: t.P, m: t.m ? 1 : 0 }, { timeout: !!t.skip });
 }
 
 /* ---------- partida ---------- */
@@ -3911,10 +4346,11 @@ function buildOnlineGame(g) {
   if (Math.abs(W.D - st.dist) > .01) { setDistance(st.dist); buildHall(); }
   computeDvdP();
   const nT = [2, 3].includes(st.teams) ? st.teams : 0;
-  const players = st.players.slice(0, MAX_PLAYERS).map((s, i) => { const p = newPlayer(String(s.name).slice(0, 14), i, false, DESIGN_IDS.includes(s.design) ? s.design : null); p.pid = s.pid; if (nT && Number.isInteger(s.team) && s.team >= 0 && s.team < nT) p.team = s.team; return p; });
+  const players = st.players.slice(0, MAX_PLAYERS).map((s, i) => { const p = newPlayer(String(s.name).slice(0, 14), i, false, DESIGN_IDS.includes(s.design) ? s.design : null); p.pid = s.pid; p.zurdo = !!s.z; if (nT && Number.isInteger(s.team) && s.team >= 0 && s.team < nT) p.team = s.team; return p; });
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: clampGoal(st.goal), mode: 'online', gid: g.gid, ...pickRules(st), aimHelp: !!st.aimHelp, thrown: 0, over: false };
   game.teams = applyTeams(players, nT);
   if (st.kind === 'rana') { ranaPrepare(); game.goal = clampRanaGoal(st.goal); computeDvdP(); }
+  if (st.kind === 'bolo') { boloPrepare(); game.goal = clampBoloGoal(st.goal); computeDvdP(); }
   NET.pending = {}; lastP = {}; clearFeed(); paused = false;
   showScreen(null); setHud(true);
 }
@@ -3977,9 +4413,9 @@ function netTurn(p) {
 }
 function netThrow(a) {
   if (phase !== 'aim' || current().pid !== NET.pid) return;
-  const t = { n: game.thrown, L: r5(a.L), P: r5(a.P), gid: game.gid, pid: NET.pid };
+  const t = { n: game.thrown, L: r5(a.L), P: r5(a.P), gid: game.gid, pid: NET.pid, ...(isBolo() ? { m: a.m ? 1 : 0 } : {}) };
   NET.lastT = t;
-  launch({ L: t.L, P: t.P });
+  launch({ L: t.L, P: t.P, ...(isBolo() ? { m: t.m } : {}) });
   if (NET.sala) {
     NET.sala.presence({ t, aim: null }).catch(() => { });
     if (amHost()) publishG({ ...NET.g, last: t, ver: NET.g.ver + 1 });
@@ -4009,7 +4445,7 @@ function netRematch() {
   let players = g.setup.players.filter(s => here.has(s.pid));
   here.forEach((pr, pid) => { if (players.length < MAX_PLAYERS && !players.some(s => s.pid === pid) && pr.name) players.push({ pid, name: String(pr.name).slice(0, 14) }); });
   if (players.length > 1) players = [...players.slice(1), players[0]]; // empieza otro
-  players = withDesigns(players.map(s => ({ ...s, design: here.get(s.pid) && DESIGN_IDS.includes(here.get(s.pid).design) ? here.get(s.pid).design : s.design })));
+  players = withDesigns(players.map(s => ({ ...s, design: here.get(s.pid) && DESIGN_IDS.includes(here.get(s.pid).design) ? here.get(s.pid).design : s.design, z: here.get(s.pid) ? (here.get(s.pid).z ? 1 : 0) : (s.z ? 1 : 0) })));
   const nT = teamsAllowed(players.length).includes(g.teams || 0) ? (g.teams || 0) : 0;   // equipos nuevos al azar en cada revancha
   players = nT ? makeTeams(players, nT).map(x => ({ ...x.item, team: x.team })) : players.map(s => { const c = { ...s }; delete c.team; return c; });
   publishG({ ...g, phase: 'play', gid: rid(), setup: { ...g.setup, players, teams: nT }, snap: null, last: null, ver: g.ver + 1 });
@@ -4026,7 +4462,7 @@ function netStart() {
   const nT = teamsAllowed(players.length).includes(g.teams || 0) ? (g.teams || 0) : 0;
   if (nT) players = makeTeams(players, nT).map(x => ({ ...x.item, team: x.team }));
   A.init(); A.tick();
-  publishG({ ...g, phase: 'play', gid: rid(), setup: { players, dist: g.dist, goal: g.goal, kind: g.kind === 'rana' ? 'rana' : 'tejo', ...pickRules(g), teams: nT }, snap: null, last: null, ver: g.ver + 1 });
+  publishG({ ...g, phase: 'play', gid: rid(), setup: { players, dist: g.dist, goal: g.goal, kind: roomKind(g.kind), ...pickRules(g), teams: nT }, snap: null, last: null, ver: g.ver + 1 });
   applyG();
 }
 
@@ -4134,7 +4570,7 @@ function renderSala() {
   else if (full) info.textContent = `La sala está llena: ya hay ${MAX_PLAYERS} jugadores. Si alguien sale, entras de una; si no, crea otra sala.`;
   else if (host) info.textContent = seats.length < 2 ? 'Pásale el código a tus amigos. Cuando entren, aparecen aquí.' : 'Están listos. Empieza cuando quieras.';
   else info.textContent = 'Esperando a que el anfitrión empiece la partida.';
-  $('salaRules').textContent = g ? `${g.kind === 'rana' ? 'Rana · partida a ' + fmtGoal(g.goal) : fmtD(g.dist) + ' · partida a ' + g.goal} · mira ${g.aimHelp ? 'sí' : 'no'} · lupa ${g.aimHelp && g.lupa !== false ? 'sí' : 'no'} · barra de fuerza ${g.power !== false ? 'sí' : 'no'} · cámara ${!(+g.zoom) ? 'cerca' : +g.zoom >= 1 ? 'lejos' : 'media'} · hasta ${MAX_PLAYERS} jugadores` : '';
+  $('salaRules').textContent = g ? `${g.kind === 'bolo' ? 'Bolo · partida a ' + g.goal : g.kind === 'rana' ? 'Rana · partida a ' + fmtGoal(g.goal) : fmtD(g.dist) + ' · partida a ' + g.goal} · mira ${g.aimHelp ? 'sí' : 'no'} · lupa ${g.aimHelp && g.lupa !== false ? 'sí' : 'no'} · barra de fuerza ${g.power !== false ? 'sí' : 'no'} · cámara ${!(+g.zoom) ? 'cerca' : +g.zoom >= 1 ? 'lejos' : 'media'} · hasta ${MAX_PLAYERS} jugadores` : '';
   // forma de juego: la escoge el anfitrión; los equipos se arman al azar al empezar
   const lobby = !!(g && g.phase === 'lobby'), nHere = seats.filter(s => here.has(s.pid)).length, allowed = teamsAllowed(nHere), want = (g && g.teams) || 0;
   $('salaTeams').hidden = !lobby;
@@ -4245,8 +4681,10 @@ const store = {
 function saveSettings() { store.set('tejo.settings.v1', settings); }
 function loadSettings() {
   const s = store.get('tejo.settings.v1', null); if (s) Object.assign(settings, s);
-  settings.goal = clampGoal(settings.goal); settings.ranaGoal = clampRanaGoal(settings.ranaGoal);
-  if (settings.game !== 'rana') settings.game = 'tejo';
+  settings.goal = clampGoal(settings.goal); settings.ranaGoal = clampRanaGoal(settings.ranaGoal); settings.boloGoal = clampBoloGoal(settings.boloGoal);
+  if (!['rana', 'bolo'].includes(settings.game)) settings.game = 'tejo';
+  if (!Array.isArray(settings.hands)) settings.hands = [];
+  for (let i = 0; i < 6; i++) if (settings.hands[i] !== 'Z') settings.hands[i] = 'D';
   // antes el juego traía nombres de ejemplo (Javi, Pacho…); se borran para que cada quien escriba el suyo
   if (!settings.namesV2) {
     const OLD = ['Javi', 'Pacho', 'Mafe', 'Leo', 'Caro', 'Nico'];
@@ -4328,6 +4766,7 @@ function renderTurn() {
   $('turnWho').textContent = game.mode === 'reto' ? `Tejo ${game.thrown + 1} de ${RETO_THROWS}` : (p.cpu ? `Lanza ${p.name}` : (online() && p.pid === NET.pid) ? 'Te toca' : `Lanza ${p.name}`);
   $('turnWho').style.color = p.color === COLORS[3] ? 'var(--yellow)' : '';
   const tm = teamOf(p);
+  if (isBolo()) { $('turnMeta').textContent = `${tm ? 'Equipo ' + tm.name + ' · ' : ''}${online() ? 'Sala ' + NET.code + ' · ' : ''}${p.zurdo ? 'Zurdo' : 'Derecho'} · ronda ${game.round} · partida a ${game.goal}`; return; }
   if (isRana()) { $('turnMeta').textContent = `${tm ? 'Equipo ' + tm.name + ' · ' : ''}${online() ? 'Sala ' + NET.code + ' · ' : ''}Argolla ${Math.min(game.arg + 1, RANA.PER_TURN)} de ${RANA.PER_TURN} · ronda ${game.round} · partida a ${fmtGoal(game.goal)}`; return; }
   $('turnMeta').textContent = game.mode === 'reto' ? `${fmtD(W.D)} · mecha 3 · embocinada 6 · moñona 9` : `${tm ? 'Equipo ' + tm.name + ' · ' : ''}${online() ? 'Sala ' + NET.code + ' · ' : ''}Ronda ${game.round} · ${fmtD(W.D)} · partida a ${game.goal}`;
 }
@@ -4336,7 +4775,10 @@ function renderOver(winner) {
   const ts = p => teamOf(p) ? teamScore(teamOf(p)) : 0;
   const rows = [...game.players].map((p, i) => ({ p, i })).sort((a, b) => (ts(b.p) - ts(a.p)) || (b.p.score - a.p.score));
   const won = p => game.mode !== 'reto' && (winner.team ? p.team === winner.idx : p === winner);
-  tbl.innerHTML = isRana()   // en la rana: st.manos = ganchos, st.mon = ranas, st.emb = sapitos, st.mechas = metidas, st.nulos = afuera
+  tbl.innerHTML = isBolo()   // en el bolo: st.mechas = palos que valieron, st.mon = chuzas, st.manos = palos que no valieron, st.nulos = en blanco
+    ? `<tr><th>Jugador</th><th>Pts</th><th>Palos</th><th>Chuzas</th><th>No valió</th><th>En blanco</th></tr>` +
+      rows.map(({ p }) => `<tr class="${won(p) ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.mechas}</td><td>${p.st.mon}</td><td>${p.st.manos}</td><td>${p.st.nulos}/${p.st.tiros}</td></tr>`).join('')
+    : isRana()   // en la rana: st.manos = ganchos, st.mon = ranas, st.emb = sapitos, st.mechas = metidas, st.nulos = afuera
     ? `<tr><th>Jugador</th><th>Pts</th><th>Gancho</th><th>Sapito</th><th>Rana</th><th>Metidas</th><th>Afuera</th></tr>` +
       rows.map(({ p }) => `<tr class="${won(p) ? 'win' : ''}" style="--c:${p.color}"><td></td><td>${p.score}</td><td>${p.st.manos}</td><td>${p.st.emb}</td><td>${p.st.mon}</td><td>${p.st.mechas}/${p.st.tiros}</td><td>${p.st.nulos}</td></tr>`).join('')
     : `<tr><th>Jugador</th><th>Pts</th><th>Mecha</th><th>Emboc.</th><th>Moñona</th><th>Mano</th><th>Nulo</th></tr>` +
@@ -4352,13 +4794,13 @@ function renderOver(winner) {
   } else if (winner.team) {
     const t = game.teams[winner.idx], names = t.members.map(i => game.players[i].name);
     const others = game.teams.filter((x, i) => i !== winner.idx).map(teamScore);
-    $('overEyebrow').textContent = isRana() ? `Rana a ${fmtGoal(game.goal)} por equipos` : `Partida a ${game.goal} por equipos · ${fmtD(settings.dist)}`;
+    $('overEyebrow').textContent = isBolo() ? `Bolo a ${game.goal} por equipos` : isRana() ? `Rana a ${fmtGoal(game.goal)} por equipos` : `Partida a ${game.goal} por equipos · ${fmtD(settings.dist)}`;
     $('overWinner').textContent = `Ganó el equipo ${t.name}`;
     $('overLine').textContent = `${names.slice(0, -1).join(', ')}${names.length > 1 ? ' y ' : ''}${names[names.length - 1]}: ${winner.score} a ${others.join(' a ')} en ${game.round} ${game.round === 1 ? 'ronda' : 'rondas'}.`;
     $('btnAgain').textContent = 'Revancha';
   } else {
     const others = rows.filter(r => r.p !== winner).map(r => r.p.score);
-    $('overEyebrow').textContent = isRana() ? `Rana a ${fmtGoal(game.goal)}` : `Partida a ${game.goal} · ${fmtD(settings.dist)}`;
+    $('overEyebrow').textContent = isBolo() ? `Bolo a ${game.goal}` : isRana() ? `Rana a ${fmtGoal(game.goal)}` : `Partida a ${game.goal} · ${fmtD(settings.dist)}`;
     $('overWinner').textContent = `Ganó ${winner.name}`;
     $('overLine').textContent = winner.cpu ? `Don Chepe te ganó ${winner.score} a ${others[0]} en ${game.round} rondas.` :
       `${winner.score} a ${others.join(' a ')} en ${game.round} ${game.round === 1 ? 'ronda' : 'rondas'}.` + (game.mode === 'cpu' ? ' Don Chepe pide la revancha.' : '');
@@ -4374,20 +4816,24 @@ function renderOver(winner) {
 function setSeg(id, val) { $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(val)))); }
 function renderMenu() {
   fixLocalDesigns();
-  // tejo o rana (la rana ya es para todos): la rana no tiene reto ni distancias y su meta va en otros números
+  // tejo, rana o bolo: la rana y el bolo no tienen reto ni distancias, y cada uno tiene su meta. El bolo es beta.
   $('grpGame').hidden = false; $('verTag').textContent = 'v' + GAME_VERSION + (betaOn ? ' · beta' : '');
-  const rana = settings.game === 'rana';
-  if (rana && settings.mode === 'reto') settings.mode = 'cpu';
+  if (!betaOn && settings.game === 'bolo') settings.game = 'tejo';
+  $('segGame').querySelector('[data-v="bolo"]').hidden = !betaOn;
+  const rana = settings.game === 'rana', bolo = settings.game === 'bolo';
+  if ((rana || bolo) && settings.mode === 'reto') settings.mode = 'cpu';
   setSeg('segGame', settings.game);
-  $('segMode').querySelector('[data-v="reto"]').hidden = rana;
-  $('grpDist').hidden = rana;
-  $('brandTitle').textContent = rana ? 'RANA' : 'TEJO';
-  $('brandLine').textContent = rana ? 'Argollas, huecos y la rana de metal. Métela en la boca de la rana y llega primero a la meta.' : 'Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.';
-  $('aimHint').textContent = rana ? 'Muestra dónde cae la argolla mientras apuntas' : 'Muestra dónde cae el tejo mientras apuntas';
+  $('segMode').querySelector('[data-v="reto"]').hidden = rana || bolo;
+  $('grpDist').hidden = rana || bolo;
+  if (phase === 'menu' || phase === 'boot') { const D0 = bolo ? BOLO.D : settings.dist; if (hall && Math.abs(W.D - D0) > .01) { setDistance(D0); buildHall(); computeDvdP(); } }   // el bolo tiene su cancha
+  $('brandTitle').textContent = bolo ? 'BOLO' : rana ? 'RANA' : 'TEJO';
+  $('brandLine').textContent = bolo ? 'Tres palos de pino y una bola de aluminio. Tumba los palos por el lado de tu mano y llega primero a la meta.'
+    : rana ? 'Argollas, huecos y la rana de metal. Métela en la boca de la rana y llega primero a la meta.' : 'Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.';
+  $('aimHint').textContent = bolo ? 'Muestra dónde cae o se para la bola mientras apuntas' : rana ? 'Muestra dónde cae la argolla mientras apuntas' : 'Muestra dónde cae el tejo mientras apuntas';
   setSeg('segMode', settings.mode); setSeg('segCount', settings.count); setSeg('segDiff', settings.diff); setSeg('segDist', settings.dist);
   // partida a: valores de siempre u otro que uno escribe (en el tejo 15, 21, 27; en la rana 1.000, 2.000, 3.000)
   const gc = goalCfg(), gv = settings[gc.key], otherGoal = goalOpen || !gc.presets.includes(gv);
-  [...$('segGoal').querySelectorAll('button:not(#goalOther)')].forEach((b, i) => { b.dataset.v = gc.presets[i]; b.textContent = fmtGoal(gc.presets[i]); });
+  [...$('segGoal').querySelectorAll('button:not(#goalOther)')].forEach((b, i) => { b.hidden = i >= gc.presets.length; if (b.hidden) return; b.dataset.v = gc.presets[i]; b.textContent = fmtGoal(gc.presets[i]); });
   setSeg('segGoal', otherGoal ? 'otra' : gv);
   $('goalOther').innerHTML = otherGoal ? `${fmtGoal(gv)}<small>otra</small>` : 'Otra';
   $('goalCustom').hidden = !otherGoal;
@@ -4398,7 +4844,7 @@ function renderMenu() {
   // la lupa solo se puede prender con la mira prendida; la barra de fuerza va aparte
   $('swLupa').setAttribute('aria-checked', String(settings.aimHelp && settings.lupa)); $('swLupa').disabled = !settings.aimHelp;
   $('rowLupa').classList.toggle('off', !settings.aimHelp);
-  $('lupaHint').textContent = !settings.aimHelp ? 'Necesita la mira activada' : settings.game === 'rana' ? 'Muestra la mesa desde arriba' : 'Acerca la greda donde va la mira';
+  $('lupaHint').textContent = !settings.aimHelp ? 'Necesita la mira activada' : settings.game === 'rana' ? 'Muestra la mesa desde arriba' : settings.game === 'bolo' ? 'Muestra los palos de cerca' : 'Acerca la greda donde va la mira';
   $('swPower').setAttribute('aria-checked', String(settings.power)); $('gauge').hidden = !settings.power;
   $('swMusic').setAttribute('aria-checked', String(settings.music !== false));
   $('grpDiff').hidden = settings.mode !== 'cpu';
@@ -4415,7 +4861,7 @@ function renderMenu() {
   $('btnPlay').textContent = settings.mode === 'online' ? 'Crear sala' : 'A jugar';
   $('btnPlay').disabled = settings.mode === 'online' && !NET.room;
   renderMenuOnline();
-  $('lblNames').textContent = settings.mode === 'local' ? 'Jugadores' : 'Tu nombre';
+  $('lblNames').textContent = (settings.mode === 'local' ? 'Jugadores' : 'Tu nombre') + (bolo ? ' · D derecho, Z zurdo' : '');
   const n = settings.mode === 'local' ? settings.count : 1, box = $('names'); box.innerHTML = '';
   box.style.gridTemplateColumns = n === 1 ? '1fr' : '1fr 1fr';
   for (let i = 0; i < n; i++) {
@@ -4432,7 +4878,14 @@ function renderMenu() {
       openPicker({ title: settings.mode === 'local' ? `Grabado de ${settings.names[i] || 'Jugador ' + (i + 1)}` : 'Escoge tu grabado', current: settings.designs[i], taken, color: COLORS[i], name: settings.names[i],
         onPick: id => { settings.designs[i] = id; saveSettings(); renderMenu(); } });
     });
-    l.append(dz, inp); box.appendChild(l);
+    l.append(dz, inp);
+    if (bolo) {   // en el bolo cada uno dice con qué mano lanza: vale lo que tumbe por ese lado
+      const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'hand'; const z = settings.hands[i] === 'Z';
+      hb.textContent = z ? 'Z' : 'D'; hb.setAttribute('aria-label', `Mano del jugador ${i + 1}: ${z ? 'zurdo' : 'derecho'}`);
+      hb.addEventListener('click', e => { e.preventDefault(); settings.hands[i] = z ? 'D' : 'Z'; saveSettings(); renderMenu(); A.init(); A.tick(); if (NET.sala && i === 0) NET.sala.presence({ z: settings.hands[0] === 'Z' ? 1 : 0 }).catch(() => { }); });
+      l.appendChild(hb); l.classList.add('withHand');
+    }
+    box.appendChild(l);
   }
   try { renderInstall(); } catch (e) { }
   const r = records()[settings.dist];
@@ -4467,11 +4920,12 @@ async function betaTry() {
 }
 /* Partida a: tres valores de siempre o uno personalizado. Cada juego guarda su meta (goal en el tejo, ranaGoal en la rana). */
 const GOAL_PRESETS = [15, 21, 27], GOAL_MIN = 3, GOAL_MAX = 99;
-const RANA_GOAL = { presets: [500, 1000, 1500], min: 200, max: 9950, step: 50 };
+const RANA_GOAL = { presets: [500, 1000, 1500], min: 200, max: 9950, step: 50 };   // (la del bolo, BOLO_GOAL, va con el bolo)
 let goalOpen = false;
 function clampGoal(v) { v = Math.round(+v); return isFinite(v) ? Math.min(GOAL_MAX, Math.max(GOAL_MIN, v)) : 27; }
 function clampRanaGoal(v) { v = Math.round(+v); return isFinite(v) ? Math.min(RANA_GOAL.max, Math.max(RANA_GOAL.min, v)) : 1000; }
 function goalCfg() {
+  if (settings.game === 'bolo') return { key: 'boloGoal', other: 'boloGoalOther', start: 21, clamp: clampBoloGoal, ...BOLO_GOAL };
   return settings.game === 'rana' ? { key: 'ranaGoal', other: 'ranaGoalOther', start: 750, clamp: clampRanaGoal, ...RANA_GOAL }
     : { key: 'goal', other: 'goalOther', start: 33, clamp: clampGoal, presets: GOAL_PRESETS, min: GOAL_MIN, max: GOAL_MAX, step: 1 };
 }
@@ -4503,7 +4957,7 @@ function pause() {
   if (online()) { $('pauseInfo').textContent = `Sala ${NET.code} · la partida sigue mientras ves este menú. Si no ves los tiros de los demás, toca Reconectar.`; $('btnRestart').hidden = true; $('btnReconnect').hidden = false; $('btnMenu').textContent = 'Salir de la sala'; showScreen('pause'); return; }
   $('btnRestart').hidden = false; $('btnReconnect').hidden = true; $('btnMenu').textContent = 'Menú';
   paused = true; drag = null; if (phase === 'aim') { setGauge(0, lastP[current().name]); reticle.visible = false; }
-  $('pauseInfo').textContent = isRana() ? `Rana · ronda ${game.round} · partida a ${fmtGoal(game.goal)}` : game.mode === 'reto' ? `Reto · tejo ${Math.min(game.thrown + 1, RETO_THROWS)} de ${RETO_THROWS} · ${fmtD(W.D)}` : `Ronda ${game.round} · partida a ${game.goal} · ${fmtD(W.D)}`;
+  $('pauseInfo').textContent = isBolo() ? `Bolo · ronda ${game.round} · partida a ${game.goal}` : isRana() ? `Rana · ronda ${game.round} · partida a ${fmtGoal(game.goal)}` : game.mode === 'reto' ? `Reto · tejo ${Math.min(game.thrown + 1, RETO_THROWS)} de ${RETO_THROWS} · ${fmtD(W.D)}` : `Ronda ${game.round} · partida a ${game.goal} · ${fmtD(W.D)}`;
   showScreen('pause');
 }
 function resume() { paused = false; showScreen(null); }
@@ -4511,7 +4965,7 @@ function resume() { paused = false; showScreen(null); }
 /* ---------- Entrada ---------- */
 let resultAt = 0;
 /* Tocar la pantalla adelanta la espera entre tiros; la repetición no se puede saltar */
-function skipWait() { if (replay) return; timers.forEach(t => t.t = Math.min(t.t, .05)); }
+function skipWait() { if (replay || breplay) return; timers.forEach(t => t.t = Math.min(t.t, .05)); }
 function bindInput() {
   const cv = renderer.domElement;
   cv.addEventListener('pointerdown', e => {
@@ -4563,7 +5017,11 @@ function bindInput() {
 }
 
 function bindUI() {
-  bindSeg('segGame', 'game', v => v === 'rana' ? 'rana' : 'tejo');
+  bindSeg('segGame', 'game', v => ['rana', 'bolo'].includes(v) ? v : 'tejo');
+  $('btnStyle').addEventListener('click', e => {   // bolo: rodando o por el aire
+    e.preventDefault(); if (!isBolo() || phase !== 'aim' || drag) return;
+    const p = current(); p.air = !p.air; renderStyleBtn(); A.init(); A.tick(); if (drag && drag.aim) showReticle(drag.aim);
+  });
   $('verTag').addEventListener('click', betaTap); $('btnBeta').addEventListener('click', betaTry); $('betaIn').addEventListener('keydown', e => { if (e.key === 'Enter') betaTry(); }); bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
   bindSeg('segDist', 'dist', Number); bindGoal(); bindSeg('segTeams', 'teams', Number); bindSeg('segCpuSize', 'cpuSize', Number);
   $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; if (!settings.aimHelp) settings.lupa = false; saveSettings(); renderMenu(); });
@@ -4596,7 +5054,7 @@ function resize() {
 /* ================= Recarga en caliente ================= */
 function snapshot() {
   const base = { settings: { ...settings } };
-  if (!game || game.over || phase === 'menu' || online() || isRana()) return base;   // la rana no se guarda para seguir después
+  if (!game || game.over || phase === 'menu' || online() || isRana() || isBolo()) return base;   // la rana y el bolo no se guardan para seguir después
   return {
     ...base, lastP, pending: phase === 'result' || phase === 'roundEnd',
     game: {
@@ -4649,6 +5107,17 @@ async function boot(data) {
   const go = d => boot(d || {});
   if (hot && hot.ready) hot.ready(go); else go(hot && hot.data || {});
 })();
+
+/* Bolo: el que lanza escoge si la bola va rodando o por el aire (el botón sale solo cuando le toca a uno) */
+function renderStyleBtn() {
+  const b = $('btnStyle'); if (!b) return;
+  const p = game && game.order.length ? current() : null;
+  const mine = !!p && isBolo() && !p.cpu && !(online() && p.pid !== NET.pid) && !game.over;
+  b.hidden = !mine; if (!mine) return;
+  b.querySelector('b').textContent = p.air ? 'POR EL AIRE' : 'RODANDO';
+  b.querySelector('small').textContent = p.air ? 'toca para rodarla' : 'toca para tirarla por el aire';
+  b.classList.toggle('air', !!p.air);
+}
 
 /* ================= Instalar en el celular y avisar de versiones nuevas =================
    Solo en GitHub Pages (en Claude no aplica). Android/Chrome: el botón abre el aviso de instalar del navegador.

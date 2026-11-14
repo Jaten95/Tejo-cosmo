@@ -23,6 +23,7 @@ src/
     03b-musica.js    música de fondo: se prende y apaga tocando un parlante o con el switch del menú
     04-partida.js    turnos, rondas, Don Chepe, cámaras y bucle principal
     04b-rana.js      el juego de la rana: la mesa, la física de la argolla, las tandas y Don Chepe
+    04c-bolo.js      el bolo criollo (beta): los tres palos, la bola, derecho o zurdo, la chuza y Don Chepe
     05-brazo.js      brazo en primera persona, mano 3D y manilla
     06-salas.js      salas en línea (salas de Claude o Supabase Realtime)
     07-interfaz.js   menú, marcador, controles y arranque
@@ -57,7 +58,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 
 `build.py` solo acepta números así (`python3 build.py 1.43.0`).
 
-**Modo beta:** lo que todavía se está probando no sale en el menú (ahora no hay nada en beta: la rana salió para todos en la 1.47.0). Se prende en un celular tocando 7 veces la versión del menú y escribiendo el código; otras 7 veces lo apagan. No es seguridad: solo esconde lo que está en prueba.
+**Modo beta:** lo que todavía se está probando no sale en el menú (ahora el bolo criollo; la rana salió para todos en la 1.47.0). Se prende en un celular tocando 7 veces la versión del menú y escribiendo el código; otras 7 veces lo apagan. No es seguridad: solo esconde lo que está en prueba.
 
 <details>
 <summary>Hasta la v1.63 el número subía de a uno en cada cambio. Así quedó cada versión con SemVer (la v1.63 equivale a la 1.42.0), y las que siguieron.</summary>
@@ -138,6 +139,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.46.7 | Arreglado | rana (beta): la argolla casi no se tambalea en el aire, va plana girando sobre sí misma |
 | — | 1.47.0 | Agregado | la rana sale para todos (ya no es beta); al lanzar la mano hace el movimiento y el tejo o la argolla vuela igual que cuando lanza otro |
 | — | 1.48.0 | Cambiado | rana: cada ronda la empieza el mismo jugador y siempre en el mismo orden (antes la empezaba el que había cerrado la anterior) |
+| — | 1.49.0 | Agregado | el bolo criollo (en beta): tres palos donde estaba la greda, bola rodando o por el aire, derecho o zurdo, vale lo que tumbe por el lado de su mano, ¡CHUZA! con repetición; contra Don Chepe, por turnos y en salas |
 
 </details>
 

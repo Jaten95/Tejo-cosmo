@@ -104,6 +104,15 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 #zoomBtns{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 64px);display:flex;flex-direction:column;gap:10px;pointer-events:auto;}
 #zoomBtns.underLupa{top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 36px + min(40vw,190px));}
 #zoomBtns .iconBtn:disabled{opacity:.35;}
+.styleBtn{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 86px);pointer-events:auto;
+  display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:9px 12px 8px;border:2px solid var(--ink);background:var(--paper);color:var(--ink);
+  box-shadow:3px 3px 0 var(--ink);font:inherit;cursor:pointer;text-align:left;}
+.styleBtn b{font-family:var(--display);font-size:16px;letter-spacing:.04em;line-height:1;}
+.styleBtn small{font-size:11px;font-weight:600;opacity:.75;}
+.styleBtn.air{background:var(--yellow);}
+.styleBtn[hidden]{display:none!important;}
+.names label.withHand{grid-template-columns:auto 1fr auto;}
+.names .hand{width:34px;height:34px;align-self:center;margin-right:6px;border:2px solid var(--ink);background:var(--paper);color:var(--ink);font:400 16px/1 var(--display);cursor:pointer;}
 
 /* ---------- announcements ---------- */
 #announce{position:fixed;left:0;right:0;top:38%;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;opacity:0;}

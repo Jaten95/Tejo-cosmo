@@ -426,11 +426,9 @@ function ranaLupa() {   // la lupa mira la tabla desde arriba, con la raya hacia
 }
 // La mesa solo se ve cuando se juega rana (o se escoge en el menú)
 function ranaFrame() {
-  const want = (phase === 'menu' || phase === 'boot') ? settings.game === 'rana' : isRana();
+  const want = shownGame() === 'rana';
   if (want && !RANA_M) buildRana();
   if (RANA_M) RANA_M.g.visible = want;
-  // la greda de tejo queda detrás de la caja y no se ve: en la rana no se dibuja (las tablas de los lados y el tablero sí se ven, esos quedan)
-  if (cancha && cancha.visible === want) { cancha.visible = !want; canchaFondo.forEach(o => o.visible = !want); }
 }
 
 /* ---------- Don Chepe en la rana ---------- */
