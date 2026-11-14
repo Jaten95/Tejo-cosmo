@@ -2,7 +2,7 @@
 /* ================= Brazo en primera persona =================
    Lanzamiento por debajo, en péndulo: al arrastrar el brazo baja y se va hacia atrás
    (como la medida); al soltar viene hacia adelante, suelta el tejo y remata apuntando a la cancha. */
-const ARM = { scene: null, cam: null, root: null, upper: null, elbow: null, fore: null, hand: null, slot: null, tejo: null, fly: null,
+const ARM = { scene: null, cam: null, root: null, upper: null, elbow: null, fore: null, hand: null, slot: null, tejo: null,
   key: '', state: 'hidden', t: 0, th: 60, be: 40, vis: 0, cb: null, released: false, from: 0 };
 function armMats() {
   return {
@@ -169,8 +169,8 @@ function updateArm(dt, now) {
     ARM.th = lerp(ARM.from, 112, e); ARM.be = lerp(ARM.be, 14, k);       // termina más bajo: antes el brazo pasaba pegado a la cámara
     if (!ARM.released && ARM.th >= 92) {
       ARM.released = true;
-      // lo de la mano pasa a ser el de la cancha, que sale de donde se veía (se ve uno solo)
-      if (ARM.tejo) armLetGo();
+      // la mano lo suelta y desaparece de ella: el que vuela es el de la cancha, igual que cuando lanza otro (se ve uno solo)
+      if (ARM.tejo) { ARM.slot.remove(ARM.tejo); ARM.tejo = null; ARM.key = ''; }
       const cb = ARM.cb; ARM.cb = null; if (cb) cb();
     }
     if (u >= 1) { ARM.state = 'follow'; ARM.t = 0; }
@@ -182,10 +182,6 @@ function updateArm(dt, now) {
   }
   const oe = ARM.state === 'drop' ? Math.min(1, ARM.t / .12) : 0;
   if (ARM.state === 'drop' && armVisibleTurn()) ARM.state = 'ready';   // vuelve solo cuando le toca apuntar otra vez (antes volvía de una y la mano bajaba abierta por el medio)
-  if (ARM.fly && !ARM.fly.userData.taken) {   // si nadie la recoge (en línea el tiro llega después), sigue sola un momento y se va
-    const f = ARM.fly; f.userData.t += dt; f.position.add(V(-.05 * dt, .55 * dt, -2.6 * dt)); f.rotation.y += dt * 14;
-    if (f.userData.t > .35) { ARM.scene.remove(f); ARM.fly = null; }
-  }
   const curlT = (ARM.state === 'ready' || (ARM.state === 'swing' && !ARM.released)) ? 1 : ARM.state === 'drop' ? .5 : .12;
   ARM.curl += (curlT - ARM.curl) * (1 - Math.exp(-(curlT < ARM.curl || ARM.state === 'drop' ? 18 : 6) * dt));
   armFingers(ARM.curl);
@@ -195,39 +191,6 @@ function updateArm(dt, now) {
   ARM.root.position.set(-.09 * (1 - kx) + .5 * oe, -.32 * (1 - ARM.vis) * (1 - oe * .7) - .1 * oe, 0);
   ARM.root.scale.setScalar(a < 1 ? .9 : 1);
 }
-/* Paso de la mano a la cancha. Al soltar, el de la cancha arranca donde se veía el de la mano (mismo punto de la
-   pantalla, mismo tamaño y misma vuelta) y con la velocidad del tiro de verdad; ese desvío se va apagando suave
-   (sin quiebres) hasta que queda en su recorrido real, así se ve una sola parábola que sale de la mano.
-   Si el tiro llega tarde (en línea), mientras tanto el de la mano sigue volando solo un momento.
-   Solo es imagen: el tiro y los puntos no cambian. */
-function armLetGo() {
-  const m = ARM.tejo; m.updateWorldMatrix(true, false);
-  const p = new THREE.Vector3(), q = new THREE.Quaternion(); m.getWorldPosition(p); m.getWorldQuaternion(q);
-  ARM.slot.remove(m); m.position.copy(p); m.quaternion.copy(q); m.userData.t = 0; m.userData.taken = false;
-  ARM.scene.add(m); if (ARM.fly) ARM.scene.remove(ARM.fly); ARM.fly = m; ARM.tejo = null; ARM.key = '';
-}
-function takeHandoff(f) {
-  const m = ARM.fly; if (!m || m.userData.taken || !(cam.fov > 1)) return null;
-  m.userData.taken = true; ARM.scene.remove(m); ARM.fly = null;
-  // dónde se ve ahora en la mano, pasado a la cancha: mismo punto de la pantalla y la distancia a la que se ve del mismo tamaño
-  const ndc = m.position.clone().project(ARM.cam);
-  if (!(ndc.z < 1 && Math.abs(ndc.x) < 1.4 && Math.abs(ndc.y) < 1.4)) return null;
-  const d = m.position.length() / (m.scale.x || 1) * Math.tan(ARM.cam.fov * Math.PI / 360) / Math.tan(cam.fov * Math.PI / 360);
-  const dir = new THREE.Vector3(ndc.x, ndc.y, .5).unproject(cam).sub(cam.position).normalize();
-  const H = cam.position.clone().addScaledVector(dir, d);
-  // cuánto dura el empalme: lo bastante largo para que sea suave, y siempre antes de que pegue en algo
-  const sim = f.sim, first = sim.events && sim.events.length ? sim.events[0].t : sim.duration;
-  const T = clamp(Math.min(first * .6, sim.duration * .5), .2, .42);
-  return { off: H.sub(sim.path[0].p), q: cam.quaternion.clone().multiply(m.quaternion), T };
-}
-function applyHandoff(f) {
-  const h = f.hand; if (!h) return;
-  const u = Math.min(1, f.t / h.T); if (u >= 1) { f.hand = null; return; }
-  const w = 1 - u * u * (3 - 2 * u);   // empieza en 1 y termina en 0, las dos puntas sin cambio de velocidad
-  f.mesh.position.addScaledVector(h.off, w);
-  f.mesh.quaternion.slerp(h.q, w);
-}
-function endHandoff(f) { f.hand = null; }
 function renderArm(w, h) {
   if (!ARM.root || !ARM.root.visible || !(w > 10 && h > 10)) return;
   ARM.cam.aspect = w / h; ARM.cam.updateProjectionMatrix();

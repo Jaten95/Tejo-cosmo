@@ -337,7 +337,6 @@ function ranaLaunch(a, opts) {
   const sim = ranaSimulate(a, game.thrown);
   const mesh = makeArgolla(); mesh.position.copy(sim.path[0].p); scene.add(mesh);
   rflight = { sim, mesh, t: 0, ev: 0, owner: game.order[game.idx], timeout: !!(opts && opts.timeout), spin: 9 + seeded(a.L, a.P, game.thrown) * 6, landed: false, done: false };
-  rflight.hand = takeHandoff(rflight); applyHandoff(rflight);   // si la lanzó la mano, la de la mano vuela hasta aquí y se cambian
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
   game.thrown++;
   A.whoosh(); buzz(15); ranaBoardDraw();
@@ -356,11 +355,10 @@ function ranaUpdate(dt) {
   f.mesh.position.copy(samplePath(sim.path, Math.min(f.t, sim.duration)));
   if (!f.landed) f.mesh.rotation.set(Math.PI / 2 + Math.sin(f.t * 5) * .07, f.t * .3, f.t * f.spin);   // va casi plana: gira sobre sí misma y apenas se mece
   else f.mesh.rotation.set(Math.PI / 2, 0, f.mesh.rotation.z + dt * 3);
-  if (f.hand) applyHandoff(f);
   if (f.t >= sim.duration) ranaFinish();
 }
 function ranaFinish() {
-  const f = rflight; if (!f || f.done) return; f.done = true; rflight = null; if (f.hand) endHandoff(f);
+  const f = rflight; if (!f || f.done) return; f.done = true; rflight = null;
   const p = game.players[f.owner], r = f.sim.res;
   const n = game.rings.filter(x => x.slot === r.slot).length;
   game.rings.push({ owner: f.owner, mesh: f.mesh, slot: r.slot, pts: r.pts });

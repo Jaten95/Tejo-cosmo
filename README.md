@@ -57,7 +57,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 
 `build.py` solo acepta números así (`python3 build.py 1.43.0`).
 
-**Modo beta:** lo que todavía se está probando (por ahora la rana) no sale en el menú. Se prende en un celular tocando 7 veces la versión del menú y escribiendo el código; otras 7 veces lo apagan. No es seguridad: solo esconde lo que está en prueba.
+**Modo beta:** lo que todavía se está probando no sale en el menú (ahora no hay nada en beta: la rana salió para todos en la 1.47.0). Se prende en un celular tocando 7 veces la versión del menú y escribiendo el código; otras 7 veces lo apagan. No es seguridad: solo esconde lo que está en prueba.
 
 <details>
 <summary>Hasta la v1.63 el número subía de a uno en cada cambio. Así quedó cada versión con SemVer (la v1.63 equivale a la 1.42.0), y las que siguieron.</summary>
@@ -136,6 +136,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.46.5 | Arreglado | rana (beta): no se dibuja la greda de tejo que queda tapada detrás de la caja (menos trabajo por cuadro) |
 | — | 1.46.6 | Arreglado | al lanzar: el tejo o la argolla sale de la mano en una sola parábola, el brazo remata corto y sale por un lado, y en tejo tu tiro tiene la misma cámara que cuando lanza otro |
 | — | 1.46.7 | Arreglado | rana (beta): la argolla casi no se tambalea en el aire, va plana girando sobre sí misma |
+| — | 1.47.0 | Agregado | la rana sale para todos (ya no es beta); al lanzar la mano hace el movimiento y el tejo o la argolla vuela igual que cuando lanza otro |
 
 </details>
 

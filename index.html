@@ -318,8 +318,8 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <h1 id="brandTitle">TEJO</h1>
       <p id="brandLine">Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.</p>
     </div>
-    <div class="group" id="grpGame" hidden>
-      <h3>Juego · beta</h3>
+    <div class="group" id="grpGame">
+      <h3>Juego</h3>
       <div class="seg" id="segGame"><button data-v="tejo">Tejo<small>greda y bocín</small></button><button data-v="rana">Rana<small>argollas</small></button></div>
     </div>
     <div class="group">
@@ -397,7 +397,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <h3>Modo beta</h3>
       <div class="joinRow"><input id="betaIn" placeholder="Código beta" aria-label="Código del modo beta" autocomplete="off" autocapitalize="off"><button class="btn ghost" id="btnBeta" type="button">Activar</button></div>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.46.7</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.47.0</span></div>
   </div></div>
 </section>
 
@@ -504,7 +504,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.46.7";
+const GAME_VERSION = "1.47.0";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -2437,7 +2437,6 @@ function launch(a, opts) {
   const fsim = res.rebound ? joinRebound(sim, res.rebound) : sim;
   const mesh = makeTejo(p.color, p.design, p.name); mesh.position.copy(sim.path[0].p); scene.add(mesh);
   flight = { timeout: !!(opts && opts.timeout), sim: fsim, res, mesh, t: 0, base: game.tejos.map(t => t.mesh.position.clone()), owner: game.order[game.idx], ev: 0, done: false, impactAt: fsim.first === 'clay' ? fsim.firstT : fsim.duration, spin: rand(12, 18) * (Math.random() < .5 ? -1 : 1), tilt: V(rand(-.25, .25), 0, rand(-.25, .25)) };
-  flight.hand = takeHandoff(flight); applyHandoff(flight);   // si lo lanzó la mano, el de la mano vuela hasta aquí y se cambian
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
   game.thrown++;
   A.whoosh(); buzz(15);
@@ -2462,7 +2461,6 @@ function updateFlight(dt) {
   f.mesh.position.copy(p);
   const bounced = f.ev > 0;
   f.mesh.rotation.set(f.tilt.x + (bounced ? f.t * 6 : 0), f.t * f.spin, f.tilt.z + (bounced ? f.t * 4 : 0));
-  if (f.hand) applyHandoff(f);
   if (f.t >= sim.duration) {
     if (!sim.clay) { f.mesh.position.copy(sim.end); f.mesh.rotation.set(0, rand(0, 6), 0); }
     finishFlight();
@@ -2510,7 +2508,7 @@ function nuloWhy(sim) {
 }
 
 function finishFlight() {
-  const f = flight; if (f.done) return; f.done = true; if (f.hand) endHandoff(f);
+  const f = flight; if (f.done) return; f.done = true;
   const p = game.players[f.owner], r = f.res;
   (r.moved || []).forEach(m => { const t = game.tejos[m.i]; if (t) { t.u = m.u; t.v = m.v; t.d = Math.hypot(m.u, m.v); } });
   game.tejos.push({ owner: f.owner, mesh: f.mesh, valid: r.valid, d: r.valid ? r.d : Infinity, u: r.u, v: r.v, pts: r.pts || 0 });
@@ -3137,7 +3135,6 @@ function ranaLaunch(a, opts) {
   const sim = ranaSimulate(a, game.thrown);
   const mesh = makeArgolla(); mesh.position.copy(sim.path[0].p); scene.add(mesh);
   rflight = { sim, mesh, t: 0, ev: 0, owner: game.order[game.idx], timeout: !!(opts && opts.timeout), spin: 9 + seeded(a.L, a.P, game.thrown) * 6, landed: false, done: false };
-  rflight.hand = takeHandoff(rflight); applyHandoff(rflight);   // si la lanzó la mano, la de la mano vuela hasta aquí y se cambian
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
   game.thrown++;
   A.whoosh(); buzz(15); ranaBoardDraw();
@@ -3156,11 +3153,10 @@ function ranaUpdate(dt) {
   f.mesh.position.copy(samplePath(sim.path, Math.min(f.t, sim.duration)));
   if (!f.landed) f.mesh.rotation.set(Math.PI / 2 + Math.sin(f.t * 5) * .07, f.t * .3, f.t * f.spin);   // va casi plana: gira sobre sí misma y apenas se mece
   else f.mesh.rotation.set(Math.PI / 2, 0, f.mesh.rotation.z + dt * 3);
-  if (f.hand) applyHandoff(f);
   if (f.t >= sim.duration) ranaFinish();
 }
 function ranaFinish() {
-  const f = rflight; if (!f || f.done) return; f.done = true; rflight = null; if (f.hand) endHandoff(f);
+  const f = rflight; if (!f || f.done) return; f.done = true; rflight = null;
   const p = game.players[f.owner], r = f.sim.res;
   const n = game.rings.filter(x => x.slot === r.slot).length;
   game.rings.push({ owner: f.owner, mesh: f.mesh, slot: r.slot, pts: r.pts });
@@ -3268,7 +3264,7 @@ function ranaPlanCpu(p) {
 /* ================= Brazo en primera persona =================
    Lanzamiento por debajo, en péndulo: al arrastrar el brazo baja y se va hacia atrás
    (como la medida); al soltar viene hacia adelante, suelta el tejo y remata apuntando a la cancha. */
-const ARM = { scene: null, cam: null, root: null, upper: null, elbow: null, fore: null, hand: null, slot: null, tejo: null, fly: null,
+const ARM = { scene: null, cam: null, root: null, upper: null, elbow: null, fore: null, hand: null, slot: null, tejo: null,
   key: '', state: 'hidden', t: 0, th: 60, be: 40, vis: 0, cb: null, released: false, from: 0 };
 function armMats() {
   return {
@@ -3435,8 +3431,8 @@ function updateArm(dt, now) {
     ARM.th = lerp(ARM.from, 112, e); ARM.be = lerp(ARM.be, 14, k);       // termina más bajo: antes el brazo pasaba pegado a la cámara
     if (!ARM.released && ARM.th >= 92) {
       ARM.released = true;
-      // lo de la mano pasa a ser el de la cancha, que sale de donde se veía (se ve uno solo)
-      if (ARM.tejo) armLetGo();
+      // la mano lo suelta y desaparece de ella: el que vuela es el de la cancha, igual que cuando lanza otro (se ve uno solo)
+      if (ARM.tejo) { ARM.slot.remove(ARM.tejo); ARM.tejo = null; ARM.key = ''; }
       const cb = ARM.cb; ARM.cb = null; if (cb) cb();
     }
     if (u >= 1) { ARM.state = 'follow'; ARM.t = 0; }
@@ -3448,10 +3444,6 @@ function updateArm(dt, now) {
   }
   const oe = ARM.state === 'drop' ? Math.min(1, ARM.t / .12) : 0;
   if (ARM.state === 'drop' && armVisibleTurn()) ARM.state = 'ready';   // vuelve solo cuando le toca apuntar otra vez (antes volvía de una y la mano bajaba abierta por el medio)
-  if (ARM.fly && !ARM.fly.userData.taken) {   // si nadie la recoge (en línea el tiro llega después), sigue sola un momento y se va
-    const f = ARM.fly; f.userData.t += dt; f.position.add(V(-.05 * dt, .55 * dt, -2.6 * dt)); f.rotation.y += dt * 14;
-    if (f.userData.t > .35) { ARM.scene.remove(f); ARM.fly = null; }
-  }
   const curlT = (ARM.state === 'ready' || (ARM.state === 'swing' && !ARM.released)) ? 1 : ARM.state === 'drop' ? .5 : .12;
   ARM.curl += (curlT - ARM.curl) * (1 - Math.exp(-(curlT < ARM.curl || ARM.state === 'drop' ? 18 : 6) * dt));
   armFingers(ARM.curl);
@@ -3461,39 +3453,6 @@ function updateArm(dt, now) {
   ARM.root.position.set(-.09 * (1 - kx) + .5 * oe, -.32 * (1 - ARM.vis) * (1 - oe * .7) - .1 * oe, 0);
   ARM.root.scale.setScalar(a < 1 ? .9 : 1);
 }
-/* Paso de la mano a la cancha. Al soltar, el de la cancha arranca donde se veía el de la mano (mismo punto de la
-   pantalla, mismo tamaño y misma vuelta) y con la velocidad del tiro de verdad; ese desvío se va apagando suave
-   (sin quiebres) hasta que queda en su recorrido real, así se ve una sola parábola que sale de la mano.
-   Si el tiro llega tarde (en línea), mientras tanto el de la mano sigue volando solo un momento.
-   Solo es imagen: el tiro y los puntos no cambian. */
-function armLetGo() {
-  const m = ARM.tejo; m.updateWorldMatrix(true, false);
-  const p = new THREE.Vector3(), q = new THREE.Quaternion(); m.getWorldPosition(p); m.getWorldQuaternion(q);
-  ARM.slot.remove(m); m.position.copy(p); m.quaternion.copy(q); m.userData.t = 0; m.userData.taken = false;
-  ARM.scene.add(m); if (ARM.fly) ARM.scene.remove(ARM.fly); ARM.fly = m; ARM.tejo = null; ARM.key = '';
-}
-function takeHandoff(f) {
-  const m = ARM.fly; if (!m || m.userData.taken || !(cam.fov > 1)) return null;
-  m.userData.taken = true; ARM.scene.remove(m); ARM.fly = null;
-  // dónde se ve ahora en la mano, pasado a la cancha: mismo punto de la pantalla y la distancia a la que se ve del mismo tamaño
-  const ndc = m.position.clone().project(ARM.cam);
-  if (!(ndc.z < 1 && Math.abs(ndc.x) < 1.4 && Math.abs(ndc.y) < 1.4)) return null;
-  const d = m.position.length() / (m.scale.x || 1) * Math.tan(ARM.cam.fov * Math.PI / 360) / Math.tan(cam.fov * Math.PI / 360);
-  const dir = new THREE.Vector3(ndc.x, ndc.y, .5).unproject(cam).sub(cam.position).normalize();
-  const H = cam.position.clone().addScaledVector(dir, d);
-  // cuánto dura el empalme: lo bastante largo para que sea suave, y siempre antes de que pegue en algo
-  const sim = f.sim, first = sim.events && sim.events.length ? sim.events[0].t : sim.duration;
-  const T = clamp(Math.min(first * .6, sim.duration * .5), .2, .42);
-  return { off: H.sub(sim.path[0].p), q: cam.quaternion.clone().multiply(m.quaternion), T };
-}
-function applyHandoff(f) {
-  const h = f.hand; if (!h) return;
-  const u = Math.min(1, f.t / h.T); if (u >= 1) { f.hand = null; return; }
-  const w = 1 - u * u * (3 - 2 * u);   // empieza en 1 y termina en 0, las dos puntas sin cambio de velocidad
-  f.mesh.position.addScaledVector(h.off, w);
-  f.mesh.quaternion.slerp(h.q, w);
-}
-function endHandoff(f) { f.hand = null; }
 function renderArm(w, h) {
   if (!ARM.root || !ARM.root.visible || !(w > 10 && h > 10)) return;
   ARM.cam.aspect = w / h; ARM.cam.updateProjectionMatrix();
@@ -4415,9 +4374,8 @@ function renderOver(winner) {
 function setSeg(id, val) { $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(val)))); }
 function renderMenu() {
   fixLocalDesigns();
-  // tejo o rana: la rana es beta (solo sale en el celular donde se prendió); no tiene reto ni distancias y su meta va en otros números
-  if (!betaOn) settings.game = 'tejo';
-  $('grpGame').hidden = !betaOn; $('verTag').textContent = 'v' + GAME_VERSION + (betaOn ? ' · beta' : '');
+  // tejo o rana (la rana ya es para todos): la rana no tiene reto ni distancias y su meta va en otros números
+  $('grpGame').hidden = false; $('verTag').textContent = 'v' + GAME_VERSION + (betaOn ? ' · beta' : '');
   const rana = settings.game === 'rana';
   if (rana && settings.mode === 'reto') settings.mode = 'cpu';
   setSeg('segGame', settings.game);
@@ -4487,7 +4445,7 @@ function showMenu() {
   if (game) clearCancha(); game = null; reticle.visible = false;
   setHud(false); renderMenu(); showScreen('menu');
 }
-/* Modo beta: lo nuevo que se está probando (por ahora la rana) solo sale en el celular donde se prende.
+/* Modo beta: lo nuevo que se está probando solo sale en el celular donde se prende (ahora no hay nada en beta: la rana ya salió para todos).
    Se prende tocando 7 veces la versión del menú y escribiendo el código. No es seguridad (el código del juego es
    público): solo esconde lo que todavía se está probando. Se guarda en este celular; otras 7 veces la apagan. */
 const BETA_HASH = 'dcb67db02a0afe0fb52cbe5a5af52bde7c63e5192de4376a242c4a06504883ef';
