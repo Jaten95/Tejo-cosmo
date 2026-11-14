@@ -2,7 +2,7 @@
 /* ================= Bolo criollo =================
    El juego santandereano de los tres palos: tres palos de pino de 60 cm en fila india (separados 20 cm) al fondo
    del carril de tierra, donde estaba la greda, y detrás las tablas (los matacheros) donde rebota la bola.
-   Un tiro por turno, rodando o por el aire, con una bola de aluminio. Vale cada palo que la bola tumbe pegándole
+   Un tiro por turno, por el aire, con una bola de aluminio. Vale cada palo que la bola tumbe pegándole
    por el lado de la mano de quien lanza (al derecho, por la derecha; al zurdo, por la izquierda), y los que esos
    palos tumben al caer. Los que tumba por el otro lado o de rebote en las tablas no valen. Los tres de un tiro: ¡CHUZA!
    La física es propia y determinista (el aleatorio sale de una semilla), así en las salas todos ven lo mismo.
@@ -15,7 +15,7 @@ const BOLO = {
   ZB: -20.76,                       // la cara de las tablas de atrás, delante del tablero del salón
   PH: .6, PR: .028, GAP: .2,        // palo: alto, radio y separación (en fila india)
   BR: .052,                         // radio de la bola
-  ROLL: 2.6,                        // freno de la tierra con la bola rodando (m/s²)
+  ROLL: 2.6,                        // freno de la tierra cuando la bola ya cayó y rueda (m/s²)
   P0: .55, SPAN: 15,                // fuerza que llega a los palos y metros por unidad de fuerza
   THETA: .42,                       // ángulo de salida por el aire
   KNOCK: .45,                       // velocidad mínima para tumbar un palo (m/s)
@@ -25,7 +25,7 @@ function clampBoloGoal(v) { v = Math.round(+v); return isFinite(v) ? Math.min(BO
 const boloPinPos = i => ({ x: 0, z: BOLO.Z0 - i * BOLO.GAP });
 
 let BOLO_M = null;    // los palos, las tablas y lo del lado izquierdo, en la escena
-let bflight = null;   // bola rodando o en el aire
+let bflight = null;   // la bola en el aire (y rodando después de caer)
 let breplay = null;   // repetición de la chuza
 function isBolo() { return !!(game && game.kind === 'bolo'); }
 // Qué juego se ve en el salón: en el menú el que está escogido; jugando, el de la partida
@@ -33,28 +33,24 @@ function shownGame() { return (phase === 'menu' || phase === 'boot' || !game) ? 
 function handOf(p) { return p && p.zurdo ? -1 : 1; }   // 1 = derecho, -1 = zurdo
 
 /* ---------- Física de la bola y los palos ---------- */
-// Dónde sale la bola: el derecho lanza desde la derecha del carril, el zurdo desde la izquierda; rodando sale más abajo
-function boloStart(air, hand) { return V(hand * .32, air ? 1.0 : .32, air ? -.25 : -.45); }
+// Dónde sale la bola: el derecho lanza desde la derecha del carril, el zurdo desde la izquierda
+function boloStart(hand) { return V(hand * .32, 1.0, -.25); }
 // Velocidad de salida: va derecho hacia el punto de los palos que se apunta (L = metros de lado en la fila de palos);
-// la fuerza dice hasta dónde llega: por el aire, dónde cae; rodando, dónde se pararía si no pegara en nada
-function boloVel(aim, air, hand) {
-  const s = boloStart(air, hand), tx = aim.L, tz = BOLO.Z0;
+// la fuerza dice dónde cae
+function boloVel(aim, hand) {
+  const s = boloStart(hand), tx = aim.L, tz = BOLO.Z0;
   const dx = tx - s.x, dz = tz - s.z, d0 = Math.hypot(dx, dz), ux = dx / d0, uz = dz / d0;
-  const reach = Math.max(1.5, -BOLO.Z0 + (aim.P - BOLO.P0) * BOLO.SPAN + (air ? 0 : 1.9) + s.z);   // a lo largo de la dirección (rodando, con la fuerza del centro pasa los palos con ganas)
-  if (air) {
-    const c = Math.cos(BOLO.THETA), tn = Math.tan(BOLO.THETA), h = BOLO.BR - s.y;
-    const v = Math.sqrt(G * reach * reach / (2 * c * c * Math.max(.05, reach * tn - h)));
-    return V(ux * v * c, v * Math.sin(BOLO.THETA), uz * v * c);
-  }
-  const v = Math.sqrt(2 * BOLO.ROLL * reach);
-  return V(ux * v, -.6, uz * v);
+  const reach = Math.max(1.5, -BOLO.Z0 + (aim.P - BOLO.P0) * BOLO.SPAN + s.z);   // a lo largo de la dirección
+  const c = Math.cos(BOLO.THETA), tn = Math.tan(BOLO.THETA), h = BOLO.BR - s.y;
+  const v = Math.sqrt(G * reach * reach / (2 * c * c * Math.max(.05, reach * tn - h)));
+  return V(ux * v * c, v * Math.sin(BOLO.THETA), uz * v * c);
 }
 
 /* Simula el tiro completo. k es el número del tiro: con él sale el aleatorio, igual en todos los celulares.
-   withPins = false sirve para la mira: dónde cae o se para la bola si no pega en nada. */
-function boloSimulate(aim, air, hand, k, withPins = true) {
-  const rnd = i => seeded(aim.L * 5.31 + i * .191, aim.P * 7.13 + k * .277, k * 2.3 + i + (air ? 7 : 0));
-  const p = boloStart(air, hand), v = boloVel(aim, air, hand), dt = 1 / 240, R = BOLO.BR;
+   withPins = false sirve para la mira: dónde cae la bola si no pega en nada. */
+function boloSimulate(aim, hand, k, withPins = true) {
+  const rnd = i => seeded(aim.L * 5.31 + i * .191, aim.P * 7.13 + k * .277, k * 2.3 + i + 7);
+  const p = boloStart(hand), v = boloVel(aim, hand), dt = 1 / 240, R = BOLO.BR;
   const pins = [0, 1, 2].map(i => ({ i, ...boloPinPos(i), down: false }));
   const path = [{ t: 0, p: p.clone() }], events = [], falls = [];
   const drift = (rnd(0) - .5) * .012;   // la tierra no es pareja: la bola se va un poquito de lado al rodar
@@ -84,14 +80,14 @@ function boloSimulate(aim, air, hand, k, withPins = true) {
       p.x += v.x * dt; p.z += v.z * dt;
     }
     t += dt;
-    // toca el piso: por el aire la tierra se la traga un poco y sigue rodando
+    // toca el piso: la tierra se la traga un poco y sigue rodando
     if (mode === 'air' && p.y <= R) {
       p.y = R; mode = 'roll';
-      const keep = air ? .42 + rnd(ri++) * .12 : .92;
-      const a = (rnd(ri++) - .5) * (air ? .16 : .004), c = Math.cos(a), s = Math.sin(a), x = v.x * c - v.z * s, z = v.x * s + v.z * c;
+      const keep = .42 + rnd(ri++) * .12;
+      const a = (rnd(ri++) - .5) * .16, c = Math.cos(a), s = Math.sin(a), x = v.x * c - v.z * s, z = v.x * s + v.z * c;
       v.x = x * keep; v.z = z * keep; v.y = 0;
       if (!land) land = p.clone();
-      ev(air ? 'cae' : 'rueda', p);
+      ev('cae', p);
     }
     // los palos
     if (withPins) pins.forEach(pin => {
@@ -130,7 +126,7 @@ function boloSimulate(aim, air, hand, k, withPins = true) {
   const lastFall = falls.reduce((m, f) => Math.max(m, f.t), 0);
   const valid = falls.filter(f => f.valid).length;
   return { path, events, falls, duration: Math.max(t, falls.length ? lastFall + .7 : 0) + .15, ballEnd: t, land: land || p.clone(), stop: p.clone(),
-    res: { pts: valid, invalid: falls.length - valid, chuza: valid === 3, air } };
+    res: { pts: valid, invalid: falls.length - valid, chuza: valid === 3 } };
 }
 
 /* ---------- La cancha de bolo ---------- */
@@ -235,10 +231,9 @@ function boloNewTurn() {
   bflight = null; boloResetPins();
 }
 function boloLaunch(a, opts) {
-  $('btnStyle').hidden = true;
-  const p = current(), air = a.m !== undefined ? !!a.m : !!p.air, hand = handOf(p);
+  const p = current(), hand = handOf(p);
   lastP[p.name] = a.P;
-  const sim = boloSimulate(a, air, hand, game.thrown);
+  const sim = boloSimulate(a, hand, game.thrown);
   const mesh = makeBola(); mesh.position.copy(sim.path[0].p); scene.add(mesh);
   bflight = { sim, mesh, t: 0, ev: 0, owner: game.order[game.idx], timeout: !!(opts && opts.timeout), done: false, hit: false, roll: new THREE.Quaternion() };
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
@@ -334,15 +329,15 @@ function boloEndReplay() {
 
 /* ---------- Puntería y cámaras ---------- */
 function boloAimInfo(aim) {
-  const p = current(), air = !!p.air, s = boloSimulate(aim, air, handOf(p), game.thrown, false);
-  return { at: air ? s.land : s.stop, air };
+  const p = current(), s = boloSimulate(aim, handOf(p), game.thrown, false);
+  return { at: s.land };
 }
 function boloShowReticle(aim) {
   if (!aimHelpNow()) { reticle.visible = false; return; }
   const i = boloAimInfo(aim), q = i.at;
   // amarilla si la bola llega a los palos con fuerza y va por el lado de la mano
   const hand = handOf(current()), x = aim.L * hand;
-  const good = q.z <= BOLO.Z0 + (i.air ? .4 : -.3) && q.z > BOLO.Z0 - 6 && x > -.02 && x < BOLO.BR + BOLO.PR * 2;
+  const good = q.z <= BOLO.Z0 + .4 && q.z > BOLO.Z0 - 6 && x > -.02 && x < BOLO.BR + BOLO.PR * 2;
   // en el piso casi no se vería desde la raya: va parada mirando a la cámara, con el borde de abajo tocando la tierra
   const sc = 1.5 * (1 + (drag ? clamp(((performance.now() - drag.t0) / 1000 - 1.6) * .25, 0, .8) : 0));
   reticle.visible = true; reticle.position.set(q.x, .066 * sc, q.z);
@@ -380,9 +375,8 @@ function boloLupa() {   // la lupa mira los palos un poco de lado (por el lado d
 /* ---------- Don Chepe en el bolo ---------- */
 function boloPlanCpu(p) {
   const d = settings.diff, hand = handOf(p);
-  p.air = Math.random() < (d >= 2 ? .3 : .5);
-  // le apunta al palo de adelante, un poquito por el lado de su mano, con fuerza para que la bola siga hasta los de atrás
-  const L = hand * (BOLO.BR + BOLO.PR) * (.25 + Math.random() * .25), P = p.air ? BOLO.P0 - .2 / BOLO.SPAN + Math.random() * .04 : BOLO.P0 + (1.2 + Math.random() * 1.5) / BOLO.SPAN;
+  // le apunta al palo de adelante, un poquito por el lado de su mano, para que caiga encima o justo antes
+  const L = hand * (BOLO.BR + BOLO.PR) * (.25 + Math.random() * .25), P = BOLO.P0 - .2 / BOLO.SPAN + Math.random() * .04;
   const sx = [.22, .12, .065, .04][d], sp = [1.6, 1.0, .6, .4][d];
   const fin = { L: clamp(L + gauss() * sx, -AIM.L, AIM.L), P: clamp(P + gauss() * sp / BOLO.SPAN, .02, 1) };
   cpuAim = { from: { L: rand(-.5, .5), P: rand(.2, .45) }, to: fin, t: 0, dur: rand(1, 1.5) };

@@ -139,13 +139,6 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 #zoomBtns{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 64px);display:flex;flex-direction:column;gap:10px;pointer-events:auto;}
 #zoomBtns.underLupa{top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 36px + min(40vw,190px));}
 #zoomBtns .iconBtn:disabled{opacity:.35;}
-.styleBtn{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 86px);pointer-events:auto;
-  display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:9px 12px 8px;border:2px solid var(--ink);background:var(--paper);color:var(--ink);
-  box-shadow:3px 3px 0 var(--ink);font:inherit;cursor:pointer;text-align:left;}
-.styleBtn b{font-family:var(--display);font-size:16px;letter-spacing:.04em;line-height:1;}
-.styleBtn small{font-size:11px;font-weight:600;opacity:.75;}
-.styleBtn.air{background:var(--yellow);}
-.styleBtn[hidden]{display:none!important;}
 .names label.withHand{grid-template-columns:auto 1fr auto;}
 .names .hand{width:34px;height:34px;align-self:center;margin-right:6px;border:2px solid var(--ink);background:var(--paper);color:var(--ink);font:400 16px/1 var(--display);cursor:pointer;}
 
@@ -312,7 +305,6 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
   <div id="rxTray" hidden></div>
   <div id="hint"><span id="hintText">Arrastra hacia abajo para cargar · suelta para lanzar</span><button id="hintClose" aria-label="Cerrar la ayuda en esta partida">×</button></div>
   <button class="skipBtn" id="btnSkip" hidden>Saltar turno</button>
-  <button class="styleBtn" id="btnStyle" type="button" hidden><b>RODANDO</b><small>toca para tirarla por el aire</small></button>
 </div>
 <div id="announce" aria-live="assertive"><div class="t" id="annT"></div><div class="s"></div><div class="p" id="annP"></div></div>
 <div id="toast"></div>
@@ -407,7 +399,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <h3>Modo beta</h3>
       <div class="joinRow"><input id="betaIn" placeholder="Código beta" aria-label="Código del modo beta" autocomplete="off" autocapitalize="off"><button class="btn ghost" id="btnBeta" type="button">Activar</button></div>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.49.0</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.50.0</span></div>
   </div></div>
 </section>
 
@@ -483,7 +475,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <tr><td>¡Chuza!<span>Los tres palos de un solo tiro.</span></td><td>3</td></tr>
       <tr><td>No vale<span>Lo que tumbe por el otro lado o de rebote en las tablas de atrás.</span></td><td>0</td></tr>
     </table>
-    <p class="prose"><b>Bolo:</b> tres palos de pino de 60 cm en fila, a unos 20 m de la raya. Un tiro por turno, rodando o por el aire (lo escoges con el botón de abajo a la izquierda), siempre en el mismo orden. En el menú cada jugador dice si es derecho (D) o zurdo (Z). Partida a 15 o a lo que se escoja.</p>
+    <p class="prose"><b>Bolo:</b> tres palos de pino de 60 cm en fila, a unos 20 m de la raya. Un tiro por turno, siempre por el aire y en el mismo orden. En el menú cada jugador dice si es derecho (D) o zurdo (Z). Partida a 15 o a lo que se escoja.</p>
     <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
     <p class="prose"><b>Tiempo en salas:</b> tienes 20 segundos para lanzar. Si no lanzas, tu tiro es nulo y pasa el turno.</p>
     <p class="prose"><b>Configuración en salas:</b> la mira, la lupa, la barra de fuerza y el zoom de la cámara son los que tenga puestos quien creó la sala, para que todos jueguen igual.</p>
@@ -521,7 +513,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.49.0";
+const GAME_VERSION = "1.50.0";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -2387,7 +2379,6 @@ function nextThrow() {
   reticle.visible = false; setGauge(0, lastP[p.name]);
   if (isRana()) ranaBoardDraw();
   if (isBolo()) boloNewTurn();   // el garitero para los palos y recoge la bola
-  renderStyleBtn();
   if (online()) return netTurn(p);
   if (p.cpu) {
     phase = 'cpu'; hint(`${p.name} está midiendo…`, true);
@@ -2456,7 +2447,7 @@ function showReticle(aim) {
 
 /* ---------- Lanzar ---------- */
 function finalAim(aim) {
-  if (isBolo()) return { L: aim.L + gauss() * .025, P: aim.P + gauss() * .3 / BOLO.SPAN, m: current().air ? 1 : 0 };   // m: 1 = por el aire, 0 = rodando
+  if (isBolo()) return { L: aim.L + gauss() * .025, P: aim.P + gauss() * .3 / BOLO.SPAN };
   return isRana() ? { L: aim.L + gauss() * .03 / RANA.LX, P: aim.P + gauss() * .03 / RANA.SPAN } : { L: aim.L + gauss() * .012, P: aim.P + gauss() * .012 / dvdP }; }
 function launch(a, opts) {
   if (isRana()) return ranaLaunch(a, opts);
@@ -3300,7 +3291,7 @@ function ranaPlanCpu(p) {
 /* ================= Bolo criollo =================
    El juego santandereano de los tres palos: tres palos de pino de 60 cm en fila india (separados 20 cm) al fondo
    del carril de tierra, donde estaba la greda, y detrás las tablas (los matacheros) donde rebota la bola.
-   Un tiro por turno, rodando o por el aire, con una bola de aluminio. Vale cada palo que la bola tumbe pegándole
+   Un tiro por turno, por el aire, con una bola de aluminio. Vale cada palo que la bola tumbe pegándole
    por el lado de la mano de quien lanza (al derecho, por la derecha; al zurdo, por la izquierda), y los que esos
    palos tumben al caer. Los que tumba por el otro lado o de rebote en las tablas no valen. Los tres de un tiro: ¡CHUZA!
    La física es propia y determinista (el aleatorio sale de una semilla), así en las salas todos ven lo mismo.
@@ -3313,7 +3304,7 @@ const BOLO = {
   ZB: -20.76,                       // la cara de las tablas de atrás, delante del tablero del salón
   PH: .6, PR: .028, GAP: .2,        // palo: alto, radio y separación (en fila india)
   BR: .052,                         // radio de la bola
-  ROLL: 2.6,                        // freno de la tierra con la bola rodando (m/s²)
+  ROLL: 2.6,                        // freno de la tierra cuando la bola ya cayó y rueda (m/s²)
   P0: .55, SPAN: 15,                // fuerza que llega a los palos y metros por unidad de fuerza
   THETA: .42,                       // ángulo de salida por el aire
   KNOCK: .45,                       // velocidad mínima para tumbar un palo (m/s)
@@ -3323,7 +3314,7 @@ function clampBoloGoal(v) { v = Math.round(+v); return isFinite(v) ? Math.min(BO
 const boloPinPos = i => ({ x: 0, z: BOLO.Z0 - i * BOLO.GAP });
 
 let BOLO_M = null;    // los palos, las tablas y lo del lado izquierdo, en la escena
-let bflight = null;   // bola rodando o en el aire
+let bflight = null;   // la bola en el aire (y rodando después de caer)
 let breplay = null;   // repetición de la chuza
 function isBolo() { return !!(game && game.kind === 'bolo'); }
 // Qué juego se ve en el salón: en el menú el que está escogido; jugando, el de la partida
@@ -3331,28 +3322,24 @@ function shownGame() { return (phase === 'menu' || phase === 'boot' || !game) ? 
 function handOf(p) { return p && p.zurdo ? -1 : 1; }   // 1 = derecho, -1 = zurdo
 
 /* ---------- Física de la bola y los palos ---------- */
-// Dónde sale la bola: el derecho lanza desde la derecha del carril, el zurdo desde la izquierda; rodando sale más abajo
-function boloStart(air, hand) { return V(hand * .32, air ? 1.0 : .32, air ? -.25 : -.45); }
+// Dónde sale la bola: el derecho lanza desde la derecha del carril, el zurdo desde la izquierda
+function boloStart(hand) { return V(hand * .32, 1.0, -.25); }
 // Velocidad de salida: va derecho hacia el punto de los palos que se apunta (L = metros de lado en la fila de palos);
-// la fuerza dice hasta dónde llega: por el aire, dónde cae; rodando, dónde se pararía si no pegara en nada
-function boloVel(aim, air, hand) {
-  const s = boloStart(air, hand), tx = aim.L, tz = BOLO.Z0;
+// la fuerza dice dónde cae
+function boloVel(aim, hand) {
+  const s = boloStart(hand), tx = aim.L, tz = BOLO.Z0;
   const dx = tx - s.x, dz = tz - s.z, d0 = Math.hypot(dx, dz), ux = dx / d0, uz = dz / d0;
-  const reach = Math.max(1.5, -BOLO.Z0 + (aim.P - BOLO.P0) * BOLO.SPAN + (air ? 0 : 1.9) + s.z);   // a lo largo de la dirección (rodando, con la fuerza del centro pasa los palos con ganas)
-  if (air) {
-    const c = Math.cos(BOLO.THETA), tn = Math.tan(BOLO.THETA), h = BOLO.BR - s.y;
-    const v = Math.sqrt(G * reach * reach / (2 * c * c * Math.max(.05, reach * tn - h)));
-    return V(ux * v * c, v * Math.sin(BOLO.THETA), uz * v * c);
-  }
-  const v = Math.sqrt(2 * BOLO.ROLL * reach);
-  return V(ux * v, -.6, uz * v);
+  const reach = Math.max(1.5, -BOLO.Z0 + (aim.P - BOLO.P0) * BOLO.SPAN + s.z);   // a lo largo de la dirección
+  const c = Math.cos(BOLO.THETA), tn = Math.tan(BOLO.THETA), h = BOLO.BR - s.y;
+  const v = Math.sqrt(G * reach * reach / (2 * c * c * Math.max(.05, reach * tn - h)));
+  return V(ux * v * c, v * Math.sin(BOLO.THETA), uz * v * c);
 }
 
 /* Simula el tiro completo. k es el número del tiro: con él sale el aleatorio, igual en todos los celulares.
-   withPins = false sirve para la mira: dónde cae o se para la bola si no pega en nada. */
-function boloSimulate(aim, air, hand, k, withPins = true) {
-  const rnd = i => seeded(aim.L * 5.31 + i * .191, aim.P * 7.13 + k * .277, k * 2.3 + i + (air ? 7 : 0));
-  const p = boloStart(air, hand), v = boloVel(aim, air, hand), dt = 1 / 240, R = BOLO.BR;
+   withPins = false sirve para la mira: dónde cae la bola si no pega en nada. */
+function boloSimulate(aim, hand, k, withPins = true) {
+  const rnd = i => seeded(aim.L * 5.31 + i * .191, aim.P * 7.13 + k * .277, k * 2.3 + i + 7);
+  const p = boloStart(hand), v = boloVel(aim, hand), dt = 1 / 240, R = BOLO.BR;
   const pins = [0, 1, 2].map(i => ({ i, ...boloPinPos(i), down: false }));
   const path = [{ t: 0, p: p.clone() }], events = [], falls = [];
   const drift = (rnd(0) - .5) * .012;   // la tierra no es pareja: la bola se va un poquito de lado al rodar
@@ -3382,14 +3369,14 @@ function boloSimulate(aim, air, hand, k, withPins = true) {
       p.x += v.x * dt; p.z += v.z * dt;
     }
     t += dt;
-    // toca el piso: por el aire la tierra se la traga un poco y sigue rodando
+    // toca el piso: la tierra se la traga un poco y sigue rodando
     if (mode === 'air' && p.y <= R) {
       p.y = R; mode = 'roll';
-      const keep = air ? .42 + rnd(ri++) * .12 : .92;
-      const a = (rnd(ri++) - .5) * (air ? .16 : .004), c = Math.cos(a), s = Math.sin(a), x = v.x * c - v.z * s, z = v.x * s + v.z * c;
+      const keep = .42 + rnd(ri++) * .12;
+      const a = (rnd(ri++) - .5) * .16, c = Math.cos(a), s = Math.sin(a), x = v.x * c - v.z * s, z = v.x * s + v.z * c;
       v.x = x * keep; v.z = z * keep; v.y = 0;
       if (!land) land = p.clone();
-      ev(air ? 'cae' : 'rueda', p);
+      ev('cae', p);
     }
     // los palos
     if (withPins) pins.forEach(pin => {
@@ -3428,7 +3415,7 @@ function boloSimulate(aim, air, hand, k, withPins = true) {
   const lastFall = falls.reduce((m, f) => Math.max(m, f.t), 0);
   const valid = falls.filter(f => f.valid).length;
   return { path, events, falls, duration: Math.max(t, falls.length ? lastFall + .7 : 0) + .15, ballEnd: t, land: land || p.clone(), stop: p.clone(),
-    res: { pts: valid, invalid: falls.length - valid, chuza: valid === 3, air } };
+    res: { pts: valid, invalid: falls.length - valid, chuza: valid === 3 } };
 }
 
 /* ---------- La cancha de bolo ---------- */
@@ -3533,10 +3520,9 @@ function boloNewTurn() {
   bflight = null; boloResetPins();
 }
 function boloLaunch(a, opts) {
-  $('btnStyle').hidden = true;
-  const p = current(), air = a.m !== undefined ? !!a.m : !!p.air, hand = handOf(p);
+  const p = current(), hand = handOf(p);
   lastP[p.name] = a.P;
-  const sim = boloSimulate(a, air, hand, game.thrown);
+  const sim = boloSimulate(a, hand, game.thrown);
   const mesh = makeBola(); mesh.position.copy(sim.path[0].p); scene.add(mesh);
   bflight = { sim, mesh, t: 0, ev: 0, owner: game.order[game.idx], timeout: !!(opts && opts.timeout), done: false, hit: false, roll: new THREE.Quaternion() };
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
@@ -3632,15 +3618,15 @@ function boloEndReplay() {
 
 /* ---------- Puntería y cámaras ---------- */
 function boloAimInfo(aim) {
-  const p = current(), air = !!p.air, s = boloSimulate(aim, air, handOf(p), game.thrown, false);
-  return { at: air ? s.land : s.stop, air };
+  const p = current(), s = boloSimulate(aim, handOf(p), game.thrown, false);
+  return { at: s.land };
 }
 function boloShowReticle(aim) {
   if (!aimHelpNow()) { reticle.visible = false; return; }
   const i = boloAimInfo(aim), q = i.at;
   // amarilla si la bola llega a los palos con fuerza y va por el lado de la mano
   const hand = handOf(current()), x = aim.L * hand;
-  const good = q.z <= BOLO.Z0 + (i.air ? .4 : -.3) && q.z > BOLO.Z0 - 6 && x > -.02 && x < BOLO.BR + BOLO.PR * 2;
+  const good = q.z <= BOLO.Z0 + .4 && q.z > BOLO.Z0 - 6 && x > -.02 && x < BOLO.BR + BOLO.PR * 2;
   // en el piso casi no se vería desde la raya: va parada mirando a la cámara, con el borde de abajo tocando la tierra
   const sc = 1.5 * (1 + (drag ? clamp(((performance.now() - drag.t0) / 1000 - 1.6) * .25, 0, .8) : 0));
   reticle.visible = true; reticle.position.set(q.x, .066 * sc, q.z);
@@ -3678,9 +3664,8 @@ function boloLupa() {   // la lupa mira los palos un poco de lado (por el lado d
 /* ---------- Don Chepe en el bolo ---------- */
 function boloPlanCpu(p) {
   const d = settings.diff, hand = handOf(p);
-  p.air = Math.random() < (d >= 2 ? .3 : .5);
-  // le apunta al palo de adelante, un poquito por el lado de su mano, con fuerza para que la bola siga hasta los de atrás
-  const L = hand * (BOLO.BR + BOLO.PR) * (.25 + Math.random() * .25), P = p.air ? BOLO.P0 - .2 / BOLO.SPAN + Math.random() * .04 : BOLO.P0 + (1.2 + Math.random() * 1.5) / BOLO.SPAN;
+  // le apunta al palo de adelante, un poquito por el lado de su mano, para que caiga encima o justo antes
+  const L = hand * (BOLO.BR + BOLO.PR) * (.25 + Math.random() * .25), P = BOLO.P0 - .2 / BOLO.SPAN + Math.random() * .04;
   const sx = [.22, .12, .065, .04][d], sp = [1.6, 1.0, .6, .4][d];
   const fin = { L: clamp(L + gauss() * sx, -AIM.L, AIM.L), P: clamp(P + gauss() * sp / BOLO.SPAN, .02, 1) };
   cpuAim = { from: { L: rand(-.5, .5), P: rand(.2, .45) }, to: fin, t: 0, dur: rand(1, 1.5) };
@@ -4284,7 +4269,7 @@ function hostCheckThrow(here) {
   const p = current(); if (p.pid === NET.pid) return;
   const t = here.get(p.pid) && here.get(p.pid).t;
   if (t && t.n === game.thrown && t.gid === game.gid && isFinite(t.L) && isFinite(t.P))
-    acceptThrow({ n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0, m: t.m ? 1 : 0 });
+    acceptThrow({ n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0 });
 }
 function acceptThrow(t) {
   const g = NET.g; if (!g) return;
@@ -4305,7 +4290,7 @@ function applyG() {
     game.players.forEach(p => {
       const pr = here.get(p.pid), t = pr && pr.t;
       if (t && t.gid === game.gid && typeof t.n === 'number' && t.n >= game.thrown && !NET.pending[t.n] && isFinite(t.L) && isFinite(t.P))
-        NET.pending[t.n] = { n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0, m: t.m ? 1 : 0 };
+        NET.pending[t.n] = { n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0 };
     });
   }
   tryConsume();
@@ -4335,7 +4320,7 @@ function tryConsume() {
   if (current().pid !== t.pid) return;
   drag = null;
   if (t.skip) toast(current().pid === NET.pid ? 'Se te acabó el tiempo: nulo' : `${current().name} no lanzó a tiempo: nulo`);
-  launch({ L: t.L, P: t.P, m: t.m ? 1 : 0 }, { timeout: !!t.skip });
+  launch({ L: t.L, P: t.P }, { timeout: !!t.skip });
 }
 
 /* ---------- partida ---------- */
@@ -4413,9 +4398,9 @@ function netTurn(p) {
 }
 function netThrow(a) {
   if (phase !== 'aim' || current().pid !== NET.pid) return;
-  const t = { n: game.thrown, L: r5(a.L), P: r5(a.P), gid: game.gid, pid: NET.pid, ...(isBolo() ? { m: a.m ? 1 : 0 } : {}) };
+  const t = { n: game.thrown, L: r5(a.L), P: r5(a.P), gid: game.gid, pid: NET.pid };
   NET.lastT = t;
-  launch({ L: t.L, P: t.P, ...(isBolo() ? { m: t.m } : {}) });
+  launch({ L: t.L, P: t.P });
   if (NET.sala) {
     NET.sala.presence({ t, aim: null }).catch(() => { });
     if (amHost()) publishG({ ...NET.g, last: t, ver: NET.g.ver + 1 });
@@ -5018,10 +5003,7 @@ function bindInput() {
 
 function bindUI() {
   bindSeg('segGame', 'game', v => ['rana', 'bolo'].includes(v) ? v : 'tejo');
-  $('btnStyle').addEventListener('click', e => {   // bolo: rodando o por el aire
-    e.preventDefault(); if (!isBolo() || phase !== 'aim' || drag) return;
-    const p = current(); p.air = !p.air; renderStyleBtn(); A.init(); A.tick(); if (drag && drag.aim) showReticle(drag.aim);
-  });
+
   $('verTag').addEventListener('click', betaTap); $('btnBeta').addEventListener('click', betaTry); $('betaIn').addEventListener('keydown', e => { if (e.key === 'Enter') betaTry(); }); bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
   bindSeg('segDist', 'dist', Number); bindGoal(); bindSeg('segTeams', 'teams', Number); bindSeg('segCpuSize', 'cpuSize', Number);
   $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; if (!settings.aimHelp) settings.lupa = false; saveSettings(); renderMenu(); });
@@ -5107,17 +5089,6 @@ async function boot(data) {
   const go = d => boot(d || {});
   if (hot && hot.ready) hot.ready(go); else go(hot && hot.data || {});
 })();
-
-/* Bolo: el que lanza escoge si la bola va rodando o por el aire (el botón sale solo cuando le toca a uno) */
-function renderStyleBtn() {
-  const b = $('btnStyle'); if (!b) return;
-  const p = game && game.order.length ? current() : null;
-  const mine = !!p && isBolo() && !p.cpu && !(online() && p.pid !== NET.pid) && !game.over;
-  b.hidden = !mine; if (!mine) return;
-  b.querySelector('b').textContent = p.air ? 'POR EL AIRE' : 'RODANDO';
-  b.querySelector('small').textContent = p.air ? 'toca para rodarla' : 'toca para tirarla por el aire';
-  b.classList.toggle('air', !!p.air);
-}
 
 /* ================= Instalar en el celular y avisar de versiones nuevas =================
    Solo en GitHub Pages (en Claude no aplica). Android/Chrome: el botón abre el aviso de instalar del navegador.

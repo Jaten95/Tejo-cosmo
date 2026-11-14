@@ -346,10 +346,7 @@ function bindInput() {
 
 function bindUI() {
   bindSeg('segGame', 'game', v => ['rana', 'bolo'].includes(v) ? v : 'tejo');
-  $('btnStyle').addEventListener('click', e => {   // bolo: rodando o por el aire
-    e.preventDefault(); if (!isBolo() || phase !== 'aim' || drag) return;
-    const p = current(); p.air = !p.air; renderStyleBtn(); A.init(); A.tick(); if (drag && drag.aim) showReticle(drag.aim);
-  });
+
   $('verTag').addEventListener('click', betaTap); $('btnBeta').addEventListener('click', betaTry); $('betaIn').addEventListener('keydown', e => { if (e.key === 'Enter') betaTry(); }); bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
   bindSeg('segDist', 'dist', Number); bindGoal(); bindSeg('segTeams', 'teams', Number); bindSeg('segCpuSize', 'cpuSize', Number);
   $('swAim').addEventListener('click', () => { settings.aimHelp = !settings.aimHelp; if (!settings.aimHelp) settings.lupa = false; saveSettings(); renderMenu(); });
@@ -435,14 +432,3 @@ async function boot(data) {
   const go = d => boot(d || {});
   if (hot && hot.ready) hot.ready(go); else go(hot && hot.data || {});
 })();
-
-/* Bolo: el que lanza escoge si la bola va rodando o por el aire (el botón sale solo cuando le toca a uno) */
-function renderStyleBtn() {
-  const b = $('btnStyle'); if (!b) return;
-  const p = game && game.order.length ? current() : null;
-  const mine = !!p && isBolo() && !p.cpu && !(online() && p.pid !== NET.pid) && !game.over;
-  b.hidden = !mine; if (!mine) return;
-  b.querySelector('b').textContent = p.air ? 'POR EL AIRE' : 'RODANDO';
-  b.querySelector('small').textContent = p.air ? 'toca para rodarla' : 'toca para tirarla por el aire';
-  b.classList.toggle('air', !!p.air);
-}

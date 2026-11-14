@@ -140,6 +140,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.47.0 | Agregado | la rana sale para todos (ya no es beta); al lanzar la mano hace el movimiento y el tejo o la argolla vuela igual que cuando lanza otro |
 | — | 1.48.0 | Cambiado | rana: cada ronda la empieza el mismo jugador y siempre en el mismo orden (antes la empezaba el que había cerrado la anterior) |
 | — | 1.49.0 | Agregado | el bolo criollo (en beta): tres palos donde estaba la greda, bola rodando o por el aire, derecho o zurdo, vale lo que tumbe por el lado de su mano, ¡CHUZA! con repetición; contra Don Chepe, por turnos y en salas |
+| — | 1.50.0 | Cambiado | bolo (beta): la bola solo se lanza por el aire (se quitó la opción de rodarla) |
 
 </details>
 

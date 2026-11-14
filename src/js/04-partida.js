@@ -129,7 +129,6 @@ function nextThrow() {
   reticle.visible = false; setGauge(0, lastP[p.name]);
   if (isRana()) ranaBoardDraw();
   if (isBolo()) boloNewTurn();   // el garitero para los palos y recoge la bola
-  renderStyleBtn();
   if (online()) return netTurn(p);
   if (p.cpu) {
     phase = 'cpu'; hint(`${p.name} está midiendo…`, true);
@@ -198,7 +197,7 @@ function showReticle(aim) {
 
 /* ---------- Lanzar ---------- */
 function finalAim(aim) {
-  if (isBolo()) return { L: aim.L + gauss() * .025, P: aim.P + gauss() * .3 / BOLO.SPAN, m: current().air ? 1 : 0 };   // m: 1 = por el aire, 0 = rodando
+  if (isBolo()) return { L: aim.L + gauss() * .025, P: aim.P + gauss() * .3 / BOLO.SPAN };
   return isRana() ? { L: aim.L + gauss() * .03 / RANA.LX, P: aim.P + gauss() * .03 / RANA.SPAN } : { L: aim.L + gauss() * .012, P: aim.P + gauss() * .012 / dvdP }; }
 function launch(a, opts) {
   if (isRana()) return ranaLaunch(a, opts);

@@ -265,7 +265,7 @@ function hostCheckThrow(here) {
   const p = current(); if (p.pid === NET.pid) return;
   const t = here.get(p.pid) && here.get(p.pid).t;
   if (t && t.n === game.thrown && t.gid === game.gid && isFinite(t.L) && isFinite(t.P))
-    acceptThrow({ n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0, m: t.m ? 1 : 0 });
+    acceptThrow({ n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0 });
 }
 function acceptThrow(t) {
   const g = NET.g; if (!g) return;
@@ -286,7 +286,7 @@ function applyG() {
     game.players.forEach(p => {
       const pr = here.get(p.pid), t = pr && pr.t;
       if (t && t.gid === game.gid && typeof t.n === 'number' && t.n >= game.thrown && !NET.pending[t.n] && isFinite(t.L) && isFinite(t.P))
-        NET.pending[t.n] = { n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0, m: t.m ? 1 : 0 };
+        NET.pending[t.n] = { n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0 };
     });
   }
   tryConsume();
@@ -316,7 +316,7 @@ function tryConsume() {
   if (current().pid !== t.pid) return;
   drag = null;
   if (t.skip) toast(current().pid === NET.pid ? 'Se te acabó el tiempo: nulo' : `${current().name} no lanzó a tiempo: nulo`);
-  launch({ L: t.L, P: t.P, m: t.m ? 1 : 0 }, { timeout: !!t.skip });
+  launch({ L: t.L, P: t.P }, { timeout: !!t.skip });
 }
 
 /* ---------- partida ---------- */
@@ -394,9 +394,9 @@ function netTurn(p) {
 }
 function netThrow(a) {
   if (phase !== 'aim' || current().pid !== NET.pid) return;
-  const t = { n: game.thrown, L: r5(a.L), P: r5(a.P), gid: game.gid, pid: NET.pid, ...(isBolo() ? { m: a.m ? 1 : 0 } : {}) };
+  const t = { n: game.thrown, L: r5(a.L), P: r5(a.P), gid: game.gid, pid: NET.pid };
   NET.lastT = t;
-  launch({ L: t.L, P: t.P, ...(isBolo() ? { m: t.m } : {}) });
+  launch({ L: t.L, P: t.P });
   if (NET.sala) {
     NET.sala.presence({ t, aim: null }).catch(() => { });
     if (amHost()) publishG({ ...NET.g, last: t, ver: NET.g.ver + 1 });
