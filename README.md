@@ -145,6 +145,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.51.1 | Arreglado | bolo (beta): las bolas se ven como las de verdad: aluminio fundido mate con anillos torneados y el huequito de lado |
 | — | 1.52.0 | Cambiado | bolo (beta): menos fricción: la bola rueda más después de caer (unos 3 m con fuerza media, más entre más duro) |
 | — | 1.52.1 | Arreglado | bolo (beta): agarre propio de la bola: asentada en la palma, con los dedos abrazándola por delante y el pulgar de lado |
+| — | 1.52.2 | Arreglado | bolo (beta): los dedos y el pulgar quedan apoyados en la bola, ya no se meten dentro de ella |
 
 </details>
 

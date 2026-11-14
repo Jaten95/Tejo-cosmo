@@ -284,7 +284,8 @@ const HAND_POSE = {
   // la argolla la sostienen el pulgar y el índice (en C); corazón, anular y meñique van recogidos
   argolla: { index: [.45, 1, .8], middle: [1.25, 1.55, 1], ring: [1.35, 1.55, 1], pinky: [1.4, 1.5, 1], thumb: [[.1, -.7, 0], [.3, 0, 0], [.4, 0, 0]] },
   // bolo: la bola en la palma y los dedos abrazándola por delante y por los lados
-  bola: { index: [.8, 1, .7], middle: [.8, 1, .7], ring: [.85, 1, .7], pinky: [.9, 1, .7], thumb: [[.3, -.4, 0], [.3, 0, 0], [.3, 0, 0]] }
+  // (cada dedo se dobló hasta tocar la bola sin meterse en ella)
+  bola: { index: [.579, .524, .57], middle: [.5, .678, .475], ring: [.268, .858, .084], pinky: [.163, .649, .165], thumb: [[.1, -.4, 0], [.2, 0, 0], [.2, 0, 0]] }
 };
 function poseModel(c) {
   const mix = (a, b) => Array.isArray(a) ? a.map((v, i) => mix(v, b[i])) : lerp(b, a, c);
