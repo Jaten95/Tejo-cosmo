@@ -397,7 +397,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <h3>Modo beta</h3>
       <div class="joinRow"><input id="betaIn" placeholder="Código beta" aria-label="Código del modo beta" autocomplete="off" autocapitalize="off"><button class="btn ghost" id="btnBeta" type="button">Activar</button></div>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.46.5</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.46.6</span></div>
   </div></div>
 </section>
 
@@ -504,7 +504,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.46.5";
+const GAME_VERSION = "1.46.6";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -2437,7 +2437,7 @@ function launch(a, opts) {
   const fsim = res.rebound ? joinRebound(sim, res.rebound) : sim;
   const mesh = makeTejo(p.color, p.design, p.name); mesh.position.copy(sim.path[0].p); scene.add(mesh);
   flight = { timeout: !!(opts && opts.timeout), sim: fsim, res, mesh, t: 0, base: game.tejos.map(t => t.mesh.position.clone()), owner: game.order[game.idx], ev: 0, done: false, impactAt: fsim.first === 'clay' ? fsim.firstT : fsim.duration, spin: rand(12, 18) * (Math.random() < .5 ? -1 : 1), tilt: V(rand(-.25, .25), 0, rand(-.25, .25)) };
-  flight.hand = takeHandoff(); applyHandoff(flight);   // si lo lanzó la mano, sale de donde se veía en la mano
+  flight.hand = takeHandoff(flight); applyHandoff(flight);   // si lo lanzó la mano, el de la mano vuela hasta aquí y se cambian
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
   game.thrown++;
   A.whoosh(); buzz(15);
@@ -2510,7 +2510,7 @@ function nuloWhy(sim) {
 }
 
 function finishFlight() {
-  const f = flight; if (f.done) return; f.done = true;
+  const f = flight; if (f.done) return; f.done = true; if (f.hand) endHandoff(f);
   const p = game.players[f.owner], r = f.res;
   (r.moved || []).forEach(m => { const t = game.tejos[m.i]; if (t) { t.u = m.u; t.v = m.v; t.d = Math.hypot(m.u, m.v); } });
   game.tejos.push({ owner: f.owner, mesh: f.mesh, valid: r.valid, d: r.valid ? r.d : Infinity, u: r.u, v: r.v, pts: r.pts || 0 });
@@ -3136,8 +3136,8 @@ function ranaLaunch(a, opts) {
   lastP[p.name] = a.P;
   const sim = ranaSimulate(a, game.thrown);
   const mesh = makeArgolla(); mesh.position.copy(sim.path[0].p); scene.add(mesh);
-  rflight = { sim, mesh, t: 0, ev: 0, owner: game.order[game.idx], timeout: !!(opts && opts.timeout), spin: 9 + seeded(a.L, a.P, game.thrown) * 6, landed: false, done: false, hand: takeHandoff() };
-  applyHandoff(rflight);   // si la lanzó la mano, sale de donde se veía en la mano
+  rflight = { sim, mesh, t: 0, ev: 0, owner: game.order[game.idx], timeout: !!(opts && opts.timeout), spin: 9 + seeded(a.L, a.P, game.thrown) * 6, landed: false, done: false };
+  rflight.hand = takeHandoff(rflight); applyHandoff(rflight);   // si la lanzó la mano, la de la mano vuela hasta aquí y se cambian
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
   game.thrown++;
   A.whoosh(); buzz(15); ranaBoardDraw();
@@ -3160,7 +3160,7 @@ function ranaUpdate(dt) {
   if (f.t >= sim.duration) ranaFinish();
 }
 function ranaFinish() {
-  const f = rflight; if (!f || f.done) return; f.done = true; rflight = null;
+  const f = rflight; if (!f || f.done) return; f.done = true; rflight = null; if (f.hand) endHandoff(f);
   const p = game.players[f.owner], r = f.sim.res;
   const n = game.rings.filter(x => x.slot === r.slot).length;
   game.rings.push({ owner: f.owner, mesh: f.mesh, slot: r.slot, pts: r.pts });
@@ -3268,7 +3268,7 @@ function ranaPlanCpu(p) {
 /* ================= Brazo en primera persona =================
    Lanzamiento por debajo, en péndulo: al arrastrar el brazo baja y se va hacia atrás
    (como la medida); al soltar viene hacia adelante, suelta el tejo y remata apuntando a la cancha. */
-const ARM = { scene: null, cam: null, root: null, upper: null, elbow: null, fore: null, hand: null, slot: null, tejo: null, handoff: null,
+const ARM = { scene: null, cam: null, root: null, upper: null, elbow: null, fore: null, hand: null, slot: null, tejo: null, fly: null,
   key: '', state: 'hidden', t: 0, th: 60, be: 40, vis: 0, cb: null, released: false, from: 0 };
 function armMats() {
   return {
@@ -3412,8 +3412,7 @@ function armRelease(cb) {
 function armBusy() { return ARM.state === 'swing'; }
 function updateArm(dt, now) {
   if (!ARM.root) return;
-  const fpFlight = phase === 'flight' && flight && flight.fp && !flight.fpDone;
-  const show = armVisibleTurn() || ARM.state === 'swing' || ARM.state === 'follow' || fpFlight;
+  const show = armVisibleTurn() || ARM.state === 'swing' || ARM.state === 'follow';   // después del remate el brazo se va, aunque el tiro siga en primera persona
   if (show && ARM.state === 'hidden') { ARM.state = 'ready'; ARM.th = 30; ARM.be = 30; }
   if (show && ARM.state === 'ready') armSetPlayer(current());   // nuevo tejo en la mano solo cuando vuelve a apuntar
   ARM.vis += ((show ? 1 : 0) - ARM.vis) * (1 - Math.exp(-(show ? 7 : 14) * dt));
@@ -3433,83 +3432,75 @@ function updateArm(dt, now) {
     ARM.root.rotation.y += ((-L * .18) - ARM.root.rotation.y) * k;
   } else if (ARM.state === 'swing') {
     ARM.t += dt; const u = Math.min(1, ARM.t / .3), e = u * u;            // acelera hacia adelante
-    ARM.th = lerp(ARM.from, 128, e); ARM.be = lerp(ARM.be, 12, k);
-    if (!ARM.released && ARM.th >= 100) {
+    ARM.th = lerp(ARM.from, 112, e); ARM.be = lerp(ARM.be, 14, k);       // termina más bajo: antes el brazo pasaba pegado a la cámara
+    if (!ARM.released && ARM.th >= 92) {
       ARM.released = true;
-      // la mano solo lo suelta: el que vuela es el de la cancha, que arranca donde se veía en la mano
-      // (antes salía también una copia desde la mano y se veían dos)
-      if (ARM.tejo) { ARM.handoff = armHandoff(); ARM.slot.remove(ARM.tejo); ARM.tejo = null; ARM.key = ''; }
+      // lo de la mano pasa a ser el de la cancha, que sale de donde se veía (se ve uno solo)
+      if (ARM.tejo) armLetGo();
       const cb = ARM.cb; ARM.cb = null; if (cb) cb();
-      if (flight && !flight.done) flight.fp = true;   // este tiro se ve en primera persona
     }
     if (u >= 1) { ARM.state = 'follow'; ARM.t = 0; }
-  } else if (ARM.state === 'follow') {
-    ARM.t += dt; ARM.th += ((ARM.t > .7 ? 104 : 120) - ARM.th) * k * .3; ARM.be += ((ARM.t > .7 ? 22 : 12) - ARM.be) * k * .3;
-    if (ARM.t > .45 && !fpFlight) ARM.state = 'drop';
+  } else if (ARM.state === 'follow') {   // remate corto y se va
+    ARM.t += dt; ARM.th += (106 - ARM.th) * k * .3; ARM.be += (18 - ARM.be) * k * .3;
+    if (ARM.t > .12) { ARM.state = 'drop'; ARM.t = 0; }
+  } else if (ARM.state === 'drop') {   // sale por la derecha y abajo, sin bajar la mano abierta por el medio de la pantalla
+    ARM.t += dt;
   }
-  if (ARM.state === 'drop' && show) ARM.state = 'ready';
-  const curlT = (ARM.state === 'ready' || (ARM.state === 'swing' && !ARM.released)) ? 1 : .12;
-  ARM.curl += (curlT - ARM.curl) * (1 - Math.exp(-(curlT < ARM.curl ? 18 : 6) * dt));
+  const oe = ARM.state === 'drop' ? Math.min(1, ARM.t / .12) : 0;
+  if (ARM.state === 'drop' && armVisibleTurn()) ARM.state = 'ready';   // vuelve solo cuando le toca apuntar otra vez (antes volvía de una y la mano bajaba abierta por el medio)
+  if (ARM.fly && !ARM.fly.userData.taken) {   // si nadie la recoge (en línea el tiro llega después), sigue sola un momento y se va
+    const f = ARM.fly; f.userData.t += dt; f.position.add(V(-.05 * dt, .55 * dt, -2.6 * dt)); f.rotation.y += dt * 14;
+    if (f.userData.t > .35) { ARM.scene.remove(f); ARM.fly = null; }
+  }
+  const curlT = (ARM.state === 'ready' || (ARM.state === 'swing' && !ARM.released)) ? 1 : ARM.state === 'drop' ? .5 : .12;
+  ARM.curl += (curlT - ARM.curl) * (1 - Math.exp(-(curlT < ARM.curl || ARM.state === 'drop' ? 18 : 6) * dt));
   armFingers(ARM.curl);
   armPose(ARM.th, ARM.be);
   // acomodar el brazo a la pantalla (en vertical va más al centro) y subirlo/bajarlo al aparecer
   const a = cam.aspect, kx = clamp(a / 1.25, .48, 1);
-  ARM.root.position.set(-.09 * (1 - kx), -.32 * (1 - ARM.vis), 0);
+  ARM.root.position.set(-.09 * (1 - kx) + .5 * oe, -.32 * (1 - ARM.vis) * (1 - oe * .7) - .1 * oe, 0);
   ARM.root.scale.setScalar(a < 1 ? .9 : 1);
 }
-/* Paso de la mano a la cancha: al soltar se guarda cómo se veía en la mano (punto de la pantalla, tamaño y vuelta).
-   Lo que vuela en la cancha arranca viéndose igual y en un cuarto de segundo se junta con su recorrido de verdad.
+/* Paso de la mano a la cancha. Al soltar, el de la cancha arranca donde se veía el de la mano (mismo punto de la
+   pantalla, mismo tamaño y misma vuelta) y con la velocidad del tiro de verdad; ese desvío se va apagando suave
+   (sin quiebres) hasta que queda en su recorrido real, así se ve una sola parábola que sale de la mano.
+   Si el tiro llega tarde (en línea), mientras tanto el de la mano sigue volando solo un momento.
    Solo es imagen: el tiro y los puntos no cambian. */
-const HANDOFF_T = .25;
-function armHandoff() {
-  if (!ARM.tejo || !ARM.root || !ARM.root.visible) return null;
-  ARM.tejo.updateWorldMatrix(true, false);
-  const p = new THREE.Vector3(), q = new THREE.Quaternion(); ARM.tejo.getWorldPosition(p); ARM.tejo.getWorldQuaternion(q);
-  const dArm = p.length(); p.project(ARM.cam);
-  if (!(Math.abs(p.x) < 1.3 && Math.abs(p.y) < 1.3)) return null;
-  return { x: p.x, y: p.y, dArm, s: ARM.tejo.scale.x || 1, q, at: performance.now() };
+function armLetGo() {
+  const m = ARM.tejo; m.updateWorldMatrix(true, false);
+  const p = new THREE.Vector3(), q = new THREE.Quaternion(); m.getWorldPosition(p); m.getWorldQuaternion(q);
+  ARM.slot.remove(m); m.position.copy(p); m.quaternion.copy(q); m.userData.t = 0; m.userData.taken = false;
+  ARM.scene.add(m); if (ARM.fly) ARM.scene.remove(ARM.fly); ARM.fly = m; ARM.tejo = null; ARM.key = '';
 }
-function takeHandoff() { const h = ARM.handoff; ARM.handoff = null; return h && performance.now() - h.at < 600 ? h : null; }
+function takeHandoff(f) {
+  const m = ARM.fly; if (!m || m.userData.taken || !(cam.fov > 1)) return null;
+  m.userData.taken = true; ARM.scene.remove(m); ARM.fly = null;
+  // dónde se ve ahora en la mano, pasado a la cancha: mismo punto de la pantalla y la distancia a la que se ve del mismo tamaño
+  const ndc = m.position.clone().project(ARM.cam);
+  if (!(ndc.z < 1 && Math.abs(ndc.x) < 1.4 && Math.abs(ndc.y) < 1.4)) return null;
+  const d = m.position.length() / (m.scale.x || 1) * Math.tan(ARM.cam.fov * Math.PI / 360) / Math.tan(cam.fov * Math.PI / 360);
+  const dir = new THREE.Vector3(ndc.x, ndc.y, .5).unproject(cam).sub(cam.position).normalize();
+  const H = cam.position.clone().addScaledVector(dir, d);
+  // cuánto dura el empalme: lo bastante largo para que sea suave, y siempre antes de que pegue en algo
+  const sim = f.sim, first = sim.events && sim.events.length ? sim.events[0].t : sim.duration;
+  const T = clamp(Math.min(first * .6, sim.duration * .5), .2, .42);
+  return { off: H.sub(sim.path[0].p), q: cam.quaternion.clone().multiply(m.quaternion), T };
+}
 function applyHandoff(f) {
-  const h = f.hand; if (!h || !(cam.fov > 1)) return;
-  const u = Math.min(1, f.t / HANDOFF_T); if (u >= 1) { f.hand = null; return; }
-  const w = 1 - u * u * (3 - 2 * u), k = Math.tan(ARM.cam.fov * Math.PI / 360) / Math.tan(cam.fov * Math.PI / 360), d = h.dArm * k / h.s;
-  if (h.t0 == null) {   // el recorrido real arranca más cerca de la cámara que la mano: se toma desde donde va a la misma distancia
-    const path = f.sim.path; let i = 0; while (i < path.length - 1 && path[i].t < HANDOFF_T * .8 && path[i].p.distanceTo(cam.position) < d) i++;
-    h.t0 = path[i].t;
-  }
-  if (h.t0 > 0) f.mesh.position.copy(samplePath(f.sim.path, Math.min(f.t + h.t0 * (1 - u), f.sim.duration)));   // alcanza al tiempo real al final del paso
-  const dir = new THREE.Vector3(h.x, h.y, .5).unproject(cam).sub(cam.position).normalize();
-  f.mesh.position.lerp(cam.position.clone().addScaledVector(dir, d), w);   // con la cámara de este cuadro, aunque se esté moviendo
-  f.mesh.quaternion.slerp(cam.quaternion.clone().multiply(h.q), w);
+  const h = f.hand; if (!h) return;
+  const u = Math.min(1, f.t / h.T); if (u >= 1) { f.hand = null; return; }
+  const w = 1 - u * u * (3 - 2 * u);   // empieza en 1 y termina en 0, las dos puntas sin cambio de velocidad
+  f.mesh.position.addScaledVector(h.off, w);
+  f.mesh.quaternion.slerp(h.q, w);
 }
+function endHandoff(f) { f.hand = null; }
 function renderArm(w, h) {
   if (!ARM.root || !ARM.root.visible || !(w > 10 && h > 10)) return;
   ARM.cam.aspect = w / h; ARM.cam.updateProjectionMatrix();
   renderer.clearDepth(); renderer.render(ARM.scene, ARM.cam);
 }
 
-/* Cámara en primera persona durante el lanzamiento: se queda en el lanzador, abre el plano para
-   ver la parábola y, cuando el tejo ya va llegando a la cancha, pasa a la cámara del tejo. */
-const baseUpdateCamera = updateCamera;
-updateCamera = function (dt) {
-  const f = flight;
-  if (phase === 'flight' && f && f.fp && !f.fpDone) {
-    const remain = f.impactAt - f.t;
-    const landing = f.res.valid ? remain < .6 : f.ev > 0;
-    if (!landing) { fpCamera(dt, f); return; }
-    f.fpDone = true;
-  }
-  baseUpdateCamera(dt);
-};
-function fpCamera(dt, f) {
-  const a = 1 - Math.exp(-3.2 * dt);
-  const pos = V(0, 1.78, 2.1);
-  const look = f.mesh.position.clone().lerp(V(0, CY, -W.D), .55);
-  const fov = cam.aspect < 1 ? 46 : 34;
-  camCur.pos.lerp(pos, a); camCur.look.lerp(look, a); camCur.fov = lerp(camCur.fov, fov, a);
-  cam.position.copy(camCur.pos); cam.fov = camCur.fov; cam.updateProjectionMatrix(); cam.lookAt(camCur.look);
-}
+/* La cámara de tu tiro es la misma de cuando lanza otro (la sigue updateCamera): ya no hay cámara aparte en primera persona. */
 
 function armFingers(c) {
   if (ARM.model) { poseModel(c); return; }

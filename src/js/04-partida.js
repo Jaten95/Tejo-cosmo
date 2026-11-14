@@ -198,7 +198,7 @@ function launch(a, opts) {
   const fsim = res.rebound ? joinRebound(sim, res.rebound) : sim;
   const mesh = makeTejo(p.color, p.design, p.name); mesh.position.copy(sim.path[0].p); scene.add(mesh);
   flight = { timeout: !!(opts && opts.timeout), sim: fsim, res, mesh, t: 0, base: game.tejos.map(t => t.mesh.position.clone()), owner: game.order[game.idx], ev: 0, done: false, impactAt: fsim.first === 'clay' ? fsim.firstT : fsim.duration, spin: rand(12, 18) * (Math.random() < .5 ? -1 : 1), tilt: V(rand(-.25, .25), 0, rand(-.25, .25)) };
-  flight.hand = takeHandoff(); applyHandoff(flight);   // si lo lanzó la mano, sale de donde se veía en la mano
+  flight.hand = takeHandoff(flight); applyHandoff(flight);   // si lo lanzó la mano, el de la mano vuela hasta aquí y se cambian
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
   game.thrown++;
   A.whoosh(); buzz(15);
@@ -271,7 +271,7 @@ function nuloWhy(sim) {
 }
 
 function finishFlight() {
-  const f = flight; if (f.done) return; f.done = true;
+  const f = flight; if (f.done) return; f.done = true; if (f.hand) endHandoff(f);
   const p = game.players[f.owner], r = f.res;
   (r.moved || []).forEach(m => { const t = game.tejos[m.i]; if (t) { t.u = m.u; t.v = m.v; t.d = Math.hypot(m.u, m.v); } });
   game.tejos.push({ owner: f.owner, mesh: f.mesh, valid: r.valid, d: r.valid ? r.d : Infinity, u: r.u, v: r.v, pts: r.pts || 0 });
