@@ -177,7 +177,7 @@ function wobble(holdT, t) {
 }
 function currentAim(now) {
   if (!drag) return null;
-  const w = wobble((now - drag.t0) / 1000, now / 1000), kx = isRana() ? 2.4 : 1;   // en la rana la mesa es pequeña: el pulso se nota más de lado
+  const w = wobble((now - drag.t0) / 1000, now / 1000), kx = isRana() ? 2.4 : isBolo() ? BOLO.KX : 1;   // en la rana y el bolo el blanco es pequeño: el pulso se nota más de lado
   return { L: drag.L + w.x * kx, P: clamp(drag.P + w.y / dvdP, 0, 1), amp: w.amp };
 }
 function showReticle(aim) {
@@ -199,7 +199,7 @@ function showReticle(aim) {
 function finalAim(aim) {
   if (isBolo()) {   // la bola es pesada: entre más fuerza, más se le va la mano (de lado y de largo)
     const k = clamp(aim.P, 0, 1) ** 2;
-    return { L: aim.L + gauss() * (.018 + .06 * k), P: aim.P + gauss() * (.2 + .7 * k) / BOLO.SPAN };
+    return { L: aim.L + gauss() * (.024 + .06 * k), P: aim.P + gauss() * (.2 + .7 * k) / BOLO.SPAN };
   }
   return isRana() ? { L: aim.L + gauss() * .03 / RANA.LX, P: aim.P + gauss() * .03 / RANA.SPAN } : { L: aim.L + gauss() * .012, P: aim.P + gauss() * .012 / dvdP }; }
 function launch(a, opts) {

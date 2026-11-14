@@ -20,6 +20,10 @@ const BOLO = {
   P0: .55, SPAN: 15,                // fuerza que llega a los palos y metros por unidad de fuerza
   THETA: .42,                       // ángulo de salida por el aire
   KNOCK: .45,                       // velocidad mínima para tumbar un palo (m/s)
+  KX: 3.0,                          // el pulso se nota más de lado: los palos son una franja de 6 cm a 20 m
+  CHAIN: 0,                         // qué tan derecho tiene que caer un palo para tumbar al de atrás (holgura de lado, m)
+  FALLJ: .95,                       // qué tanto se desvía al caer un palo que golpean (rad, de punta a punta)
+  SIDEP: 1.5,                       // un palo que lo cogen de lado se va hacia ese lado
 };
 const BOLO_GOAL = { presets: [15], min: 3, max: 99, step: 1 };
 function clampBoloGoal(v) { v = Math.round(+v); return isFinite(v) ? Math.min(BOLO_GOAL.max, Math.max(BOLO_GOAL.min, v)) : 15; }
@@ -65,8 +69,11 @@ function boloSimulate(aim, hand, k, withPins = true) {
     pins.forEach(o => {
       if (o.down) return;
       const rx = o.x - pin.x, rz = o.z - pin.z, pr = rx * dir.x + rz * dir.z, perp = Math.abs(rx * dir.z - rz * dir.x);
-      if (pr > 0 && pr < BOLO.PH * .92 && perp < BOLO.PR * 2 + .008) {
-        const n = Math.hypot(rx, rz), nd = V(dir.x * .8 + rx / n * .2, 0, dir.z * .8 + rz / n * .2).normalize();
+      if (pr > 0 && pr < BOLO.PH * .92 && perp < BOLO.PR * 2 + BOLO.CHAIN) {
+        // si lo coge de lado lo empuja más hacia ese lado (no sigue derecho por la fila), y nunca cae igual
+        const tol = BOLO.PR * 2 + BOLO.CHAIN, ox = rx - dir.x * pr, oz = rz - dir.z * pr, ol = Math.hypot(ox, oz) || 1, off = perp / tol;
+        const j = (rnd(ri++) - .5) * BOLO.FALLJ, d0 = V(dir.x + ox / ol * off * BOLO.SIDEP, 0, dir.z + oz / ol * off * BOLO.SIDEP).normalize();
+        const nd = V(d0.x * Math.cos(j) - d0.z * Math.sin(j), 0, d0.x * Math.sin(j) + d0.z * Math.cos(j));
         fall(o, nd, at + .12 + .22 * pr / BOLO.PH, valid, 'palo');
       }
     });
@@ -103,7 +110,7 @@ function boloSimulate(aim, hand, k, withPins = true) {
         // vale si le pega por el lado de la mano (o de frente) yendo hacia atrás, y sin haber rebotado en las tablas
         const side = n.x * hand <= .12, front = mode === 'air' || v.z < 0;
         const valid = side && front && !rebound, why = !side ? 'lado' : rebound ? 'rebote' : !front ? 'atras' : 'bola';
-        const vd = spH > 1e-3 ? V(v.x / spH, 0, v.z / spH) : n, j = (rnd(ri++) - .5) * .22;
+        const vd = spH > 1e-3 ? V(v.x / spH, 0, v.z / spH) : n, j = (rnd(ri++) - .5) * BOLO.FALLJ;
         const d = V(n.x * .7 + vd.x * .3, 0, n.z * .7 + vd.z * .3).normalize(), c = Math.cos(j), s = Math.sin(j);
         fall(pin, V(d.x * c - d.z * s, 0, d.x * s + d.z * c), t, valid, why);
         ev('palo', p, { i: pin.i });
