@@ -390,7 +390,7 @@ function ranaAdvance() {
   later(1.5, () => {
     ranaClearRings(); game.arg = 0; game.turnPts = 0;
     game.idx++;
-    if (game.idx < game.order.length) nextThrow(); else startRound();
+    if (game.idx < game.order.length) nextThrow(); else startRound(game.order[0]);   // nueva ronda: siempre en el mismo orden, empieza el mismo de la primera
   });
 }
 

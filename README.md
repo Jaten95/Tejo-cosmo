@@ -137,6 +137,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.46.6 | Arreglado | al lanzar: el tejo o la argolla sale de la mano en una sola parábola, el brazo remata corto y sale por un lado, y en tejo tu tiro tiene la misma cámara que cuando lanza otro |
 | — | 1.46.7 | Arreglado | rana (beta): la argolla casi no se tambalea en el aire, va plana girando sobre sí misma |
 | — | 1.47.0 | Agregado | la rana sale para todos (ya no es beta); al lanzar la mano hace el movimiento y el tejo o la argolla vuela igual que cuando lanza otro |
+| — | 1.48.0 | Cambiado | rana: cada ronda la empieza el mismo jugador y siempre en el mismo orden (antes la empezaba el que había cerrado la anterior) |
 
 </details>
 

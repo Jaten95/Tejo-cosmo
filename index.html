@@ -397,7 +397,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <h3>Modo beta</h3>
       <div class="joinRow"><input id="betaIn" placeholder="Código beta" aria-label="Código del modo beta" autocomplete="off" autocapitalize="off"><button class="btn ghost" id="btnBeta" type="button">Activar</button></div>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.47.0</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.48.0</span></div>
   </div></div>
 </section>
 
@@ -466,7 +466,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <tr><td>Rana<span>Se mete en la boca grande de la rana de atrás.</span></td><td>80</td></tr>
       <tr><td>Huecos<span>Cada hueco da lo que dice su cajón: 50, 45, 40, 30, 20 o 10.</span></td><td>10–50</td></tr>
     </table>
-    <p class="prose"><b>Rana:</b> se lanza desde la raya, a 3,5 m de la mesa. Cada jugador tiene una tanda de 6 argollas y lo que entra se suma al momento; el tablero de arriba de la mesa va mostrando sus puntos. Si la argolla se queda en la tabla o se cae, no cuenta. Gana el primero que llegue a la meta.</p>
+    <p class="prose"><b>Rana:</b> se lanza desde la raya, a 3,5 m de la mesa. Cada jugador tiene una tanda de 6 argollas, siempre en el mismo orden (cada ronda la empieza el mismo), y lo que entra se suma al momento; el tablero de arriba de la mesa va mostrando sus puntos. Si la argolla se queda en la tabla o se cae, no cuenta. Gana el primero que llegue a la meta.</p>
     <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
     <p class="prose"><b>Tiempo en salas:</b> tienes 20 segundos para lanzar. Si no lanzas, tu tiro es nulo y pasa el turno.</p>
     <p class="prose"><b>Configuración en salas:</b> la mira, la lupa, la barra de fuerza y el zoom de la cámara son los que tenga puestos quien creó la sala, para que todos jueguen igual.</p>
@@ -504,7 +504,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.47.0";
+const GAME_VERSION = "1.48.0";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -3188,7 +3188,7 @@ function ranaAdvance() {
   later(1.5, () => {
     ranaClearRings(); game.arg = 0; game.turnPts = 0;
     game.idx++;
-    if (game.idx < game.order.length) nextThrow(); else startRound();
+    if (game.idx < game.order.length) nextThrow(); else startRound(game.order[0]);   // nueva ronda: siempre en el mismo orden, empieza el mismo de la primera
   });
 }
 
