@@ -141,16 +141,36 @@ function makePalo() {
   }
   const m = new THREE.Mesh(PIN_GEO, PIN_MAT); m.castShadow = true; m.receiveShadow = true; return m;
 }
+// Bola de aluminio fundido como las de verdad: gris mate con anillos torneados alrededor y un huequito de lado
+// (por ahí se le echa arena o plomo para darle el peso)
+function bolaTex() {
+  const W2 = 512, H2 = 256, [c, g] = cnv(W2, H2), [cb, gb] = cnv(W2, H2);
+  g.fillStyle = '#a9adb1'; g.fillRect(0, 0, W2, H2); gb.fillStyle = '#808080'; gb.fillRect(0, 0, W2, H2);
+  for (let i = 0; i < 9000; i++) {   // poros del metal fundido
+    const x = Math.random() * W2, y = Math.random() * H2, k = Math.random();
+    g.fillStyle = k < .5 ? 'rgba(60,64,70,.16)' : 'rgba(235,238,240,.14)'; g.fillRect(x, y, 1.4, 1.4);
+    gb.fillStyle = k < .5 ? 'rgba(0,0,0,.25)' : 'rgba(255,255,255,.2)'; gb.fillRect(x, y, 1.4, 1.4);
+  }
+  // los anillos: una raya clara (el filo torneado) con su sombrita debajo; de polo a polo, más juntos cerca del centro
+  for (let k = -6; k <= 6; k++) {
+    const lat = k * .21 + (k % 2 ? .02 : 0), y = H2 * (.5 - lat / Math.PI);
+    g.fillStyle = 'rgba(240,242,244,.85)'; g.fillRect(0, y - 1.4, W2, 2.2);
+    g.fillStyle = 'rgba(70,74,78,.55)'; g.fillRect(0, y + .9, W2, 1.6);
+    gb.fillStyle = '#000'; gb.fillRect(0, y - 1, W2, 2.6);
+  }
+  return { map: tex(c), bump: tex(cb, 1, 1, false) };
+}
 function makeBola() {
   if (!BALL_GEO) {
-    BALL_GEO = new THREE.SphereGeometry(BOLO.BR, 24, 16);
-    BALL_MAT = std({ color: '#c6c9cc', metalness: .85, roughness: .33 });
-    BALL_PLUG = std({ color: '#3a3632', metalness: .3, roughness: .8 });
+    BALL_GEO = new THREE.SphereGeometry(BOLO.BR, 32, 20);
+    const t = bolaTex();
+    BALL_MAT = std({ map: t.map, bumpMap: t.bump, bumpScale: .0012, color: '#ffffff', metalness: .55, roughness: .55 });
+    BALL_PLUG = std({ color: '#141312', metalness: .2, roughness: .9 });
   }
   const g = new THREE.Group(), b = new THREE.Mesh(BALL_GEO, BALL_MAT); b.castShadow = true; g.add(b);
-  // el hueco por donde se le echa la arena, tapado
-  const plug = new THREE.Mesh(new THREE.CylinderGeometry(BOLO.BR * .28, BOLO.BR * .28, .004, 14), BALL_PLUG);
-  plug.position.y = BOLO.BR - .0015; g.add(plug);
+  // el huequito de lado, en la mitad
+  const hole = new THREE.Mesh(new THREE.CylinderGeometry(BOLO.BR * .12, BOLO.BR * .12, .003, 14), BALL_PLUG);
+  hole.rotation.z = Math.PI / 2; hole.position.x = BOLO.BR - .0008; g.add(hole);
   return g;
 }
 function buildBolo() {

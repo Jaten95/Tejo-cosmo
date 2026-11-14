@@ -91,7 +91,7 @@ function armSetPlayer(p) {
     ARM.tejo.scale.setScalar(G.s);
   }
   else if (isBolo()) {   // la bola de aluminio en la palma, con los dedos cerrados por delante
-    ARM.tejo = makeBola(); ARM.tejo.position.set(...BOLA_GRIP.pos); ARM.tejo.scale.setScalar(BOLA_GRIP.s);
+    ARM.tejo = makeBola(); ARM.tejo.position.set(...BOLA_GRIP.pos); ARM.tejo.rotation.set(...BOLA_GRIP.rot); ARM.tejo.scale.setScalar(BOLA_GRIP.s);
   }
   else ARM.tejo = makeTejo(p.color, p.design, p.name);
   ARM.tejo.castShadow = false; ARM.slot.add(ARM.tejo);
@@ -274,7 +274,7 @@ function bendChain(J, angles, start) {
 const ARG_ARM = [45, 95];   // hombro y codo con la argolla en la mano
 const ARG_HAND = { roll: 1.9, yaw: 0, pitch: 0 };   // cuánto se voltea la mano (desde la muñeca)
 // dónde queda la argolla (coordenadas de la mano: palma +Y, dedos -Z, pulgar +X): entre la yema del índice y la del pulgar, de cara al jugador
-const BOLA_GRIP = { pos: [0, .045, 0], s: .9 };   // la bola en el soporte de la mano (sobre la palma)
+const BOLA_GRIP = { pos: [0, .045, 0], s: .9, rot: [-.35, -1.1, 0] };   // la bola en el soporte de la mano (sobre la palma), con los anillos de lado como en la foto
 const ARG_GRIP = { pos: [.0314, .0784, -.0427], n: [.927, -.333, -.175], spin: .4, s: 1.1 };
 const HAND_POSE = {
   closed: { index: [.587, .701, .738], middle: [.647, .571, 1.037], ring: [.475, .818, .459], pinky: [.695, -.202, 1.276], thumb: [[-.719, -.86, -.578], [.664, .243, .16], [.944, -.076, -.134]] },
