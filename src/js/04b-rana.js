@@ -431,6 +431,8 @@ function ranaFrame() {
   const want = (phase === 'menu' || phase === 'boot') ? settings.game === 'rana' : isRana();
   if (want && !RANA_M) buildRana();
   if (RANA_M) RANA_M.g.visible = want;
+  // la greda de tejo queda detrás de la caja y no se ve: en la rana no se dibuja (las tablas de los lados y el tablero sí se ven, esos quedan)
+  if (cancha && cancha.visible === want) { cancha.visible = !want; canchaFondo.forEach(o => o.visible = !want); }
 }
 
 /* ---------- Don Chepe en la rana ---------- */

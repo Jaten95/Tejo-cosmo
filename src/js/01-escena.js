@@ -125,7 +125,7 @@ function scorchTex() {
 }
 
 /* ================= Escena ================= */
-let renderer, scene, cam, lupaCam, hall, cancha, mechaMeshes = [], reticle, reticleCore, clayMat;
+let renderer, scene, cam, lupaCam, hall, cancha, canchaFondo = [], mechaMeshes = [], reticle, reticleCore, clayMat;
 const T = {}; // texturas
 const mats = {};
 
@@ -215,6 +215,7 @@ function buildHall() {
 
 function buildCancha() {
   if (cancha) hall.remove(cancha);
+  canchaFondo.forEach(o => hall.remove(o)); canchaFondo = [];   // paredes del cajón de greda (en la rana se esconden con la cancha)
   cancha = new THREE.Group();
   const m = new THREE.Matrix4().makeBasis(W.a, W.s, W.n);
   cancha.quaternion.setFromRotationMatrix(m); cancha.position.copy(W.C);
@@ -239,14 +240,14 @@ function buildCancha() {
   const wallMat = rustMat();
   [HU, -HU - fw].forEach(x => {
     const w = new THREE.Mesh(new THREE.ExtrudeGeometry(side, { depth: fw, bevelEnabled: false }), wallMat);
-    w.rotation.y = Math.PI / 2; w.position.x = x; w.castShadow = w.receiveShadow = true; hall.add(w);
+    w.rotation.y = Math.PI / 2; w.position.x = x; w.castShadow = w.receiveShadow = true; hall.add(w); canchaFondo.push(w);
   });
   const backW = new THREE.Mesh(tileUV(new THREE.BoxGeometry(HU * 2 + fw * 2, yBack, .04), HU * 2 + fw * 2, yBack, .04), wallMat);
-  backW.position.set(0, yBack / 2, zBack + .02); backW.castShadow = backW.receiveShadow = true; hall.add(backW);
+  backW.position.set(0, yBack / 2, zBack + .02); backW.castShadow = backW.receiveShadow = true; hall.add(backW); canchaFondo.push(backW);
   // tablero
   const board = new THREE.Mesh(new THREE.BoxGeometry(3.3, 2.5, .08), [std({ map: T.woodPlain, roughness: .85 }), std({ map: T.woodPlain, roughness: .85 }), std({ map: T.woodPlain, roughness: .85 }), std({ map: T.woodPlain, roughness: .85 }), std({ map: T.backboard, roughness: .82 }), std({ map: T.woodPlain, roughness: .85 })]);
   board.position.set(0, 1.25, W.ZB - .04); board.receiveShadow = true; hall.add(board);
-  [-1.65, 1.65].forEach(x => { const sb = new THREE.Mesh(new THREE.BoxGeometry(.06, 1.7, 2.4), std({ map: T.woodPlain, roughness: .85 })); sb.position.set(x, .85, -W.D - .1); sb.castShadow = sb.receiveShadow = true; hall.add(sb); });
+  [-1.65, 1.65].forEach(x => { const sb = new THREE.Mesh(new THREE.BoxGeometry(.06, 1.7, 2.4), std({ map: T.woodPlain, roughness: .85 })); sb.position.set(x, .85, -W.D - .1); sb.castShadow = sb.receiveShadow = true; hall.add(sb); });   // estas se ven a los lados de la rana: se quedan
   buildProps();
   buildMechas();
   buildReticle();
