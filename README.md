@@ -132,6 +132,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.46.1 | Arreglado | rana (beta): el gancho empieza vacío con su 300 pintado y las bocas de la rana y el sapito se ven abiertas |
 | — | 1.46.2 | Arreglado | rana (beta): la argolla se agarra en C entre el pulgar y el índice, con el brazo y la mano como en la foto |
 | — | 1.46.3 | Arreglado | rana (beta): los ojos del sapito quedan encima de la cabeza como los de la rana grande, ya no pegados al labio |
+| — | 1.46.4 | Arreglado | al lanzar ya no se ven dos tejos o dos argollas: el que vuela sale de la mano (antes también salía una copia desde la mano) |
 
 </details>
 

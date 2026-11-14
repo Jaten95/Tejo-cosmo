@@ -198,6 +198,7 @@ function launch(a, opts) {
   const fsim = res.rebound ? joinRebound(sim, res.rebound) : sim;
   const mesh = makeTejo(p.color, p.design, p.name); mesh.position.copy(sim.path[0].p); scene.add(mesh);
   flight = { timeout: !!(opts && opts.timeout), sim: fsim, res, mesh, t: 0, base: game.tejos.map(t => t.mesh.position.clone()), owner: game.order[game.idx], ev: 0, done: false, impactAt: fsim.first === 'clay' ? fsim.firstT : fsim.duration, spin: rand(12, 18) * (Math.random() < .5 ? -1 : 1), tilt: V(rand(-.25, .25), 0, rand(-.25, .25)) };
+  flight.hand = takeHandoff(); applyHandoff(flight);   // si lo lanzó la mano, sale de donde se veía en la mano
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
   game.thrown++;
   A.whoosh(); buzz(15);
@@ -222,6 +223,7 @@ function updateFlight(dt) {
   f.mesh.position.copy(p);
   const bounced = f.ev > 0;
   f.mesh.rotation.set(f.tilt.x + (bounced ? f.t * 6 : 0), f.t * f.spin, f.tilt.z + (bounced ? f.t * 4 : 0));
+  if (f.hand) applyHandoff(f);
   if (f.t >= sim.duration) {
     if (!sim.clay) { f.mesh.position.copy(sim.end); f.mesh.rotation.set(0, rand(0, 6), 0); }
     finishFlight();

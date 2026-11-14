@@ -2,8 +2,8 @@
 /* ================= Brazo en primera persona =================
    Lanzamiento por debajo, en péndulo: al arrastrar el brazo baja y se va hacia atrás
    (como la medida); al soltar viene hacia adelante, suelta el tejo y remata apuntando a la cancha. */
-const ARM = { scene: null, cam: null, root: null, upper: null, elbow: null, fore: null, hand: null, slot: null, tejo: null, fly: null,
-  key: '', state: 'hidden', t: 0, th: 60, be: 40, vis: 0, cb: null, released: false, from: 0, flyT: 0 };
+const ARM = { scene: null, cam: null, root: null, upper: null, elbow: null, fore: null, hand: null, slot: null, tejo: null, handoff: null,
+  key: '', state: 'hidden', t: 0, th: 60, be: 40, vis: 0, cb: null, released: false, from: 0 };
 function armMats() {
   return {
     sleeve: new THREE.MeshStandardMaterial({ color: '#7d2a21', roughness: .85 }),
@@ -170,12 +170,9 @@ function updateArm(dt, now) {
     ARM.th = lerp(ARM.from, 128, e); ARM.be = lerp(ARM.be, 12, k);
     if (!ARM.released && ARM.th >= 100) {
       ARM.released = true;
-      if (ARM.tejo) {
-        const fly = ARM.tejo; ARM.tejo = null; ARM.key = '';
-        fly.updateWorldMatrix(true, false); const p = new THREE.Vector3(), q = new THREE.Quaternion();
-        fly.getWorldPosition(p); fly.getWorldQuaternion(q); ARM.slot.remove(fly);
-        fly.position.copy(p); fly.quaternion.copy(q); ARM.scene.add(fly); ARM.fly = fly; ARM.flyT = 0;
-      }
+      // la mano solo lo suelta: el que vuela es el de la cancha, que arranca donde se veía en la mano
+      // (antes salía también una copia desde la mano y se veían dos)
+      if (ARM.tejo) { ARM.handoff = armHandoff(); ARM.slot.remove(ARM.tejo); ARM.tejo = null; ARM.key = ''; }
       const cb = ARM.cb; ARM.cb = null; if (cb) cb();
       if (flight && !flight.done) flight.fp = true;   // este tiro se ve en primera persona
     }
@@ -185,11 +182,6 @@ function updateArm(dt, now) {
     if (ARM.t > .45 && !fpFlight) ARM.state = 'drop';
   }
   if (ARM.state === 'drop' && show) ARM.state = 'ready';
-  if (ARM.fly) {   // el tejo que sale de la mano se aleja hacia la cancha
-    ARM.flyT += dt; const f = ARM.fly;
-    f.position.add(V(-.05 * dt, .55 * dt, -2.6 * dt)); f.rotation.y += dt * 14;
-    if (ARM.flyT > .35) { ARM.scene.remove(f); ARM.fly = null; }
-  }
   const curlT = (ARM.state === 'ready' || (ARM.state === 'swing' && !ARM.released)) ? 1 : .12;
   ARM.curl += (curlT - ARM.curl) * (1 - Math.exp(-(curlT < ARM.curl ? 18 : 6) * dt));
   armFingers(ARM.curl);
@@ -198,6 +190,32 @@ function updateArm(dt, now) {
   const a = cam.aspect, kx = clamp(a / 1.25, .48, 1);
   ARM.root.position.set(-.09 * (1 - kx), -.32 * (1 - ARM.vis), 0);
   ARM.root.scale.setScalar(a < 1 ? .9 : 1);
+}
+/* Paso de la mano a la cancha: al soltar se guarda cómo se veía en la mano (punto de la pantalla, tamaño y vuelta).
+   Lo que vuela en la cancha arranca viéndose igual y en un cuarto de segundo se junta con su recorrido de verdad.
+   Solo es imagen: el tiro y los puntos no cambian. */
+const HANDOFF_T = .25;
+function armHandoff() {
+  if (!ARM.tejo || !ARM.root || !ARM.root.visible) return null;
+  ARM.tejo.updateWorldMatrix(true, false);
+  const p = new THREE.Vector3(), q = new THREE.Quaternion(); ARM.tejo.getWorldPosition(p); ARM.tejo.getWorldQuaternion(q);
+  const dArm = p.length(); p.project(ARM.cam);
+  if (!(Math.abs(p.x) < 1.3 && Math.abs(p.y) < 1.3)) return null;
+  return { x: p.x, y: p.y, dArm, s: ARM.tejo.scale.x || 1, q, at: performance.now() };
+}
+function takeHandoff() { const h = ARM.handoff; ARM.handoff = null; return h && performance.now() - h.at < 600 ? h : null; }
+function applyHandoff(f) {
+  const h = f.hand; if (!h || !(cam.fov > 1)) return;
+  const u = Math.min(1, f.t / HANDOFF_T); if (u >= 1) { f.hand = null; return; }
+  const w = 1 - u * u * (3 - 2 * u), k = Math.tan(ARM.cam.fov * Math.PI / 360) / Math.tan(cam.fov * Math.PI / 360), d = h.dArm * k / h.s;
+  if (h.t0 == null) {   // el recorrido real arranca más cerca de la cámara que la mano: se toma desde donde va a la misma distancia
+    const path = f.sim.path; let i = 0; while (i < path.length - 1 && path[i].t < HANDOFF_T * .8 && path[i].p.distanceTo(cam.position) < d) i++;
+    h.t0 = path[i].t;
+  }
+  if (h.t0 > 0) f.mesh.position.copy(samplePath(f.sim.path, Math.min(f.t + h.t0 * (1 - u), f.sim.duration)));   // alcanza al tiempo real al final del paso
+  const dir = new THREE.Vector3(h.x, h.y, .5).unproject(cam).sub(cam.position).normalize();
+  f.mesh.position.lerp(cam.position.clone().addScaledVector(dir, d), w);   // con la cámara de este cuadro, aunque se esté moviendo
+  f.mesh.quaternion.slerp(cam.quaternion.clone().multiply(h.q), w);
 }
 function renderArm(w, h) {
   if (!ARM.root || !ARM.root.visible || !(w > 10 && h > 10)) return;
