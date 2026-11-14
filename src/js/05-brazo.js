@@ -276,7 +276,7 @@ const ARG_ARM = [45, 95];   // hombro y codo con la argolla en la mano
 const ARG_HAND = { roll: 1.9, yaw: 0, pitch: 0 };   // cuánto se voltea la mano (desde la muñeca)
 // dónde queda la argolla (coordenadas de la mano: palma +Y, dedos -Z, pulgar +X): entre la yema del índice y la del pulgar, de cara al jugador
 // bolo: la bola asentada en la palma (coordenadas de la mano: palma +Y, dedos -Z, pulgar +X), con los anillos de lado como en la foto
-const BOLA_GRIP = { pos: [-.005, .064, -.032], s: .9, rot: [-.35, -1.1, 0] };
+const BOLA_GRIP = { pos: [.005, .064, -.032], s: .9, rot: [-.35, -1.1, 0] };
 const ARG_GRIP = { pos: [.0314, .0784, -.0427], n: [.927, -.333, -.175], spin: .4, s: 1.1 };
 const HAND_POSE = {
   closed: { index: [.587, .701, .738], middle: [.647, .571, 1.037], ring: [.475, .818, .459], pinky: [.695, -.202, 1.276], thumb: [[-.719, -.86, -.578], [.664, .243, .16], [.944, -.076, -.134]] },
@@ -284,11 +284,12 @@ const HAND_POSE = {
   // la argolla la sostienen el pulgar y el índice (en C); corazón, anular y meñique van recogidos
   argolla: { index: [.45, 1, .8], middle: [1.25, 1.55, 1], ring: [1.35, 1.55, 1], pinky: [1.4, 1.5, 1], thumb: [[.1, -.7, 0], [.3, 0, 0], [.4, 0, 0]] },
   // bolo: la bola en la palma y los dedos abrazándola por delante y por los lados
-  // (cada dedo se dobló hasta tocar la bola sin meterse en ella)
-  bola: { index: [.579, .524, .57], middle: [.5, .678, .475], ring: [.268, .858, .084], pinky: [.163, .649, .165], thumb: [[.1, -.4, 0], [.2, 0, 0], [.2, 0, 0]] }
+  // (cada dedo se dobló hasta tocar la bola sin meterse en ella; el meñique y el anular un poco abiertos para que se vea el meñique por el lado)
+  bola: { index: [.412, .802, .172], middle: [.495, .696, .442], ring: [[.473, .12, 0], .63, .334], pinky: [[.638, .35, 0], .183, .74], thumb: [[-.2, -.3, -.2], [.4, 0, 0], [.4, 0, 0]] }
 };
 function poseModel(c) {
-  const mix = (a, b) => Array.isArray(a) ? a.map((v, i) => mix(v, b[i])) : lerp(b, a, c);
+  // un nudillo puede ser un número (solo doblar) o [doblar, abrir de lado, girar]
+  const mix = (a, b) => Array.isArray(a) ? a.map((v, i) => mix(v, Array.isArray(b) ? b[i] : i === 0 ? b : 0)) : lerp(b || 0, a, c);
   const G = isRana() ? HAND_POSE.argolla : isBolo() ? HAND_POSE.bola : HAND_POSE.closed;   // la argolla y la bola se agarran distinto al tejo
   ['index', 'middle', 'ring', 'pinky'].forEach(f => {
     const J = ['metacarpal', 'phalanx-proximal', 'phalanx-intermediate', 'phalanx-distal', 'tip'].map(s => `${f}-finger-${s}`);
