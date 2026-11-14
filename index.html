@@ -397,7 +397,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <h3>Modo beta</h3>
       <div class="joinRow"><input id="betaIn" placeholder="Código beta" aria-label="Código del modo beta" autocomplete="off" autocapitalize="off"><button class="btn ghost" id="btnBeta" type="button">Activar</button></div>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.46.6</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.46.7</span></div>
   </div></div>
 </section>
 
@@ -504,7 +504,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.46.6";
+const GAME_VERSION = "1.46.7";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -3154,7 +3154,7 @@ function ranaUpdate(dt) {
     if (e.kind === 'mesa' || e.kind === 'madera') f.landed = true;
   }
   f.mesh.position.copy(samplePath(sim.path, Math.min(f.t, sim.duration)));
-  if (!f.landed) f.mesh.rotation.set(Math.PI / 2 + Math.sin(f.t * 5) * .5, f.t * 2, f.t * f.spin);
+  if (!f.landed) f.mesh.rotation.set(Math.PI / 2 + Math.sin(f.t * 5) * .07, f.t * .3, f.t * f.spin);   // va casi plana: gira sobre sí misma y apenas se mece
   else f.mesh.rotation.set(Math.PI / 2, 0, f.mesh.rotation.z + dt * 3);
   if (f.hand) applyHandoff(f);
   if (f.t >= sim.duration) ranaFinish();

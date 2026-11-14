@@ -354,7 +354,7 @@ function ranaUpdate(dt) {
     if (e.kind === 'mesa' || e.kind === 'madera') f.landed = true;
   }
   f.mesh.position.copy(samplePath(sim.path, Math.min(f.t, sim.duration)));
-  if (!f.landed) f.mesh.rotation.set(Math.PI / 2 + Math.sin(f.t * 5) * .5, f.t * 2, f.t * f.spin);
+  if (!f.landed) f.mesh.rotation.set(Math.PI / 2 + Math.sin(f.t * 5) * .07, f.t * .3, f.t * f.spin);   // va casi plana: gira sobre sí misma y apenas se mece
   else f.mesh.rotation.set(Math.PI / 2, 0, f.mesh.rotation.z + dt * 3);
   if (f.hand) applyHandoff(f);
   if (f.t >= sim.duration) ranaFinish();

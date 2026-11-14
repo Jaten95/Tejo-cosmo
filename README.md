@@ -135,6 +135,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.46.4 | Arreglado | al lanzar ya no se ven dos tejos o dos argollas: el que vuela sale de la mano (antes también salía una copia desde la mano) |
 | — | 1.46.5 | Arreglado | rana (beta): no se dibuja la greda de tejo que queda tapada detrás de la caja (menos trabajo por cuadro) |
 | — | 1.46.6 | Arreglado | al lanzar: el tejo o la argolla sale de la mano en una sola parábola, el brazo remata corto y sale por un lado, y en tejo tu tiro tiene la misma cámara que cuando lanza otro |
+| — | 1.46.7 | Arreglado | rana (beta): la argolla casi no se tambalea en el aire, va plana girando sobre sí misma |
 
 </details>
 
