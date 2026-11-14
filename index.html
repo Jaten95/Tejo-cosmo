@@ -399,7 +399,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <h3>Modo beta</h3>
       <div class="joinRow"><input id="betaIn" placeholder="Código beta" aria-label="Código del modo beta" autocomplete="off" autocapitalize="off"><button class="btn ghost" id="btnBeta" type="button">Activar</button></div>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.52.0</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.52.1</span></div>
   </div></div>
 </section>
 
@@ -513,7 +513,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.52.0";
+const GAME_VERSION = "1.52.1";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -3774,7 +3774,8 @@ function armSetPlayer(p) {
     ARM.tejo.scale.setScalar(G.s);
   }
   else if (isBolo()) {   // la bola de aluminio en la palma, con los dedos cerrados por delante
-    ARM.tejo = makeBola(); ARM.tejo.position.set(...BOLA_GRIP.pos); ARM.tejo.rotation.set(...BOLA_GRIP.rot); ARM.tejo.scale.setScalar(BOLA_GRIP.s);
+    ARM.tejo = makeBola(); ARM.tejo.position.fromArray(BOLA_GRIP.pos).sub(ARM.slot.position).applyAxisAngle(V(1, 0, 0), -ARM.slot.rotation.x);
+    ARM.tejo.rotation.set(...BOLA_GRIP.rot); ARM.tejo.scale.setScalar(BOLA_GRIP.s);
   }
   else ARM.tejo = makeTejo(p.color, p.design, p.name);
   ARM.tejo.castShadow = false; ARM.slot.add(ARM.tejo);
@@ -3957,17 +3958,20 @@ function bendChain(J, angles, start) {
 const ARG_ARM = [45, 95];   // hombro y codo con la argolla en la mano
 const ARG_HAND = { roll: 1.9, yaw: 0, pitch: 0 };   // cuánto se voltea la mano (desde la muñeca)
 // dónde queda la argolla (coordenadas de la mano: palma +Y, dedos -Z, pulgar +X): entre la yema del índice y la del pulgar, de cara al jugador
-const BOLA_GRIP = { pos: [0, .045, 0], s: .9, rot: [-.35, -1.1, 0] };   // la bola en el soporte de la mano (sobre la palma), con los anillos de lado como en la foto
+// bolo: la bola asentada en la palma (coordenadas de la mano: palma +Y, dedos -Z, pulgar +X), con los anillos de lado como en la foto
+const BOLA_GRIP = { pos: [-.005, .064, -.032], s: .9, rot: [-.35, -1.1, 0] };
 const ARG_GRIP = { pos: [.0314, .0784, -.0427], n: [.927, -.333, -.175], spin: .4, s: 1.1 };
 const HAND_POSE = {
   closed: { index: [.587, .701, .738], middle: [.647, .571, 1.037], ring: [.475, .818, .459], pinky: [.695, -.202, 1.276], thumb: [[-.719, -.86, -.578], [.664, .243, .16], [.944, -.076, -.134]] },
   open: { index: [.02, .1, .05], middle: [.02, .1, .05], ring: [.03, .12, .06], pinky: [.05, .14, .08], thumb: [[0, 0, 0], [0, 0, 0], [0, 0, 0]] },
   // la argolla la sostienen el pulgar y el índice (en C); corazón, anular y meñique van recogidos
-  argolla: { index: [.45, 1, .8], middle: [1.25, 1.55, 1], ring: [1.35, 1.55, 1], pinky: [1.4, 1.5, 1], thumb: [[.1, -.7, 0], [.3, 0, 0], [.4, 0, 0]] }
+  argolla: { index: [.45, 1, .8], middle: [1.25, 1.55, 1], ring: [1.35, 1.55, 1], pinky: [1.4, 1.5, 1], thumb: [[.1, -.7, 0], [.3, 0, 0], [.4, 0, 0]] },
+  // bolo: la bola en la palma y los dedos abrazándola por delante y por los lados
+  bola: { index: [.8, 1, .7], middle: [.8, 1, .7], ring: [.85, 1, .7], pinky: [.9, 1, .7], thumb: [[.3, -.4, 0], [.3, 0, 0], [.3, 0, 0]] }
 };
 function poseModel(c) {
   const mix = (a, b) => Array.isArray(a) ? a.map((v, i) => mix(v, b[i])) : lerp(b, a, c);
-  const G = isRana() ? HAND_POSE.argolla : HAND_POSE.closed;   // la argolla se agarra distinto al tejo
+  const G = isRana() ? HAND_POSE.argolla : isBolo() ? HAND_POSE.bola : HAND_POSE.closed;   // la argolla y la bola se agarran distinto al tejo
   ['index', 'middle', 'ring', 'pinky'].forEach(f => {
     const J = ['metacarpal', 'phalanx-proximal', 'phalanx-intermediate', 'phalanx-distal', 'tip'].map(s => `${f}-finger-${s}`);
     bendChain(J, mix(G[f], HAND_POSE.open[f]), 1);
