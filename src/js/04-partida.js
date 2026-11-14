@@ -177,7 +177,9 @@ function wobble(holdT, t) {
 }
 function currentAim(now) {
   if (!drag) return null;
-  const w = wobble((now - drag.t0) / 1000, now / 1000), kx = isRana() ? 2.4 : isBolo() ? BOLO.KX : 1;   // en la rana y el bolo el blanco es pequeño: el pulso se nota más de lado
+  const hold = (now - drag.t0) / 1000;
+  if (isBolo()) { const w = boloWobble(hold, now / 1000, drag.P); return { L: drag.L + w.L, P: clamp(drag.P + w.P, 0, 1), amp: w.amp }; }
+  const w = wobble(hold, now / 1000), kx = isRana() ? 2.4 : 1;   // en la rana la mesa es pequeña: el pulso se nota más de lado
   return { L: drag.L + w.x * kx, P: clamp(drag.P + w.y / dvdP, 0, 1), amp: w.amp };
 }
 function showReticle(aim) {

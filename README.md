@@ -149,6 +149,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.52.3 | Arreglado | bolo (beta): el meñique se ve por el lado de la bola y el agarre se ve más natural |
 | — | 1.52.4 | Arreglado | bolo (beta): el meñique queda pegado a la bola, ya no se ve separado |
 | — | 1.53.0 | Cambiado | bolo (beta): más difícil hacer chuza: el pulso tiembla más de lado, la bola se va más al soltarla y un palo que cae no siempre tumba al de atrás (si lo coge de lado lo bota hacia ese lado) |
+| — | 1.54.0 | Cambiado | bolo (beta): el pulso empieza a temblar cuando la mira va llegando a los palos (casi quieto cerca de la raya, unos 9 cm de lado y 35 de largo en los palos) |
 
 </details>
 

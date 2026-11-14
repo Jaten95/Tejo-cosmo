@@ -20,7 +20,8 @@ const BOLO = {
   P0: .55, SPAN: 15,                // fuerza que llega a los palos y metros por unidad de fuerza
   THETA: .42,                       // ángulo de salida por el aire
   KNOCK: .45,                       // velocidad mínima para tumbar un palo (m/s)
-  KX: 3.0,                          // el pulso se nota más de lado: los palos son una franja de 6 cm a 20 m
+  KX: 2.2,                          // el pulso se nota más de lado: los palos son una franja de 6 cm a 20 m
+  TREM: [.22, .5, 1.3, 8],          // el pulso empieza a temblar cuando la mira va llegando a los palos: de qué fuerza a qué fuerza crece, cuánto más tiembla allá, y metros de largo por unidad
   CHAIN: 0,                         // qué tan derecho tiene que caer un palo para tumbar al de atrás (holgura de lado, m)
   FALLJ: .95,                       // qué tanto se desvía al caer un palo que golpean (rad, de punta a punta)
   SIDEP: 1.5,                       // un palo que lo cogen de lado se va hacia ese lado
@@ -343,6 +344,11 @@ function boloEndReplay() {
 }
 
 /* ---------- Puntería y cámaras ---------- */
+// El pulso en el bolo: casi quieto cerca de la raya y temblando cuando la mira va llegando a los palos (y más entre más tiempo se aguanta)
+function boloWobble(hold, t, P) {
+  const [a, b, k, ky] = BOLO.TREM, u = clamp((P - a) / (b - a), 0, 1), near = u * u * (3 - 2 * u), w = wobble(hold, t), m = .35 + near * (1 + k);
+  return { L: w.x * m * BOLO.KX, P: w.y * m * ky / BOLO.SPAN, amp: w.amp * m };
+}
 function boloAimInfo(aim) {
   const p = current(), s = boloSimulate(aim, handOf(p), game.thrown, false);
   return { at: s.land };
