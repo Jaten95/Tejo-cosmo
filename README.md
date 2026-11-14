@@ -34,7 +34,7 @@ src/
     perro.glb, husky.glb  los perros que pasan (Quaternius, CC0)
 build.py             une todo y genera index.html y sw.js
 manifest.webmanifest e icon-*.png: datos para instalar el juego como app
-musica-vallenato.mp3 la música de fondo; el juego la baja al empezar a jugar (ver LICENSES/)
+musica-vallenato.mp3 la música de fondo; el juego la baja al empezar a jugar y, instalado, queda guardada para sonar sin internet (ver LICENSES/)
 ```
 
 ## Generar una versión nueva
@@ -151,6 +151,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.53.0 | Cambiado | bolo (beta): más difícil hacer chuza: el pulso tiembla más de lado, la bola se va más al soltarla y un palo que cae no siempre tumba al de atrás (si lo coge de lado lo bota hacia ese lado) |
 | — | 1.54.0 | Cambiado | bolo (beta): el pulso empieza a temblar cuando la mira va llegando a los palos (casi quieto cerca de la raya, unos 9 cm de lado y 35 de largo en los palos) |
 | — | 1.55.0 | Agregado | bolo (beta): el perro y la bola: si le pasa cerca brinca y sale corriendo; si le pega, chilla, huye, la bola se para ahí y el que lanzó pierde un punto por maltrato animal (en las salas de bolo no pasan perros) |
+| — | 1.55.1 | Arreglado | la música de fondo queda guardada al instalar el juego y suena sin internet, también después de cada actualización |
 
 </details>
 
