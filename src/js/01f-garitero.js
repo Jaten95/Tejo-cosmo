@@ -1,6 +1,7 @@
 
 /* ================= El garitero =================
-   Un campesino de sombrero que está de pie junto a la cancha, a la izquierda. Al terminar cada ronda de tejo
+   Un campesino de sombrero que está de pie junto a la cancha, a la izquierda, mirando al que lanza; sigue con la cabeza
+   (y, si hace falta, dando la vuelta) el tejo, la argolla o la bola mientras va y hasta que se acaba el tiro. Al terminar cada ronda de tejo
    camina a la cancha, saca los tejos y pone las mechas nuevas; en el bolo, cuando caen palos, va y los para.
    Mientras tanto respira y cambia de pie, y cuando alguien revienta mecha o mete el tejo, saluda con la mano.
    Llega siempre en GARI_GO segundos (fijo: en las salas todos esperan lo mismo, se vea o no se vea el garitero).
@@ -11,6 +12,8 @@ const GARI_GO = 2.2;                  // segundos que tarda en llegar a la canch
 const GARI_WALK = 1.15;               // m/s a los que se ve bien la animación de caminar a ritmo normal
 const GARI_HOME = [-2.45, 2.4];       // x y la distancia desde la cancha hacia la raya (z = -D + dz)
 const GARI_COLORS = { Skin: '#c98e66', Eyebrows: '#1d140e', Hair: '#1d140e' };   // trigueño, pelo y cejas negras
+const GARI_EYE = V(0, 1.55, .3);      // la cara del que lanza, parado en la raya
+const GARI_NECK = 1.05;               // lo más que voltea la cabeza (rad); más allá da la vuelta con el cuerpo
 let GARI = null;
 
 function loadGaritero() {
@@ -34,16 +37,17 @@ function placeGaritero() {
     o.frustumCulled = false; o.castShadow = true;
     [].concat(o.material).forEach(m => { m.metalness = 0; m.roughness = Math.max(.6, m.roughness); if (GARI_COLORS[m.name]) m.color.set(GARI_COLORS[m.name]); });
   });
-  root.position.set(x, 0, z); root.rotation.set(0, Math.atan2(0 - x, -D + .3 - z), 0);   // mirando a la cancha
+  root.position.set(x, 0, z); root.rotation.set(0, Math.atan2(GARI_EYE.x - x, GARI_EYE.z - z), 0);   // mirando al que lanza
   hall.add(root);
   if (!GARI.p) {
     const mixer = new THREE.AnimationMixer(root), acts = {};
     GARI.src.animations.forEach(c => { acts[c.name] = mixer.clipAction(c); });
     const idle = acts.Idle || acts.Idle_Neutral;
     if (idle) idle.play();
-    GARI.p = { root, mixer, acts, idle, cur: idle, cheerIn: 0, waveT: 0, task: null, home: null };
+    GARI.p = { root, mixer, acts, idle, cur: idle, cheerIn: 0, waveT: 0, task: null, home: null,
+      neck: root.getObjectByName('Neck'), head: root.getObjectByName('Head'), ly: 0, lp: 0, turning: false };
   }
-  const p = GARI.p; p.task = null; p.home = { pos: root.position.clone(), yaw: root.rotation.y };
+  const p = GARI.p; p.task = null; p.turning = false; p.ly = p.lp = 0; p.home = { pos: root.position.clone(), yaw: root.rotation.y };
   gPlay(p, p.idle, 0);
 }
 
@@ -81,7 +85,7 @@ function gariArrive(p) {
   const it = p.acts.Interact; gPlay(p, it, .2, true);
   p.task = { phase: 'work', t: 0, dur: it ? it.getClip().duration * .95 : 1 };
 }
-function gariHome(p) { p.root.position.copy(p.home.pos); p.root.rotation.y = p.home.yaw; p.task = null; gPlay(p, p.idle, .35); }
+function gariHome(p) { p.root.position.copy(p.home.pos); p.task = null; p.turning = true; gPlay(p, p.idle, .35); }   // se voltea solo, sin brincar
 
 function updateGaritero(dt) {
   const p = GARI && GARI.p; if (!p || !dt) return;
@@ -99,5 +103,48 @@ function updateGaritero(dt) {
   const w = p.acts.Wave;
   if (p.cheerIn > 0 && w && !p.task) { p.cheerIn -= dt; if (p.cheerIn <= 0) { p.cheerIn = 0; gPlay(p, w, .25, true); p.waveT = w.getClip().duration * .92; } }
   if (p.waveT > 0 && !p.task) { p.waveT -= dt; if (p.waveT <= 0) { p.waveT = 0; gPlay(p, p.idle, .4); } }
+  // three.js solo reescribe un hueso si la animación lo movió: se le devuelve la pose de la animación antes de
+  // actualizar, para que el giro de la cabeza no se vaya sumando de un cuadro a otro
+  const bones = [p.neck, p.head].filter(Boolean);
+  if (p.pose) bones.forEach((b, i) => b.quaternion.copy(p.pose[i]));
   p.mixer.update(dt);
+  p.pose = bones.map((b, i) => (p.pose && p.pose[i] || new THREE.Quaternion()).copy(b.quaternion));
+  gariLook(p, dt);
+}
+
+/* ---------- A dónde mira ---------- */
+// lo que va en el aire (o lo último que se lanzó, hasta que se acaba el tiro); si no, el que va a lanzar
+function gariTarget() {
+  if (!game || !['flight', 'result', 'roundEnd'].includes(phase)) return GARI_EYE;
+  if (isBolo()) { const m = bflight ? bflight.mesh : game.ball; return m && m.visible ? m.position : GARI_EYE; }
+  if (isRana()) return rflight && rflight.mesh ? rflight.mesh.position : GARI_EYE;
+  const m = flight ? flight.mesh : game.tejos.length && game.tejos[game.tejos.length - 1].mesh;
+  return m ? m.position : GARI_EYE;
+}
+const gWrap = a => Math.atan2(Math.sin(a), Math.cos(a));
+const _gqa = new THREE.Quaternion(), _gqb = new THREE.Quaternion(), _gqw = new THREE.Quaternion(), _gqp = new THREE.Quaternion();
+const _gax = new THREE.Vector3(), _ghp = new THREE.Vector3(), _gup = new THREE.Vector3(0, 1, 0);
+// Voltea la cabeza (mitad el cuello y mitad la cabeza) hacia lo que mira; si queda muy de lado, da la vuelta con el cuerpo.
+// Va después de la animación: la cabeza se mueve encima de lo que esté haciendo. Trabajando o caminando mira al frente.
+function gariLook(p, dt) {
+  if (!p.head) return;
+  const r = p.root; let yaw = 0, pitch = 0;
+  if (!p.task) {
+    const T = gariTarget(), want = Math.atan2(T.x - r.position.x, T.z - r.position.z), d = gWrap(want - r.rotation.y);
+    if (Math.abs(d) > GARI_NECK) p.turning = true; else if (Math.abs(d) < .12) p.turning = false;
+    if (p.turning) r.rotation.y = gWrap(r.rotation.y + d * Math.min(1, dt * 3.2));
+    r.updateMatrixWorld(true); p.head.getWorldPosition(_ghp);
+    yaw = clamp(gWrap(want - r.rotation.y), -GARI_NECK, GARI_NECK);
+    pitch = clamp(Math.atan2(T.y - _ghp.y, Math.hypot(T.x - _ghp.x, T.z - _ghp.z)), -.55, .5);
+  }
+  const k = Math.min(1, dt * 7); p.ly += (yaw - p.ly) * k; p.lp += (pitch - p.lp) * k;
+  if (Math.abs(p.ly) + Math.abs(p.lp) < 1e-3) return;
+  r.updateMatrixWorld(true);
+  const look = r.rotation.y + p.ly; _gax.set(-Math.cos(look), 0, Math.sin(look));   // el eje para subir o bajar la cara
+  _gqa.setFromAxisAngle(_gup, p.ly / 2); _gqb.setFromAxisAngle(_gax, p.lp / 2); _gqa.premultiply(_gqb);
+  [p.neck, p.head].forEach(b => {
+    if (!b || !b.parent) return;
+    b.getWorldQuaternion(_gqw).premultiply(_gqa); b.parent.getWorldQuaternion(_gqp).invert();
+    b.quaternion.copy(_gqp.multiply(_gqw)); b.updateMatrixWorld(true);
+  });
 }

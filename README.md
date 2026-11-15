@@ -18,7 +18,7 @@ src/
     01c-utileria.js  herramientas, canastas de cerveza y banderines del salón
     01d-ambiente.js  bombillos encendidos, polvo en la luz, mesa, sillas plásticas, caneca y parlantes
     01e-mascotas.js  de vez en cuando pasa un perro criollo o un husky
-    01f-garitero.js  el garitero de sombrero: arregla la cancha al acabar cada ronda y para los palos del bolo
+    01f-garitero.js  el garitero de sombrero: mira al que lanza, sigue el tiro, arregla la cancha y para los palos del bolo
     02-grabados.js   los diseños grabados en la cara del tejo
     03-fisica.js     vuelo, choques, puntaje, efectos y sonido
     03b-musica.js    música de fondo: se prende y apaga tocando un parlante o con el switch del menú
@@ -164,6 +164,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.57.4 | Cambiado | menú: íconos de línea para escoger el juego: el tejo con sus escalones, la rana de lado con la boca abierta y la bola con los palos cayéndose |
 | — | 1.58.0 | Agregado | campeonato: tejo, rana y bolo en orden al azar con los mismos jugadores; en cada juego 3, 2 y 1 puntos de campeonato al primero, segundo y tercero; partidas cortas (15, 500, 10) o largas; contra Don Chepe, por turnos (con equipos fijos) y en salas |
 | — | 1.59.0 | Agregado | el garitero: un campesino de sombrero junto a la cancha que, al acabar cada ronda de tejo, va, saca los tejos y pone mechas nuevas, y en el bolo para los palos que cayeron; saluda cuando alguien revienta mecha o embocina |
+| — | 1.59.1 | Cambiado | el garitero mira al que va a lanzar y sigue con la cabeza el tejo (o la bola) mientras va; si cae a su espalda, se da la vuelta para verlo |
 
 </details>
 
