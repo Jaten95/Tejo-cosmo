@@ -158,6 +158,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.57.1 | Cambiado | el grabado solo se escoge en el tejo: en la rana y el bolo ya no sale el botón, ni en el menú ni en la sala |
 | — | 1.57.2 | Arreglado | salas: el código se borra de la casilla al entrar; si se escribe un código donde no hay nadie, avisa en vez de abrir una sala vacía con ese número |
 | — | 1.57.3 | Cambiado | menú nuevo: el juego en tarjetas con dibujo, el modo en baldosas con ícono, lo de cada modo en una tarjeta, la partida en un resumen que abre una hoja con la distancia, la meta, las ayudas y la música, y "A jugar" siempre a la vista abajo |
+| — | 1.57.4 | Cambiado | menú: íconos de línea para escoger el juego: el tejo con sus escalones, la rana de lado con la boca abierta y la bola con los palos cayéndose |
 
 </details>
 
