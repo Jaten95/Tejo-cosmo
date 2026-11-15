@@ -37,7 +37,7 @@ let bflight = null;   // la bola en el aire (y rodando después de caer)
 let breplay = null;   // repetición de la chuza
 function isBolo() { return !!(game && game.kind === 'bolo'); }
 // Qué juego se ve en el salón: en el menú el que está escogido; jugando, el de la partida
-function shownGame() { return (phase === 'menu' || phase === 'boot' || !game) ? settings.game : (game.kind || 'tejo'); }
+function shownGame() { const g = (phase === 'menu' || phase === 'boot' || !game) ? settings.game : (game.kind || 'tejo'); return g === 'champ' ? 'tejo' : g; }   // en el menú del campeonato se ve la cancha de tejo
 function handOf(p) { return p && p.zurdo ? -1 : 1; }   // 1 = derecho, -1 = zurdo
 
 /* ---------- Física de la bola y los palos ---------- */

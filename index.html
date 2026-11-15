@@ -235,6 +235,14 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 .stats td:first-child,.stats th:first-child{text-align:left;}
 .stats td:first-child{font-weight:600;border-left:4px solid var(--c);padding-left:8px;}
 .stats tr.win td{color:var(--yellow);}
+.champT{margin-bottom:6px;}
+.champT td.m3{color:var(--yellow);font-weight:800;}
+.champT td.m2{color:#d4d7da;font-weight:800;}
+.champT td.m1{color:#d9945a;font-weight:800;}
+.champT td.m0,.champT td.dim{color:var(--dim);}
+.champT td.tot{font-family:var(--display);font-size:17px;color:var(--paper);}
+.champT tr.win td.tot{color:var(--yellow);}
+.champT th.now{color:var(--yellow);}
 .winner{font-family:var(--display);font-size:clamp(34px,10vw,48px);line-height:1;color:var(--paper);text-shadow:3px 3px 0 var(--red);}
 .loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--night);color:var(--muted);font-weight:600;z-index:5;}
 .joinRow{display:flex;gap:8px;}
@@ -297,7 +305,13 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 #menu .group > h3{color:var(--yellow);}
 
 /* el juego: tres tarjetas con dibujo */
-#menu #segGame{gap:8px;background:none;padding:0;}
+#menu #segGame{gap:8px;background:none;padding:0;grid-auto-flow:row;grid-template-columns:repeat(3,minmax(0,1fr));}
+#menu #segGame button.champCard{grid-column:1/-1;flex-direction:row;justify-content:center;gap:14px;padding:10px 14px;}
+#menu #segGame button.champCard svg{width:38px;height:38px;margin:0;}
+#menu #segGame button.champCard span{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;}
+#menu #segGame button.champCard b{font-weight:400;}
+#menu #segGame button.champCard small{margin-top:3px;}
+#menu .brand h1.long{font-size:clamp(30px,10vw,44px);line-height:1.05;}
 #menu #segGame button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 4px 9px;background:var(--ink);border:1.5px solid var(--wood-3);
   border-radius:8px;font:400 21px/1 var(--display);color:var(--paper);transition:transform .15s,box-shadow .15s,background .15s;}
 #menu #segGame button svg{width:46px;height:46px;margin:2px 0 7px;color:var(--yellow);}
@@ -396,6 +410,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
         <button data-v="tejo"><svg viewBox="3 5 42 42" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="rotate(-14 24 26)"><path d="M5 33 7.6 28.2h1.6L11.6 23.6h1.6L15.4 19"/><path d="M43 33 40.4 28.2h-1.6L36.4 23.6h-1.6L32.6 19"/><ellipse cx="24" cy="19" rx="8.6" ry="2.7"/><path d="M7.6 28.2a16.4 3.9 0 0 0 32.8 0" stroke-width="1.9"/><path d="M11.6 23.6a12.4 3.2 0 0 0 24.8 0" stroke-width="1.9"/><path d="M5 33a19 4.6 0 0 0 38 0"/></g></svg>Tejo<small>greda y bocín</small></button>
         <button data-v="rana"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M42 4.5C37.5 4.1 32.6 5.2 29.4 6.8A3.6 3.6 0 0 0 22.6 8.6C17.6 13.2 13.2 19.6 10.5 27.5 8 33.5 8.6 39.6 13.5 41.5H39M43.5 14.5C40 18.5 36.5 20.5 34.2 23.4 32.6 26.6 32.6 31.5 33 35.5L33.6 41.5M43.5 14.5 31.5 13.6 42 4.5"/><path d="M14 41.5c-.8-5.6 2.6-9.6 8-9.6 4.6 0 7.4 3.4 7 7.6" stroke-width="2"/><circle cx="26.2" cy="8.3" r="1.2" fill="currentColor" stroke="none"/></svg>Rana<small>argollas</small></button>
         <button data-v="bolo"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.50 41 L19.97 19.88 Q20.83 17.90 20.67 15.59 Q19.58 13.61 19.97 10.64 Q22.00 6.68 24.03 10.64 Q24.42 13.61 23.33 15.59 Q23.17 17.90 24.03 19.88 L24.50 41Z" stroke-width="2"/><path d="M27.50 41 L27.97 19.88 Q28.83 17.90 28.67 15.59 Q27.58 13.61 27.97 10.64 Q30.00 6.68 32.03 10.64 Q32.42 13.61 31.33 15.59 Q31.17 17.90 32.03 19.88 L32.50 41Z" stroke-width="2"/><g transform="rotate(13 36.5 41)"><path d="M34.00 41 L34.47 20.84 Q35.33 18.95 35.17 16.75 Q34.08 14.86 34.47 12.02 Q36.50 8.24 38.53 12.02 Q38.92 14.86 37.83 16.75 Q37.67 18.95 38.53 20.84 L39.00 41Z" stroke-width="2"/></g><circle cx="10" cy="33.5" r="8"/><path d="M2.56 30.70Q10.00 33.34 17.44 30.70M2.56 36.30Q10.00 39.10 17.44 36.30" stroke-width="1.8"/><circle cx="13.60" cy="28.54" r="1.2" fill="currentColor" stroke="none"/><path d="M3 43h42"/></svg>Bolo<small>tres palos</small></button>
+        <button data-v="champ" class="champCard"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 7h18v9a9 9 0 0 1-18 0z"/><path d="M15 10.5H9.5c0 5 2.6 8 6.4 8.6M33 10.5h5.5c0 5-2.6 8-6.4 8.6"/><path d="M24 25v6"/><path d="M18 41h12M19.5 41l1.2-10h6.6l1.2 10"/></svg><span><b>Campeonato</b><small>los tres juegos en orden al azar</small></span></button>
       </div>
       <p class="gameDesc" id="brandLine">Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.</p>
     </div>
@@ -447,7 +462,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.57.4</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.58.0</span></div>
   </div></div>
   <div id="mSheet" hidden>
     <div class="shPanel" role="dialog" aria-labelledby="mSheetT">
@@ -468,6 +483,10 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
           <label><input id="goalIn" type="number" inputmode="numeric" min="3" max="99" step="1" aria-label="Puntos para ganar" autocomplete="off"><span>puntos</span></label>
           <button class="step" id="goalPlus" type="button" aria-label="Más puntos">+</button>
         </div>
+      </div>
+      <div class="group" id="grpChampLen" hidden>
+        <h3>Partidas del campeonato</h3>
+        <div class="seg" id="segChampLen"><button data-v="corta">Cortas<small>15 · 500 · 10</small></button><button data-v="larga">Largas<small>27 · 1.000 · 15</small></button></div>
       </div>
       <h3 class="shSub">Ayudas y sonido</h3>
       <div class="rows">
@@ -566,6 +585,8 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <tr><td>El perro<span>Si la bola le pega al perro que pasa por el salón: maltrato animal. Contra Don Chepe y por turnos; en las salas no pasan perros.</span></td><td>−1</td></tr>
     </table>
     <p class="prose"><b>Bolo:</b> tres palos de pino de 60 cm en fila, a unos 20 m de la raya. Un tiro por turno, siempre por el aire y en el mismo orden. La bola es pesada: al caer en la tierra rueda poco, más entre más duro la tires, y entre más fuerza le metas más difícil es que vaya derecha. En el menú cada jugador dice si es derecho (D) o zurdo (Z). Partida a 15 o a lo que se escoja.</p>
+    <h3 class="rulesH">Campeonato</h3>
+    <p class="prose"><b>Campeonato:</b> se juegan los tres, tejo, rana y bolo, en un orden al azar y con los mismos jugadores. En cada juego el primero se lleva 3 puntos de campeonato, el segundo 2 y el tercero 1 (si empatan en puntos, el mismo puesto). Gana el que más sume al final de los tres; si empatan, el que más se acercó a las metas. Las partidas son cortas (tejo a 15, rana a 500, bolo a 10) o largas (27, 1.000 y 15). Con equipos cuenta el equipo, y cada juego lo empieza otro jugador.</p>
     <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
     <p class="prose"><b>Tiempo en salas:</b> tienes 20 segundos para lanzar. Si no lanzas, tu tiro es nulo y pasa el turno.</p>
     <p class="prose"><b>Configuración en salas:</b> la mira, la lupa, la barra de fuerza y el zoom de la cámara son los que tenga puestos quien creó la sala, para que todos jueguen igual.</p>
@@ -592,6 +613,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
     <h3 id="overEyebrow">Fin de la partida</h3>
     <div class="winner" id="overWinner"></div>
     <p class="prose" id="overLine"></p>
+    <div style="overflow-x:auto" id="champWrap" hidden><table class="stats champT" id="champStats"></table></div>
     <div style="overflow-x:auto"><table class="stats" id="overStats"></table></div>
     <div class="cta">
       <button class="btn" id="btnAgain">Revancha</button>
@@ -603,7 +625,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GAME_VERSION = "1.57.4";
+const GAME_VERSION = "1.58.0";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -2373,7 +2395,7 @@ function updateSpeakers(dt) {
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, music: true, game: 'tejo', ranaGoal: 1000, boloGoal: 15, hands: ['D', 'D', 'D', 'D', 'D', 'D'] };
+const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, music: true, game: 'tejo', ranaGoal: 1000, boloGoal: 15, hands: ['D', 'D', 'D', 'D', 'D', 'D'], champLen: 'corta' };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
@@ -2432,11 +2454,13 @@ function computeDvdP() {
 
 function newPlayer(name, i, cpu, design) { return { name, color: COLORS[i], design: design || null, score: 0, cpu: !!cpu, st: { mechas: 0, emb: 0, mon: 0, manos: 0, nulos: 0, tiros: 0 } }; }
 
-function startGame() {
+// kind: qué se juega (tejo, rana o bolo); ch: el campeonato, si este juego es parte de uno (ver 04d-campeonato.js)
+function startGame(kind = settings.game, ch = null) {
+  if (kind === 'champ') return startChamp();
   timers.length = 0; flight && flight.mesh && scene.remove(flight.mesh); flight = null; drag = null; cpuAim = null;
-  const D0 = settings.game === 'bolo' ? BOLO.D : settings.dist;   // el bolo tiene su distancia
+  const D0 = kind === 'bolo' ? BOLO.D : settings.dist;   // el bolo tiene su distancia
   if (Math.abs(W.D - D0) > .01 || !hall) { setDistance(D0); buildHall(); }
-  computeDvdP();
+  game = null; computeDvdP();   // sin partida: lo del tejo (la rana y el bolo lo vuelven a calcular abajo)
   let players;
   fixLocalDesigns();
   const D = settings.designs;
@@ -2458,22 +2482,25 @@ function startGame() {
   else if (settings.mode === 'local') {
     nT = teamsAllowed(settings.count).includes(settings.teams) ? settings.teams : 0;
     const idx = Array.from({ length: settings.count }, (_, i) => i);
-    const plan = nT ? makeTeams(idx, nT) : idx.map(i => ({ item: i }));
+    const plan = nT ? (ch && ch.plan) || makeTeams(idx, nT) : idx.map(i => ({ item: i }));
+    if (ch) ch.plan = plan;   // en el campeonato los equipos son los mismos en los tres juegos
     players = plan.map(x => { const i = x.item, p = newPlayer(settings.names[i] || `Jugador ${i + 1}`, i, false, D[i]); if (nT) p.team = x.team; return p; });
   }
   else players = [newPlayer(settings.names[0] || 'Tú', 0, false, D[0])];
-  game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: settings.goal, mode: settings.mode, thrown: 0, over: false };
+  game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: ch ? champGoal('tejo', ch.len) : settings.goal, mode: settings.mode, thrown: 0, over: false };
+  if (ch) game.champ = ch;
   game.teams = applyTeams(players, players[0].team !== undefined ? nT : 0);
-  if (settings.game === 'rana' && settings.mode !== 'reto') { ranaPrepare(); game.goal = clampRanaGoal(settings.ranaGoal); computeDvdP(); }
-  if (settings.game === 'bolo' && settings.mode !== 'reto') {
-    boloPrepare(); game.goal = clampBoloGoal(settings.boloGoal); computeDvdP();
+  if (kind === 'rana' && settings.mode !== 'reto') { ranaPrepare(); game.goal = ch ? champGoal('rana', ch.len) : clampRanaGoal(settings.ranaGoal); computeDvdP(); }
+  if (kind === 'bolo' && settings.mode !== 'reto') {
+    boloPrepare(); game.goal = ch ? champGoal('bolo', ch.len) : clampBoloGoal(settings.boloGoal); computeDvdP();
     // derecho o zurdo: cada quien lo escoge en el menú; de los bots, Rigo es zurdo
     players.forEach((p, i) => { p.zurdo = p.cpu ? p.name === 'Rigo' : (settings.hands || [])[settings.mode === 'local' ? i : 0] === 'Z'; });
   }
   lastP = {};
   clearFeed();
   showScreen(null); setHud(true);
-  startRound();
+  startRound(ch ? ch.k % players.length : undefined);   // en el campeonato cada juego lo empieza otro
+  if (ch) champAnnounce();
 }
 
 function clearCancha() {
@@ -2483,6 +2510,7 @@ function clearCancha() {
   if (manoRing) { cancha.remove(manoRing); manoRing = null; }
   resetMechas(false);
   if (isRana()) { ranaClearRings(); game.arg = 0; game.turnPts = 0; }
+  if (game && game.ball) { scene.remove(game.ball); game.ball = null; }   // la bola del bolo que quedó en el piso
 }
 
 // first: quien sale en esta ronda. Si no se dice, sale el siguiente al que salió en la ronda anterior
@@ -2804,6 +2832,7 @@ function topScorer() {
 
 function gameOver(winner) {
   phase = 'over'; game.over = true; reticle.visible = false; hint('', false);
+  if (game.champ && !online()) champRecord();
   if (online()) netGameOver();
   later(.9, () => { setHud(false); renderOver(winner); showScreen('over'); });
 }
@@ -3478,7 +3507,7 @@ let bflight = null;   // la bola en el aire (y rodando después de caer)
 let breplay = null;   // repetición de la chuza
 function isBolo() { return !!(game && game.kind === 'bolo'); }
 // Qué juego se ve en el salón: en el menú el que está escogido; jugando, el de la partida
-function shownGame() { return (phase === 'menu' || phase === 'boot' || !game) ? settings.game : (game.kind || 'tejo'); }
+function shownGame() { const g = (phase === 'menu' || phase === 'boot' || !game) ? settings.game : (game.kind || 'tejo'); return g === 'champ' ? 'tejo' : g; }   // en el menú del campeonato se ve la cancha de tejo
 function handOf(p) { return p && p.zurdo ? -1 : 1; }   // 1 = derecho, -1 = zurdo
 
 /* ---------- Física de la bola y los palos ---------- */
@@ -3882,6 +3911,83 @@ function boloPlanCpu(p) {
   const sx = [.22, .12, .065, .04][d], sp = [1.6, 1.0, .6, .4][d];
   const fin = { L: clamp(L + gauss() * sx, -AIM.L, AIM.L), P: clamp(P + gauss() * sp / BOLO.SPAN, .02, 1) };
   cpuAim = { from: { L: rand(-.5, .5), P: rand(.2, .45) }, to: fin, t: 0, dur: rand(1, 1.5) };
+}
+
+/* ================= Campeonato =================
+   Los tres juegos (tejo, rana y bolo) en orden al azar, uno detrás del otro, con los mismos jugadores (y los
+   mismos equipos). En cada juego el 1º se lleva 3 puntos de campeonato, el 2º 2 y el 3º 1; empatados en puntos,
+   el mismo puesto. Gana el campeonato el que más sume; si empatan, el que más se acercó a las metas
+   (lo que hizo sobre la meta de cada juego, sumado). Con equipos compiten los equipos.
+   Partidas cortas (tejo a 15, rana a 500, bolo a 10) o largas (27, 1.000 y 15). Cada juego lo empieza otro.
+   Fuera de las salas el campeonato vive en `champ`; en las salas va en la configuración que publica el
+   anfitrión (setup.champ), así todos ven el mismo orden y la misma tabla. */
+const CHAMP_GAMES = ['tejo', 'rana', 'bolo'];
+const CHAMP_GOALS = { corta: { tejo: 15, rana: 500, bolo: 10 }, larga: { tejo: 27, rana: 1000, bolo: 15 } };
+const CHAMP_MEDAL = [3, 2, 1];
+const GAME_NAME = { tejo: 'Tejo', rana: 'Rana', bolo: 'Bolo' };
+let champ = null;
+
+function champLen() { return settings.champLen === 'larga' ? 'larga' : 'corta'; }
+function champGoal(kind, len) { return (CHAMP_GOALS[len] || CHAMP_GOALS.corta)[kind]; }
+function shuffled(a) { const s = a.slice(); for (let i = s.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [s[i], s[j]] = [s[j], s[i]]; } return s; }
+function newChamp(len) { return { order: shuffled(CHAMP_GAMES), k: 0, len: len === 'larga' ? 'larga' : 'corta', hist: [] }; }
+// que un campeonato que llega de la sala tenga la forma esperada
+function validChamp(c) {
+  return !!(c && Array.isArray(c.order) && c.order.length === 3 && c.order.every(k => CHAMP_GAMES.includes(k)) && Number.isInteger(c.k) && c.k >= 0 && c.k < 3
+    && Array.isArray(c.hist) && c.hist.length <= 3 && c.hist.every(h => h && CHAMP_GAMES.includes(h.kind) && Array.isArray(h.sc) && +h.goal > 0));
+}
+
+/* ---------- fuera de las salas ---------- */
+function startChamp() { champ = newChamp(champLen()); startChampGame(); }
+function startChampGame() { if (game) clearCancha(); startGame(champ.order[champ.k], champ); }
+function champNext() {   // el botón del final de cada juego: el siguiente, u otro campeonato si ya se jugaron los tres
+  if (!champ || champ.hist.length >= 3) return startChamp();
+  champ.k = champ.hist.length; startChampGame();
+}
+function champRecord() { if (champ && game && game.champ === champ && champ.hist.length === champ.k) champ.hist.push(champEntry()); }
+
+/* ---------- lo de todos ---------- */
+// quiénes compiten: los equipos si hay, si no los jugadores (siempre en el mismo orden en los tres juegos)
+function champUnits() {
+  return game.teams ? game.teams.map(t => ({ name: 'Equipo ' + t.name, color: t.color, score: teamScore(t) }))
+    : game.players.map(p => ({ name: p.name, color: p.color, score: p.score }));
+}
+function champEntry() { return { kind: game.kind || 'tejo', goal: game.goal, sc: champUnits().map(u => u.score) }; }
+function champMedals(sc) { return sc.map(s => CHAMP_MEDAL[sc.filter(x => x > s).length] || 0); }
+// la tabla: puntos de campeonato por juego, total y qué tanto se acercó a las metas (para desempatar)
+function champTable(c, hist) {
+  const rows = champUnits().map((u, i) => ({ ...u, i, per: {}, pts: 0, prog: 0 }));
+  hist.forEach(h => { const m = champMedals(h.sc); rows.forEach((r, i) => { r.per[h.kind] = m[i] || 0; r.pts += m[i] || 0; r.prog += Math.min(1, (+h.sc[i] || 0) / h.goal); }); });
+  return rows.sort((a, b) => b.pts - a.pts || b.prog - a.prog || a.i - b.i);
+}
+function champHist() { const c = game.champ; return c.hist.length > c.k ? c.hist.slice(0, c.k + 1) : c.hist.concat([champEntry()]); }   // con el juego que acaba de terminar
+function champPrefix() { return game && game.champ ? `Campeonato ${game.champ.k + 1}/3 · ` : ''; }
+function champAnnounce() { const c = game.champ, k = game.kind || 'tejo'; announce(GAME_NAME[k].toUpperCase(), `Campeonato · juego ${c.k + 1} de 3 · a ${fmtGoal(game.goal)}`, false); }
+
+/* La pantalla del final de cada juego, dentro del campeonato */
+function renderChampOver(winner) {
+  const c = game.champ, hist = champHist(), last = hist.length >= 3, rows = champTable(c, hist), kind = game.kind || 'tejo';
+  const wName = winner.team ? 'el equipo ' + game.teams[winner.idx].name : winner.name;
+  const tbl = $('champStats');
+  tbl.innerHTML = `<tr><th>Campeonato</th>${c.order.map((k, j) => `<th class="${j === c.k ? 'now' : ''}">${GAME_NAME[k]}</th>`).join('')}<th>Total</th></tr>` +
+    rows.map(r => `<tr class="${last && r === rows[0] ? 'win' : ''}" style="--c:${r.color}"><td></td>${c.order.map(k => k in r.per ? `<td class="m${r.per[k]}">${r.per[k]}</td>` : '<td class="dim">—</td>').join('')}<td class="tot">${r.pts}</td></tr>`).join('');
+  [...tbl.querySelectorAll('tr')].slice(1).forEach((tr, k) => tr.firstChild.textContent = rows[k].name);
+  $('champWrap').hidden = false;
+  const tie = rows.length > 1 && rows[0].pts === rows[1].pts && Math.abs(rows[0].prog - rows[1].prog) < 1e-9;
+  if (last) {
+    $('overEyebrow').textContent = `Campeonato · partidas ${c.len === 'larga' ? 'largas' : 'cortas'}`;
+    $('overWinner').textContent = tie ? '¡Empate en el campeonato!' : `¡${rows[0].name.startsWith('Equipo') ? 'Campeones' : 'Campeón'}: ${rows[0].name}!`;
+    const close = rows.length > 1 && rows[0].pts === rows[1].pts && !tie;
+    $('overLine').textContent = `${rows[0].pts} puntos de campeonato en tejo, rana y bolo.` + (close ? ` Empataron en puntos con ${rows[1].name}: lo desempató que se acercó más a las metas.` : '');
+    $('btnAgain').textContent = 'Otro campeonato';
+  } else {
+    const next = c.order[hist.length];
+    $('overEyebrow').textContent = `Campeonato · juego ${c.k + 1} de 3 · ${GAME_NAME[kind]} a ${fmtGoal(game.goal)}`;
+    $('overWinner').textContent = `Ganó ${wName}`;
+    $('overLine').textContent = `Van: ${rows.map(r => `${r.name} ${r.pts}`).join(' · ')}. Sigue ${GAME_NAME[next].toLowerCase()}.`;
+    $('btnAgain').textContent = `Sigue: ${GAME_NAME[next]}`;
+  }
+  if (online() && !amHost()) $('btnAgain').textContent = last ? 'Esperando otro campeonato' : 'Esperando el siguiente juego';
 }
 
 /* ================= Brazo en primera persona =================
@@ -4426,10 +4532,16 @@ function renderMenuOnline() {
    Con distinto PARCHE sí se puede: los parches no cambian cómo se juega (ver README, «Versiones»). */
 // Qué se juega en la sala: tejo (con su distancia) o rana; la meta es la de ese juego
 function roomGame() {
+  if (settings.game === 'champ') return { kind: 'champ', dist: settings.dist, goal: champLen() };   // el campeonato: la distancia del tejo y partidas cortas o largas
   if (settings.game === 'bolo') return { kind: 'bolo', dist: BOLO.D, goal: settings.boloGoal };
   return settings.game === 'rana' ? { kind: 'rana', dist: settings.dist, goal: settings.ranaGoal } : { kind: 'tejo', dist: settings.dist, goal: settings.goal };
 }
-const roomKind = k => k === 'rana' || k === 'bolo' ? k : 'tejo';
+const roomKind = k => k === 'rana' || k === 'bolo' || k === 'champ' ? k : 'tejo';
+/* La configuración de un juego del campeonato en la sala: qué se juega, a cuánto, a qué distancia y quién empieza */
+function champSetup(base, c, players) {
+  const kind = c.order[c.k];
+  return { ...base, players, kind, goal: champGoal(kind, c.len), dist: kind === 'bolo' ? BOLO.D : c.dist, first: c.k % players.length, champ: c };
+}
 function sameGameVersion(v) { const mm = s => String(s || '').split('.').slice(0, 2).join('.'); return !!v && mm(v) === mm(GAME_VERSION); }
 function presentPids(peers) { const m = new Map(); peers.forEach(p => { const pr = p.presence || {}; if (typeof pr.pid === 'string') m.set(pr.pid, pr); }); return m; }
 function publishG(g) {
@@ -4641,6 +4753,7 @@ function buildOnlineGame(g) {
   const nT = [2, 3].includes(st.teams) ? st.teams : 0;
   const players = st.players.slice(0, MAX_PLAYERS).map((s, i) => { const p = newPlayer(String(s.name).slice(0, 14), i, false, DESIGN_IDS.includes(s.design) ? s.design : null); p.pid = s.pid; p.zurdo = !!s.z; if (nT && Number.isInteger(s.team) && s.team >= 0 && s.team < nT) p.team = s.team; return p; });
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: clampGoal(st.goal), mode: 'online', gid: g.gid, ...pickRules(st), aimHelp: !!st.aimHelp, thrown: 0, over: false };
+  if (validChamp(st.champ)) game.champ = st.champ;
   game.teams = applyTeams(players, nT);
   if (st.kind === 'rana') { ranaPrepare(); game.goal = clampRanaGoal(st.goal); computeDvdP(); }
   if (st.kind === 'bolo') { boloPrepare(); game.goal = clampBoloGoal(st.goal); computeDvdP(); }
@@ -4650,7 +4763,8 @@ function buildOnlineGame(g) {
 function startOnlineGame(g) {
   buildOnlineGame(g);
   const s = aheadSnap();
-  if (s) restoreSnap(s); else startRound();
+  if (s) restoreSnap(s);
+  else { const st = g.setup; startRound(Number.isInteger(st.first) && st.first >= 0 && st.first < game.players.length ? st.first : undefined); if (game.champ) champAnnounce(); }
 }
 /* Deja las mechas como estaban en la foto: las reventadas siguen reventadas, con su quemón */
 function applyMechas(mk) {
@@ -4742,13 +4856,22 @@ function netGameOver() {
 function netRematch() {
   if (!amHost() || !NET.g || !NET.g.setup) return;
   const g = NET.g, here = presentPids(NET.sala.peers());
+  // campeonato a medias: el siguiente juego con los mismos jugadores y equipos, y la tabla con el juego que terminó
+  const c = online() && game.champ && validChamp(g.setup.champ) ? g.setup.champ : null;
+  if (c && c.hist.length + 1 < 3) {
+    const hist = c.hist.concat([champEntry()]);
+    publishG({ ...g, phase: 'play', gid: rid(), setup: champSetup(g.setup, { ...c, k: hist.length, hist }, g.setup.players), snap: null, last: null, ver: g.ver + 1 });
+    applyG(); return;
+  }
   let players = g.setup.players.filter(s => here.has(s.pid));
   here.forEach((pr, pid) => { if (players.length < MAX_PLAYERS && !players.some(s => s.pid === pid) && pr.name) players.push({ pid, name: String(pr.name).slice(0, 14) }); });
   if (players.length > 1) players = [...players.slice(1), players[0]]; // empieza otro
   players = withDesigns(players.map(s => ({ ...s, design: here.get(s.pid) && DESIGN_IDS.includes(here.get(s.pid).design) ? here.get(s.pid).design : s.design, z: here.get(s.pid) ? (here.get(s.pid).z ? 1 : 0) : (s.z ? 1 : 0) })));
   const nT = teamsAllowed(players.length).includes(g.teams || 0) ? (g.teams || 0) : 0;   // equipos nuevos al azar en cada revancha
   players = nT ? makeTeams(players, nT).map(x => ({ ...x.item, team: x.team })) : players.map(s => { const c = { ...s }; delete c.team; return c; });
-  publishG({ ...g, phase: 'play', gid: rid(), setup: { ...g.setup, players, teams: nT }, snap: null, last: null, ver: g.ver + 1 });
+  let setup = { ...g.setup, players, teams: nT };
+  if (roomKind(g.kind) === 'champ') setup = champSetup(setup, { ...newChamp(g.goal), dist: g.dist }, players);   // otro campeonato, en otro orden
+  publishG({ ...g, phase: 'play', gid: rid(), setup, snap: null, last: null, ver: g.ver + 1 });
   applyG();
 }
 function withDesigns(list) {
@@ -4762,7 +4885,9 @@ function netStart() {
   const nT = teamsAllowed(players.length).includes(g.teams || 0) ? (g.teams || 0) : 0;
   if (nT) players = makeTeams(players, nT).map(x => ({ ...x.item, team: x.team }));
   A.init(); A.tick();
-  publishG({ ...g, phase: 'play', gid: rid(), setup: { players, dist: g.dist, goal: g.goal, kind: roomKind(g.kind), ...pickRules(g), teams: nT }, snap: null, last: null, ver: g.ver + 1 });
+  const base = { players, dist: g.dist, goal: g.goal, kind: roomKind(g.kind), ...pickRules(g), teams: nT };
+  const setup = base.kind === 'champ' ? champSetup(base, { ...newChamp(g.goal), dist: g.dist }, players) : base;
+  publishG({ ...g, phase: 'play', gid: rid(), setup, snap: null, last: null, ver: g.ver + 1 });
   applyG();
 }
 
@@ -4877,7 +5002,7 @@ function renderSala() {
   else if (full) info.textContent = `La sala está llena: ya hay ${MAX_PLAYERS} jugadores. Si alguien sale, entras de una; si no, crea otra sala.`;
   else if (host) info.textContent = seats.length < 2 ? 'Pásale el código a tus amigos. Cuando entren, aparecen aquí.' : 'Están listos. Empieza cuando quieras.';
   else info.textContent = 'Esperando a que el anfitrión empiece la partida.';
-  $('salaRules').textContent = g ? `${g.kind === 'bolo' ? 'Bolo · partida a ' + g.goal : g.kind === 'rana' ? 'Rana · partida a ' + fmtGoal(g.goal) : fmtD(g.dist) + ' · partida a ' + g.goal} · mira ${g.aimHelp ? 'sí' : 'no'} · lupa ${g.aimHelp && g.lupa !== false ? 'sí' : 'no'} · barra de fuerza ${g.power !== false ? 'sí' : 'no'} · cámara ${!(+g.zoom) ? 'cerca' : +g.zoom >= 1 ? 'lejos' : 'media'} · hasta ${MAX_PLAYERS} jugadores` : '';
+  $('salaRules').textContent = g ? `${g.kind === 'champ' ? 'Campeonato: tejo, rana y bolo · partidas ' + (g.goal === 'larga' ? 'largas' : 'cortas') + ' · ' + fmtD(g.dist) : g.kind === 'bolo' ? 'Bolo · partida a ' + g.goal : g.kind === 'rana' ? 'Rana · partida a ' + fmtGoal(g.goal) : fmtD(g.dist) + ' · partida a ' + g.goal} · mira ${g.aimHelp ? 'sí' : 'no'} · lupa ${g.aimHelp && g.lupa !== false ? 'sí' : 'no'} · barra de fuerza ${g.power !== false ? 'sí' : 'no'} · cámara ${!(+g.zoom) ? 'cerca' : +g.zoom >= 1 ? 'lejos' : 'media'} · hasta ${MAX_PLAYERS} jugadores` : '';
   // forma de juego: la escoge el anfitrión; los equipos se arman al azar al empezar
   const lobby = !!(g && g.phase === 'lobby'), nHere = seats.filter(s => here.has(s.pid)).length, allowed = teamsAllowed(nHere), want = (g && g.teams) || 0;
   $('salaTeams').hidden = !lobby;
@@ -4906,7 +5031,7 @@ function renderMyDesign(g, seats) {
   $('myDzImg').src = designIcon(got || want, COLORS[i] || COLORS[0], myName());
   $('myDzName').textContent = mine && !mine.design ? `${designName(want)} está ocupado: escoge otro` : designName(got || want);
   $('myDz').disabled = !!(g && g.phase !== 'lobby');
-  $('myDz').hidden = (g ? roomKind(g.kind) : settings.game) !== 'tejo';   // el grabado es del tejo: en la rana y el bolo no se escoge
+  $('myDz').hidden = ['rana', 'bolo'].includes(g ? roomKind(g.kind) : settings.game);   // el grabado es del tejo: en la rana y el bolo no se escoge (en el campeonato sí)
 }
 function netPickDesign() {
   const g = NET.g || NET.lastG; const seats = g ? (g.seats || []) : [];
@@ -4990,7 +5115,8 @@ function saveSettings() { store.set('tejo.settings.v1', settings); }
 function loadSettings() {
   const s = store.get('tejo.settings.v1', null); if (s) Object.assign(settings, s);
   settings.goal = clampGoal(settings.goal); settings.ranaGoal = clampRanaGoal(settings.ranaGoal); settings.boloGoal = clampBoloGoal(settings.boloGoal);
-  if (!['rana', 'bolo'].includes(settings.game)) settings.game = 'tejo';
+  if (!['rana', 'bolo', 'champ'].includes(settings.game)) settings.game = 'tejo';
+  if (settings.champLen !== 'larga') settings.champLen = 'corta';
   if (!Array.isArray(settings.hands)) settings.hands = [];
   for (let i = 0; i < 6; i++) if (settings.hands[i] !== 'Z') settings.hands[i] = 'D';
   // antes el juego traía nombres de ejemplo (Javi, Pacho…); se borran para que cada quien escriba el suyo
@@ -5069,7 +5195,8 @@ function renderTeamBoard(b, cur) {
   boardHeight();
 }
 function boardHeight() { try { document.documentElement.style.setProperty('--bh', $('board').offsetHeight + 'px'); } catch (e) { } }
-function renderTurn() {
+function renderTurn() { renderTurn0(); if (game.champ) $('turnMeta').textContent = champPrefix() + $('turnMeta').textContent; }
+function renderTurn0() {
   const p = current();
   $('turnWho').textContent = game.mode === 'reto' ? `Tejo ${game.thrown + 1} de ${RETO_THROWS}` : (p.cpu ? `Lanza ${p.name}` : (online() && p.pid === NET.pid) ? 'Te toca' : `Lanza ${p.name}`);
   $('turnWho').style.color = p.color === COLORS[3] ? 'var(--yellow)' : '';
@@ -5118,24 +5245,28 @@ function renderOver(winner) {
   $('btnAgain').disabled = on && !amHost();
   if (on && !amHost()) $('btnAgain').textContent = 'Esperando revancha';
   $('btnOverMenu').textContent = on ? 'Salir de la sala' : 'Menú';
+  $('champWrap').hidden = true;
+  if (game.champ) renderChampOver(winner);
 }
 
 /* ---------- Menú ---------- */
 function setSeg(id, val) { $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(val)))); }
 function renderMenu() {
   fixLocalDesigns();
-  // tejo, rana o bolo: la rana y el bolo no tienen reto ni distancias, y cada uno tiene su meta.
+  // tejo, rana, bolo o campeonato: la rana y el bolo no tienen reto ni distancias, y cada uno tiene su meta.
+  // El campeonato juega los tres: lleva distancia (la del tejo), mano (la del bolo) y grabado (el del tejo), y partidas cortas o largas.
   $('grpGame').hidden = false; $('verTag').textContent = 'v' + GAME_VERSION + (betaOn ? ' · beta' : '');
-  const rana = settings.game === 'rana', bolo = settings.game === 'bolo';
-  if ((rana || bolo) && settings.mode === 'reto') settings.mode = 'cpu';
+  const rana = settings.game === 'rana', bolo = settings.game === 'bolo', champ = settings.game === 'champ';
+  if ((rana || bolo || champ) && settings.mode === 'reto') settings.mode = 'cpu';
   setSeg('segGame', settings.game);
-  $('segMode').querySelector('[data-v="reto"]').hidden = rana || bolo;
+  $('segMode').querySelector('[data-v="reto"]').hidden = rana || bolo || champ;
   $('grpDist').hidden = rana || bolo;
   if (phase === 'menu' || phase === 'boot') { const D0 = bolo ? BOLO.D : settings.dist; if (hall && Math.abs(W.D - D0) > .01) { setDistance(D0); buildHall(); computeDvdP(); } }   // el bolo tiene su cancha
-  $('brandTitle').textContent = bolo ? 'BOLO' : rana ? 'RANA' : 'TEJO';
-  $('brandLine').textContent = bolo ? 'Tres palos de pino y una bola de aluminio. Tumba los palos por el lado de tu mano y llega primero a la meta.'
+  $('brandTitle').textContent = champ ? 'CAMPEONATO' : bolo ? 'BOLO' : rana ? 'RANA' : 'TEJO'; $('brandTitle').classList.toggle('long', champ);
+  $('brandLine').textContent = champ ? 'Tejo, rana y bolo en orden al azar. En cada juego el primero gana 3 puntos de campeonato, el segundo 2 y el tercero 1. Gana el que más sume.'
+    : bolo ? 'Tres palos de pino y una bola de aluminio. Tumba los palos por el lado de tu mano y llega primero a la meta.'
     : rana ? 'Argollas, huecos y la rana de metal. Métela en la boca de la rana y llega primero a la meta.' : 'Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.';
-  $('aimHint').textContent = bolo ? 'Muestra dónde cae o se para la bola mientras apuntas' : rana ? 'Muestra dónde cae la argolla mientras apuntas' : 'Muestra dónde cae el tejo mientras apuntas';
+  $('aimHint').textContent = champ ? 'Muestra dónde cae el tejo, la argolla o la bola mientras apuntas' : bolo ? 'Muestra dónde cae o se para la bola mientras apuntas' : rana ? 'Muestra dónde cae la argolla mientras apuntas' : 'Muestra dónde cae el tejo mientras apuntas';
   setSeg('segMode', settings.mode); setSeg('segCount', settings.count); setSeg('segDiff', settings.diff); setSeg('segDist', settings.dist);
   // partida a: valores de siempre u otro que uno escribe (en el tejo 15, 21, 27; en la rana 1.000, 2.000, 3.000)
   const gc = goalCfg(), gv = settings[gc.key], otherGoal = goalOpen || !gc.presets.includes(gv);
@@ -5150,13 +5281,14 @@ function renderMenu() {
   // la lupa solo se puede prender con la mira prendida; la barra de fuerza va aparte
   $('swLupa').setAttribute('aria-checked', String(settings.aimHelp && settings.lupa)); $('swLupa').disabled = !settings.aimHelp;
   $('rowLupa').classList.toggle('off', !settings.aimHelp);
-  $('lupaHint').textContent = !settings.aimHelp ? 'Necesita la mira activada' : settings.game === 'rana' ? 'Muestra la mesa desde arriba' : settings.game === 'bolo' ? 'Muestra los palos de cerca' : 'Acerca la greda donde va la mira';
+  $('lupaHint').textContent = !settings.aimHelp ? 'Necesita la mira activada' : settings.game === 'rana' ? 'Muestra la mesa desde arriba' : settings.game === 'bolo' ? 'Muestra los palos de cerca' : champ ? 'Acerca a donde va la mira' : 'Acerca la greda donde va la mira';
   $('swPower').setAttribute('aria-checked', String(settings.power)); $('gauge').hidden = !settings.power;
   $('swMusic').setAttribute('aria-checked', String(settings.music !== false));
   $('grpDiff').hidden = settings.mode !== 'cpu';
   $('grpCpuSize').hidden = settings.mode !== 'cpu'; setSeg('segCpuSize', settings.cpuSize || 1);
   $('grpDiff').querySelector('h3').textContent = (settings.cpuSize || 1) > 1 ? 'Pulso de los bots' : 'Pulso de Don Chepe';
-  $('grpGoal').hidden = settings.mode === 'reto';
+  $('grpGoal').hidden = settings.mode === 'reto' || champ;
+  $('grpChampLen').hidden = !champ; setSeg('segChampLen', champLen());
   $('segCount').hidden = settings.mode !== 'local';
   const allowed = teamsAllowed(settings.count);
   $('grpTeams').hidden = settings.mode !== 'local' || allowed.length < 2;
@@ -5167,7 +5299,7 @@ function renderMenu() {
   $('btnPlay').textContent = settings.mode === 'online' ? 'Crear sala' : 'A jugar';
   $('btnPlay').disabled = settings.mode === 'online' && !NET.room;
   renderMenuOnline();
-  $('lblNames').textContent = (settings.mode === 'local' ? 'Jugadores' : 'Tu nombre') + (bolo ? ' · D derecho, Z zurdo' : '');
+  $('lblNames').textContent = (settings.mode === 'local' ? 'Jugadores' : 'Tu nombre') + (bolo || champ ? ' · D derecho, Z zurdo' : '');
   const n = settings.mode === 'local' ? settings.count : 1, box = $('names'); box.innerHTML = '';
   box.style.gridTemplateColumns = n === 1 ? '1fr' : '1fr 1fr';
   for (let i = 0; i < n; i++) {
@@ -5184,8 +5316,8 @@ function renderMenu() {
       openPicker({ title: settings.mode === 'local' ? `Grabado de ${settings.names[i] || 'Jugador ' + (i + 1)}` : 'Escoge tu grabado', current: settings.designs[i], taken, color: COLORS[i], name: settings.names[i],
         onPick: id => { settings.designs[i] = id; saveSettings(); renderMenu(); } });
     });
-    if (settings.game === 'tejo') l.append(dz, inp); else { l.append(inp); l.classList.add('noDz'); }   // el grabado es del tejo: en la rana y el bolo no se escoge
-    if (bolo) {   // en el bolo cada uno dice con qué mano lanza: vale lo que tumbe por ese lado
+    if (settings.game === 'tejo' || champ) l.append(dz, inp); else { l.append(inp); l.classList.add('noDz'); }   // el grabado es del tejo: en la rana y el bolo no se escoge
+    if (bolo || champ) {   // en el bolo cada uno dice con qué mano lanza: vale lo que tumbe por ese lado
       const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'hand'; const z = settings.hands[i] === 'Z';
       hb.textContent = z ? 'Z' : 'D'; hb.setAttribute('aria-label', `Mano del jugador ${i + 1}: ${z ? 'zurdo' : 'derecho'}`);
       hb.addEventListener('click', e => { e.preventDefault(); settings.hands[i] = z ? 'D' : 'Z'; saveSettings(); renderMenu(); A.init(); A.tick(); if (NET.sala && i === 0) NET.sala.presence({ z: settings.hands[0] === 'Z' ? 1 : 0 }).catch(() => { }); });
@@ -5202,8 +5334,8 @@ function renderMenu() {
 const SUM_IC = {"dist": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\"><path d=\"M3 12h18\"/><path d=\"M6 8.5 3 12l3 3.5\"/><path d=\"M18 8.5l3 3.5-3 3.5\"/></svg>", "goal": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 21V4\"/><path d=\"M5 4h12l-2.5 4L17 12H5\"/></svg>", "eye": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\"><path d=\"M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg>", "music": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\"><path d=\"M9 18V5l11-2v13\"/><circle cx=\"6.5\" cy=\"18\" r=\"2.5\"/><circle cx=\"17.5\" cy=\"16\" r=\"2.5\"/></svg>", "mute": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\"><path d=\"M9 18V5l11-2v13\"/><circle cx=\"6.5\" cy=\"18\" r=\"2.5\"/><path d=\"M3 3l18 18\"/></svg>"};
 function renderSum() {
   const chip = (ic, t) => `<span class="mchip">${SUM_IC[ic]}${t}</span>`, parts = [], gc = goalCfg();
-  if (settings.game === 'tejo') parts.push(chip('dist', fmtD(settings.dist)));
-  parts.push(chip('goal', settings.mode === 'reto' ? '10 tejos' : 'a ' + fmtGoal(settings[gc.key])));
+  if (settings.game === 'tejo' || settings.game === 'champ') parts.push(chip('dist', fmtD(settings.dist)));
+  parts.push(chip('goal', settings.game === 'champ' ? (champLen() === 'larga' ? 'Partidas largas' : 'Partidas cortas') : settings.mode === 'reto' ? '10 tejos' : 'a ' + fmtGoal(settings[gc.key])));
   const aids = [settings.aimHelp && 'Mira', settings.aimHelp && settings.lupa && 'Lupa', settings.power && 'Fuerza'].filter(Boolean);
   parts.push(chip('eye', aids.length ? aids.join(' · ') : 'Sin ayudas'));
   parts.push(settings.music !== false ? chip('music', 'Música') : chip('mute', 'Sin música'));
@@ -5212,6 +5344,7 @@ function renderSum() {
 function openSheet(on) { $('mSheet').hidden = !on; if (!on) renderMenu(); else $('mSheetOk').focus(); }
 function showMenu() {
   if (NET.sala) netLeave();
+  champ = null;
   $('mSheet').hidden = true;
   phase = 'menu'; paused = false; timers.length = 0; drag = null; cpuAim = null;
   if (flight) { scene.remove(flight.mesh); flight = null; }
@@ -5277,7 +5410,7 @@ function pause() {
   if (online()) { $('pauseInfo').textContent = `Sala ${NET.code} · la partida sigue mientras ves este menú. Si no ves los tiros de los demás, toca Reconectar.`; $('btnRestart').hidden = true; $('btnReconnect').hidden = false; $('btnMenu').textContent = 'Salir de la sala'; showScreen('pause'); return; }
   $('btnRestart').hidden = false; $('btnReconnect').hidden = true; $('btnMenu').textContent = 'Menú';
   paused = true; drag = null; if (phase === 'aim') { setGauge(0, lastP[current().name]); reticle.visible = false; }
-  $('pauseInfo').textContent = isBolo() ? `Bolo · ronda ${game.round} · partida a ${game.goal}` : isRana() ? `Rana · ronda ${game.round} · partida a ${fmtGoal(game.goal)}` : game.mode === 'reto' ? `Reto · tejo ${Math.min(game.thrown + 1, RETO_THROWS)} de ${RETO_THROWS} · ${fmtD(W.D)}` : `Ronda ${game.round} · partida a ${game.goal} · ${fmtD(W.D)}`;
+  $('pauseInfo').textContent = champPrefix() + (isBolo() ? `Bolo · ronda ${game.round} · partida a ${game.goal}` : isRana() ? `Rana · ronda ${game.round} · partida a ${fmtGoal(game.goal)}` : game.mode === 'reto' ? `Reto · tejo ${Math.min(game.thrown + 1, RETO_THROWS)} de ${RETO_THROWS} · ${fmtD(W.D)}` : `Ronda ${game.round} · partida a ${game.goal} · ${fmtD(W.D)}`);
   showScreen('pause');
 }
 function resume() { paused = false; showScreen(null); }
@@ -5338,7 +5471,8 @@ function bindInput() {
 }
 
 function bindUI() {
-  bindSeg('segGame', 'game', v => ['rana', 'bolo'].includes(v) ? v : 'tejo');
+  bindSeg('segGame', 'game', v => ['rana', 'bolo', 'champ'].includes(v) ? v : 'tejo');
+  bindSeg('segChampLen', 'champLen', v => v === 'larga' ? 'larga' : 'corta');
 
   $('verTag').addEventListener('click', betaTap); $('btnBeta').addEventListener('click', betaTry); $('betaIn').addEventListener('keydown', e => { if (e.key === 'Enter') betaTry(); }); bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
   bindSeg('segDist', 'dist', Number); bindGoal(); bindSeg('segTeams', 'teams', Number); bindSeg('segCpuSize', 'cpuSize', Number);
@@ -5356,9 +5490,9 @@ function bindUI() {
   $('btnPause').addEventListener('click', pause);
   $('btnResume').addEventListener('click', resume);
   $('btnReconnect').addEventListener('click', () => { resume(); toast('Reconectando a la sala…'); netRejoin(); });
-  $('btnRestart').addEventListener('click', () => { paused = false; clearCancha(); startGame(); });
+  $('btnRestart').addEventListener('click', () => { paused = false; if (game && game.champ) return startChampGame(); clearCancha(); startGame(); });   // en el campeonato vuelve a empezar el juego de ahora
   $('btnMenu').addEventListener('click', showMenu);
-  $('btnAgain').addEventListener('click', () => { if (online()) return netRematch(); clearCancha(); startGame(); });
+  $('btnAgain').addEventListener('click', () => { if (online()) return netRematch(); if (game && game.champ) return champNext(); clearCancha(); startGame(); });
   $('btnOverMenu').addEventListener('click', showMenu);
   $('pickClose').addEventListener('click', closePicker);
   $('picker').addEventListener('click', e => { if (e.target === $('picker')) closePicker(); });
@@ -5374,7 +5508,7 @@ function resize() {
 /* ================= Recarga en caliente ================= */
 function snapshot() {
   const base = { settings: { ...settings } };
-  if (!game || game.over || phase === 'menu' || online() || isRana() || isBolo()) return base;   // la rana y el bolo no se guardan para seguir después
+  if (!game || game.over || phase === 'menu' || online() || isRana() || isBolo() || game.champ) return base;   // la rana, el bolo y el campeonato no se guardan para seguir después
   return {
     ...base, lastP, pending: phase === 'result' || phase === 'roundEnd',
     game: {

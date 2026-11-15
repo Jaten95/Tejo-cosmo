@@ -1,7 +1,7 @@
 
 /* ================= Estado ================= */
 const DIFF = [{ n: 'Fácil', s: .26 }, { n: 'Normal', s: .14 }, { n: 'Difícil', s: .08 }, { n: 'Maestro', s: .045 }];
-const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, music: true, game: 'tejo', ranaGoal: 1000, boloGoal: 15, hands: ['D', 'D', 'D', 'D', 'D', 'D'] };
+const settings = { mode: 'cpu', count: 2, names: ['', '', '', '', '', ''], designs: ['sol', 'condor', 'colibri', 'cafe', 'orquidea', 'palma'], teams: 0, diff: 1, dist: 18.5, goal: 27, aimHelp: true, lupa: true, power: true, zoom: 0, cpuSize: 1, music: true, game: 'tejo', ranaGoal: 1000, boloGoal: 15, hands: ['D', 'D', 'D', 'D', 'D', 'D'], champLen: 'corta' };
 /* Cada jugador del mismo celular con un diseño distinto */
 function fixLocalDesigns() {
   if (!Array.isArray(settings.designs)) settings.designs = [];
@@ -60,11 +60,13 @@ function computeDvdP() {
 
 function newPlayer(name, i, cpu, design) { return { name, color: COLORS[i], design: design || null, score: 0, cpu: !!cpu, st: { mechas: 0, emb: 0, mon: 0, manos: 0, nulos: 0, tiros: 0 } }; }
 
-function startGame() {
+// kind: qué se juega (tejo, rana o bolo); ch: el campeonato, si este juego es parte de uno (ver 04d-campeonato.js)
+function startGame(kind = settings.game, ch = null) {
+  if (kind === 'champ') return startChamp();
   timers.length = 0; flight && flight.mesh && scene.remove(flight.mesh); flight = null; drag = null; cpuAim = null;
-  const D0 = settings.game === 'bolo' ? BOLO.D : settings.dist;   // el bolo tiene su distancia
+  const D0 = kind === 'bolo' ? BOLO.D : settings.dist;   // el bolo tiene su distancia
   if (Math.abs(W.D - D0) > .01 || !hall) { setDistance(D0); buildHall(); }
-  computeDvdP();
+  game = null; computeDvdP();   // sin partida: lo del tejo (la rana y el bolo lo vuelven a calcular abajo)
   let players;
   fixLocalDesigns();
   const D = settings.designs;
@@ -86,22 +88,25 @@ function startGame() {
   else if (settings.mode === 'local') {
     nT = teamsAllowed(settings.count).includes(settings.teams) ? settings.teams : 0;
     const idx = Array.from({ length: settings.count }, (_, i) => i);
-    const plan = nT ? makeTeams(idx, nT) : idx.map(i => ({ item: i }));
+    const plan = nT ? (ch && ch.plan) || makeTeams(idx, nT) : idx.map(i => ({ item: i }));
+    if (ch) ch.plan = plan;   // en el campeonato los equipos son los mismos en los tres juegos
     players = plan.map(x => { const i = x.item, p = newPlayer(settings.names[i] || `Jugador ${i + 1}`, i, false, D[i]); if (nT) p.team = x.team; return p; });
   }
   else players = [newPlayer(settings.names[0] || 'Tú', 0, false, D[0])];
-  game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: settings.goal, mode: settings.mode, thrown: 0, over: false };
+  game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: ch ? champGoal('tejo', ch.len) : settings.goal, mode: settings.mode, thrown: 0, over: false };
+  if (ch) game.champ = ch;
   game.teams = applyTeams(players, players[0].team !== undefined ? nT : 0);
-  if (settings.game === 'rana' && settings.mode !== 'reto') { ranaPrepare(); game.goal = clampRanaGoal(settings.ranaGoal); computeDvdP(); }
-  if (settings.game === 'bolo' && settings.mode !== 'reto') {
-    boloPrepare(); game.goal = clampBoloGoal(settings.boloGoal); computeDvdP();
+  if (kind === 'rana' && settings.mode !== 'reto') { ranaPrepare(); game.goal = ch ? champGoal('rana', ch.len) : clampRanaGoal(settings.ranaGoal); computeDvdP(); }
+  if (kind === 'bolo' && settings.mode !== 'reto') {
+    boloPrepare(); game.goal = ch ? champGoal('bolo', ch.len) : clampBoloGoal(settings.boloGoal); computeDvdP();
     // derecho o zurdo: cada quien lo escoge en el menú; de los bots, Rigo es zurdo
     players.forEach((p, i) => { p.zurdo = p.cpu ? p.name === 'Rigo' : (settings.hands || [])[settings.mode === 'local' ? i : 0] === 'Z'; });
   }
   lastP = {};
   clearFeed();
   showScreen(null); setHud(true);
-  startRound();
+  startRound(ch ? ch.k % players.length : undefined);   // en el campeonato cada juego lo empieza otro
+  if (ch) champAnnounce();
 }
 
 function clearCancha() {
@@ -111,6 +116,7 @@ function clearCancha() {
   if (manoRing) { cancha.remove(manoRing); manoRing = null; }
   resetMechas(false);
   if (isRana()) { ranaClearRings(); game.arg = 0; game.turnPts = 0; }
+  if (game && game.ball) { scene.remove(game.ball); game.ball = null; }   // la bola del bolo que quedó en el piso
 }
 
 // first: quien sale en esta ronda. Si no se dice, sale el siguiente al que salió en la ronda anterior
@@ -432,6 +438,7 @@ function topScorer() {
 
 function gameOver(winner) {
   phase = 'over'; game.over = true; reticle.visible = false; hint('', false);
+  if (game.champ && !online()) champRecord();
   if (online()) netGameOver();
   later(.9, () => { setHud(false); renderOver(winner); showScreen('over'); });
 }

@@ -10,7 +10,8 @@ function saveSettings() { store.set('tejo.settings.v1', settings); }
 function loadSettings() {
   const s = store.get('tejo.settings.v1', null); if (s) Object.assign(settings, s);
   settings.goal = clampGoal(settings.goal); settings.ranaGoal = clampRanaGoal(settings.ranaGoal); settings.boloGoal = clampBoloGoal(settings.boloGoal);
-  if (!['rana', 'bolo'].includes(settings.game)) settings.game = 'tejo';
+  if (!['rana', 'bolo', 'champ'].includes(settings.game)) settings.game = 'tejo';
+  if (settings.champLen !== 'larga') settings.champLen = 'corta';
   if (!Array.isArray(settings.hands)) settings.hands = [];
   for (let i = 0; i < 6; i++) if (settings.hands[i] !== 'Z') settings.hands[i] = 'D';
   // antes el juego traía nombres de ejemplo (Javi, Pacho…); se borran para que cada quien escriba el suyo
@@ -89,7 +90,8 @@ function renderTeamBoard(b, cur) {
   boardHeight();
 }
 function boardHeight() { try { document.documentElement.style.setProperty('--bh', $('board').offsetHeight + 'px'); } catch (e) { } }
-function renderTurn() {
+function renderTurn() { renderTurn0(); if (game.champ) $('turnMeta').textContent = champPrefix() + $('turnMeta').textContent; }
+function renderTurn0() {
   const p = current();
   $('turnWho').textContent = game.mode === 'reto' ? `Tejo ${game.thrown + 1} de ${RETO_THROWS}` : (p.cpu ? `Lanza ${p.name}` : (online() && p.pid === NET.pid) ? 'Te toca' : `Lanza ${p.name}`);
   $('turnWho').style.color = p.color === COLORS[3] ? 'var(--yellow)' : '';
@@ -138,24 +140,28 @@ function renderOver(winner) {
   $('btnAgain').disabled = on && !amHost();
   if (on && !amHost()) $('btnAgain').textContent = 'Esperando revancha';
   $('btnOverMenu').textContent = on ? 'Salir de la sala' : 'Menú';
+  $('champWrap').hidden = true;
+  if (game.champ) renderChampOver(winner);
 }
 
 /* ---------- Menú ---------- */
 function setSeg(id, val) { $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(val)))); }
 function renderMenu() {
   fixLocalDesigns();
-  // tejo, rana o bolo: la rana y el bolo no tienen reto ni distancias, y cada uno tiene su meta.
+  // tejo, rana, bolo o campeonato: la rana y el bolo no tienen reto ni distancias, y cada uno tiene su meta.
+  // El campeonato juega los tres: lleva distancia (la del tejo), mano (la del bolo) y grabado (el del tejo), y partidas cortas o largas.
   $('grpGame').hidden = false; $('verTag').textContent = 'v' + GAME_VERSION + (betaOn ? ' · beta' : '');
-  const rana = settings.game === 'rana', bolo = settings.game === 'bolo';
-  if ((rana || bolo) && settings.mode === 'reto') settings.mode = 'cpu';
+  const rana = settings.game === 'rana', bolo = settings.game === 'bolo', champ = settings.game === 'champ';
+  if ((rana || bolo || champ) && settings.mode === 'reto') settings.mode = 'cpu';
   setSeg('segGame', settings.game);
-  $('segMode').querySelector('[data-v="reto"]').hidden = rana || bolo;
+  $('segMode').querySelector('[data-v="reto"]').hidden = rana || bolo || champ;
   $('grpDist').hidden = rana || bolo;
   if (phase === 'menu' || phase === 'boot') { const D0 = bolo ? BOLO.D : settings.dist; if (hall && Math.abs(W.D - D0) > .01) { setDistance(D0); buildHall(); computeDvdP(); } }   // el bolo tiene su cancha
-  $('brandTitle').textContent = bolo ? 'BOLO' : rana ? 'RANA' : 'TEJO';
-  $('brandLine').textContent = bolo ? 'Tres palos de pino y una bola de aluminio. Tumba los palos por el lado de tu mano y llega primero a la meta.'
+  $('brandTitle').textContent = champ ? 'CAMPEONATO' : bolo ? 'BOLO' : rana ? 'RANA' : 'TEJO'; $('brandTitle').classList.toggle('long', champ);
+  $('brandLine').textContent = champ ? 'Tejo, rana y bolo en orden al azar. En cada juego el primero gana 3 puntos de campeonato, el segundo 2 y el tercero 1. Gana el que más sume.'
+    : bolo ? 'Tres palos de pino y una bola de aluminio. Tumba los palos por el lado de tu mano y llega primero a la meta.'
     : rana ? 'Argollas, huecos y la rana de metal. Métela en la boca de la rana y llega primero a la meta.' : 'Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.';
-  $('aimHint').textContent = bolo ? 'Muestra dónde cae o se para la bola mientras apuntas' : rana ? 'Muestra dónde cae la argolla mientras apuntas' : 'Muestra dónde cae el tejo mientras apuntas';
+  $('aimHint').textContent = champ ? 'Muestra dónde cae el tejo, la argolla o la bola mientras apuntas' : bolo ? 'Muestra dónde cae o se para la bola mientras apuntas' : rana ? 'Muestra dónde cae la argolla mientras apuntas' : 'Muestra dónde cae el tejo mientras apuntas';
   setSeg('segMode', settings.mode); setSeg('segCount', settings.count); setSeg('segDiff', settings.diff); setSeg('segDist', settings.dist);
   // partida a: valores de siempre u otro que uno escribe (en el tejo 15, 21, 27; en la rana 1.000, 2.000, 3.000)
   const gc = goalCfg(), gv = settings[gc.key], otherGoal = goalOpen || !gc.presets.includes(gv);
@@ -170,13 +176,14 @@ function renderMenu() {
   // la lupa solo se puede prender con la mira prendida; la barra de fuerza va aparte
   $('swLupa').setAttribute('aria-checked', String(settings.aimHelp && settings.lupa)); $('swLupa').disabled = !settings.aimHelp;
   $('rowLupa').classList.toggle('off', !settings.aimHelp);
-  $('lupaHint').textContent = !settings.aimHelp ? 'Necesita la mira activada' : settings.game === 'rana' ? 'Muestra la mesa desde arriba' : settings.game === 'bolo' ? 'Muestra los palos de cerca' : 'Acerca la greda donde va la mira';
+  $('lupaHint').textContent = !settings.aimHelp ? 'Necesita la mira activada' : settings.game === 'rana' ? 'Muestra la mesa desde arriba' : settings.game === 'bolo' ? 'Muestra los palos de cerca' : champ ? 'Acerca a donde va la mira' : 'Acerca la greda donde va la mira';
   $('swPower').setAttribute('aria-checked', String(settings.power)); $('gauge').hidden = !settings.power;
   $('swMusic').setAttribute('aria-checked', String(settings.music !== false));
   $('grpDiff').hidden = settings.mode !== 'cpu';
   $('grpCpuSize').hidden = settings.mode !== 'cpu'; setSeg('segCpuSize', settings.cpuSize || 1);
   $('grpDiff').querySelector('h3').textContent = (settings.cpuSize || 1) > 1 ? 'Pulso de los bots' : 'Pulso de Don Chepe';
-  $('grpGoal').hidden = settings.mode === 'reto';
+  $('grpGoal').hidden = settings.mode === 'reto' || champ;
+  $('grpChampLen').hidden = !champ; setSeg('segChampLen', champLen());
   $('segCount').hidden = settings.mode !== 'local';
   const allowed = teamsAllowed(settings.count);
   $('grpTeams').hidden = settings.mode !== 'local' || allowed.length < 2;
@@ -187,7 +194,7 @@ function renderMenu() {
   $('btnPlay').textContent = settings.mode === 'online' ? 'Crear sala' : 'A jugar';
   $('btnPlay').disabled = settings.mode === 'online' && !NET.room;
   renderMenuOnline();
-  $('lblNames').textContent = (settings.mode === 'local' ? 'Jugadores' : 'Tu nombre') + (bolo ? ' · D derecho, Z zurdo' : '');
+  $('lblNames').textContent = (settings.mode === 'local' ? 'Jugadores' : 'Tu nombre') + (bolo || champ ? ' · D derecho, Z zurdo' : '');
   const n = settings.mode === 'local' ? settings.count : 1, box = $('names'); box.innerHTML = '';
   box.style.gridTemplateColumns = n === 1 ? '1fr' : '1fr 1fr';
   for (let i = 0; i < n; i++) {
@@ -204,8 +211,8 @@ function renderMenu() {
       openPicker({ title: settings.mode === 'local' ? `Grabado de ${settings.names[i] || 'Jugador ' + (i + 1)}` : 'Escoge tu grabado', current: settings.designs[i], taken, color: COLORS[i], name: settings.names[i],
         onPick: id => { settings.designs[i] = id; saveSettings(); renderMenu(); } });
     });
-    if (settings.game === 'tejo') l.append(dz, inp); else { l.append(inp); l.classList.add('noDz'); }   // el grabado es del tejo: en la rana y el bolo no se escoge
-    if (bolo) {   // en el bolo cada uno dice con qué mano lanza: vale lo que tumbe por ese lado
+    if (settings.game === 'tejo' || champ) l.append(dz, inp); else { l.append(inp); l.classList.add('noDz'); }   // el grabado es del tejo: en la rana y el bolo no se escoge
+    if (bolo || champ) {   // en el bolo cada uno dice con qué mano lanza: vale lo que tumbe por ese lado
       const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'hand'; const z = settings.hands[i] === 'Z';
       hb.textContent = z ? 'Z' : 'D'; hb.setAttribute('aria-label', `Mano del jugador ${i + 1}: ${z ? 'zurdo' : 'derecho'}`);
       hb.addEventListener('click', e => { e.preventDefault(); settings.hands[i] = z ? 'D' : 'Z'; saveSettings(); renderMenu(); A.init(); A.tick(); if (NET.sala && i === 0) NET.sala.presence({ z: settings.hands[0] === 'Z' ? 1 : 0 }).catch(() => { }); });
@@ -222,8 +229,8 @@ function renderMenu() {
 const SUM_IC = {"dist": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\"><path d=\"M3 12h18\"/><path d=\"M6 8.5 3 12l3 3.5\"/><path d=\"M18 8.5l3 3.5-3 3.5\"/></svg>", "goal": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 21V4\"/><path d=\"M5 4h12l-2.5 4L17 12H5\"/></svg>", "eye": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\"><path d=\"M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg>", "music": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\"><path d=\"M9 18V5l11-2v13\"/><circle cx=\"6.5\" cy=\"18\" r=\"2.5\"/><circle cx=\"17.5\" cy=\"16\" r=\"2.5\"/></svg>", "mute": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\"><path d=\"M9 18V5l11-2v13\"/><circle cx=\"6.5\" cy=\"18\" r=\"2.5\"/><path d=\"M3 3l18 18\"/></svg>"};
 function renderSum() {
   const chip = (ic, t) => `<span class="mchip">${SUM_IC[ic]}${t}</span>`, parts = [], gc = goalCfg();
-  if (settings.game === 'tejo') parts.push(chip('dist', fmtD(settings.dist)));
-  parts.push(chip('goal', settings.mode === 'reto' ? '10 tejos' : 'a ' + fmtGoal(settings[gc.key])));
+  if (settings.game === 'tejo' || settings.game === 'champ') parts.push(chip('dist', fmtD(settings.dist)));
+  parts.push(chip('goal', settings.game === 'champ' ? (champLen() === 'larga' ? 'Partidas largas' : 'Partidas cortas') : settings.mode === 'reto' ? '10 tejos' : 'a ' + fmtGoal(settings[gc.key])));
   const aids = [settings.aimHelp && 'Mira', settings.aimHelp && settings.lupa && 'Lupa', settings.power && 'Fuerza'].filter(Boolean);
   parts.push(chip('eye', aids.length ? aids.join(' · ') : 'Sin ayudas'));
   parts.push(settings.music !== false ? chip('music', 'Música') : chip('mute', 'Sin música'));
@@ -232,6 +239,7 @@ function renderSum() {
 function openSheet(on) { $('mSheet').hidden = !on; if (!on) renderMenu(); else $('mSheetOk').focus(); }
 function showMenu() {
   if (NET.sala) netLeave();
+  champ = null;
   $('mSheet').hidden = true;
   phase = 'menu'; paused = false; timers.length = 0; drag = null; cpuAim = null;
   if (flight) { scene.remove(flight.mesh); flight = null; }
@@ -297,7 +305,7 @@ function pause() {
   if (online()) { $('pauseInfo').textContent = `Sala ${NET.code} · la partida sigue mientras ves este menú. Si no ves los tiros de los demás, toca Reconectar.`; $('btnRestart').hidden = true; $('btnReconnect').hidden = false; $('btnMenu').textContent = 'Salir de la sala'; showScreen('pause'); return; }
   $('btnRestart').hidden = false; $('btnReconnect').hidden = true; $('btnMenu').textContent = 'Menú';
   paused = true; drag = null; if (phase === 'aim') { setGauge(0, lastP[current().name]); reticle.visible = false; }
-  $('pauseInfo').textContent = isBolo() ? `Bolo · ronda ${game.round} · partida a ${game.goal}` : isRana() ? `Rana · ronda ${game.round} · partida a ${fmtGoal(game.goal)}` : game.mode === 'reto' ? `Reto · tejo ${Math.min(game.thrown + 1, RETO_THROWS)} de ${RETO_THROWS} · ${fmtD(W.D)}` : `Ronda ${game.round} · partida a ${game.goal} · ${fmtD(W.D)}`;
+  $('pauseInfo').textContent = champPrefix() + (isBolo() ? `Bolo · ronda ${game.round} · partida a ${game.goal}` : isRana() ? `Rana · ronda ${game.round} · partida a ${fmtGoal(game.goal)}` : game.mode === 'reto' ? `Reto · tejo ${Math.min(game.thrown + 1, RETO_THROWS)} de ${RETO_THROWS} · ${fmtD(W.D)}` : `Ronda ${game.round} · partida a ${game.goal} · ${fmtD(W.D)}`);
   showScreen('pause');
 }
 function resume() { paused = false; showScreen(null); }
@@ -358,7 +366,8 @@ function bindInput() {
 }
 
 function bindUI() {
-  bindSeg('segGame', 'game', v => ['rana', 'bolo'].includes(v) ? v : 'tejo');
+  bindSeg('segGame', 'game', v => ['rana', 'bolo', 'champ'].includes(v) ? v : 'tejo');
+  bindSeg('segChampLen', 'champLen', v => v === 'larga' ? 'larga' : 'corta');
 
   $('verTag').addEventListener('click', betaTap); $('btnBeta').addEventListener('click', betaTry); $('betaIn').addEventListener('keydown', e => { if (e.key === 'Enter') betaTry(); }); bindSeg('segMode', 'mode', v => v); bindSeg('segCount', 'count', Number); bindSeg('segDiff', 'diff', Number);
   bindSeg('segDist', 'dist', Number); bindGoal(); bindSeg('segTeams', 'teams', Number); bindSeg('segCpuSize', 'cpuSize', Number);
@@ -376,9 +385,9 @@ function bindUI() {
   $('btnPause').addEventListener('click', pause);
   $('btnResume').addEventListener('click', resume);
   $('btnReconnect').addEventListener('click', () => { resume(); toast('Reconectando a la sala…'); netRejoin(); });
-  $('btnRestart').addEventListener('click', () => { paused = false; clearCancha(); startGame(); });
+  $('btnRestart').addEventListener('click', () => { paused = false; if (game && game.champ) return startChampGame(); clearCancha(); startGame(); });   // en el campeonato vuelve a empezar el juego de ahora
   $('btnMenu').addEventListener('click', showMenu);
-  $('btnAgain').addEventListener('click', () => { if (online()) return netRematch(); clearCancha(); startGame(); });
+  $('btnAgain').addEventListener('click', () => { if (online()) return netRematch(); if (game && game.champ) return champNext(); clearCancha(); startGame(); });
   $('btnOverMenu').addEventListener('click', showMenu);
   $('pickClose').addEventListener('click', closePicker);
   $('picker').addEventListener('click', e => { if (e.target === $('picker')) closePicker(); });
@@ -394,7 +403,7 @@ function resize() {
 /* ================= Recarga en caliente ================= */
 function snapshot() {
   const base = { settings: { ...settings } };
-  if (!game || game.over || phase === 'menu' || online() || isRana() || isBolo()) return base;   // la rana y el bolo no se guardan para seguir después
+  if (!game || game.over || phase === 'menu' || online() || isRana() || isBolo() || game.champ) return base;   // la rana, el bolo y el campeonato no se guardan para seguir después
   return {
     ...base, lastP, pending: phase === 'result' || phase === 'roundEnd',
     game: {

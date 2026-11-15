@@ -8,7 +8,7 @@
      cada versión: sus direcciones llevan la versión de cada librería y la música no cambia, así que se bajan una
      sola vez. Si algún día cambia el mp3, subir KEEP a v2.
    - Las salas en línea necesitan internet: sus conexiones no pasan por aquí. */
-const VERSION = '1.57.4';
+const VERSION = '1.58.0';
 const CACHE = 'tejo-' + VERSION;
 const PRECACHE = [
   "./",

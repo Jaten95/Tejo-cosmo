@@ -202,10 +202,16 @@ function renderMenuOnline() {
    Con distinto PARCHE sí se puede: los parches no cambian cómo se juega (ver README, «Versiones»). */
 // Qué se juega en la sala: tejo (con su distancia) o rana; la meta es la de ese juego
 function roomGame() {
+  if (settings.game === 'champ') return { kind: 'champ', dist: settings.dist, goal: champLen() };   // el campeonato: la distancia del tejo y partidas cortas o largas
   if (settings.game === 'bolo') return { kind: 'bolo', dist: BOLO.D, goal: settings.boloGoal };
   return settings.game === 'rana' ? { kind: 'rana', dist: settings.dist, goal: settings.ranaGoal } : { kind: 'tejo', dist: settings.dist, goal: settings.goal };
 }
-const roomKind = k => k === 'rana' || k === 'bolo' ? k : 'tejo';
+const roomKind = k => k === 'rana' || k === 'bolo' || k === 'champ' ? k : 'tejo';
+/* La configuración de un juego del campeonato en la sala: qué se juega, a cuánto, a qué distancia y quién empieza */
+function champSetup(base, c, players) {
+  const kind = c.order[c.k];
+  return { ...base, players, kind, goal: champGoal(kind, c.len), dist: kind === 'bolo' ? BOLO.D : c.dist, first: c.k % players.length, champ: c };
+}
 function sameGameVersion(v) { const mm = s => String(s || '').split('.').slice(0, 2).join('.'); return !!v && mm(v) === mm(GAME_VERSION); }
 function presentPids(peers) { const m = new Map(); peers.forEach(p => { const pr = p.presence || {}; if (typeof pr.pid === 'string') m.set(pr.pid, pr); }); return m; }
 function publishG(g) {
@@ -417,6 +423,7 @@ function buildOnlineGame(g) {
   const nT = [2, 3].includes(st.teams) ? st.teams : 0;
   const players = st.players.slice(0, MAX_PLAYERS).map((s, i) => { const p = newPlayer(String(s.name).slice(0, 14), i, false, DESIGN_IDS.includes(s.design) ? s.design : null); p.pid = s.pid; p.zurdo = !!s.z; if (nT && Number.isInteger(s.team) && s.team >= 0 && s.team < nT) p.team = s.team; return p; });
   game = { players, round: 0, order: [], idx: 0, tejos: [], scored: false, goal: clampGoal(st.goal), mode: 'online', gid: g.gid, ...pickRules(st), aimHelp: !!st.aimHelp, thrown: 0, over: false };
+  if (validChamp(st.champ)) game.champ = st.champ;
   game.teams = applyTeams(players, nT);
   if (st.kind === 'rana') { ranaPrepare(); game.goal = clampRanaGoal(st.goal); computeDvdP(); }
   if (st.kind === 'bolo') { boloPrepare(); game.goal = clampBoloGoal(st.goal); computeDvdP(); }
@@ -426,7 +433,8 @@ function buildOnlineGame(g) {
 function startOnlineGame(g) {
   buildOnlineGame(g);
   const s = aheadSnap();
-  if (s) restoreSnap(s); else startRound();
+  if (s) restoreSnap(s);
+  else { const st = g.setup; startRound(Number.isInteger(st.first) && st.first >= 0 && st.first < game.players.length ? st.first : undefined); if (game.champ) champAnnounce(); }
 }
 /* Deja las mechas como estaban en la foto: las reventadas siguen reventadas, con su quemón */
 function applyMechas(mk) {
@@ -518,13 +526,22 @@ function netGameOver() {
 function netRematch() {
   if (!amHost() || !NET.g || !NET.g.setup) return;
   const g = NET.g, here = presentPids(NET.sala.peers());
+  // campeonato a medias: el siguiente juego con los mismos jugadores y equipos, y la tabla con el juego que terminó
+  const c = online() && game.champ && validChamp(g.setup.champ) ? g.setup.champ : null;
+  if (c && c.hist.length + 1 < 3) {
+    const hist = c.hist.concat([champEntry()]);
+    publishG({ ...g, phase: 'play', gid: rid(), setup: champSetup(g.setup, { ...c, k: hist.length, hist }, g.setup.players), snap: null, last: null, ver: g.ver + 1 });
+    applyG(); return;
+  }
   let players = g.setup.players.filter(s => here.has(s.pid));
   here.forEach((pr, pid) => { if (players.length < MAX_PLAYERS && !players.some(s => s.pid === pid) && pr.name) players.push({ pid, name: String(pr.name).slice(0, 14) }); });
   if (players.length > 1) players = [...players.slice(1), players[0]]; // empieza otro
   players = withDesigns(players.map(s => ({ ...s, design: here.get(s.pid) && DESIGN_IDS.includes(here.get(s.pid).design) ? here.get(s.pid).design : s.design, z: here.get(s.pid) ? (here.get(s.pid).z ? 1 : 0) : (s.z ? 1 : 0) })));
   const nT = teamsAllowed(players.length).includes(g.teams || 0) ? (g.teams || 0) : 0;   // equipos nuevos al azar en cada revancha
   players = nT ? makeTeams(players, nT).map(x => ({ ...x.item, team: x.team })) : players.map(s => { const c = { ...s }; delete c.team; return c; });
-  publishG({ ...g, phase: 'play', gid: rid(), setup: { ...g.setup, players, teams: nT }, snap: null, last: null, ver: g.ver + 1 });
+  let setup = { ...g.setup, players, teams: nT };
+  if (roomKind(g.kind) === 'champ') setup = champSetup(setup, { ...newChamp(g.goal), dist: g.dist }, players);   // otro campeonato, en otro orden
+  publishG({ ...g, phase: 'play', gid: rid(), setup, snap: null, last: null, ver: g.ver + 1 });
   applyG();
 }
 function withDesigns(list) {
@@ -538,7 +555,9 @@ function netStart() {
   const nT = teamsAllowed(players.length).includes(g.teams || 0) ? (g.teams || 0) : 0;
   if (nT) players = makeTeams(players, nT).map(x => ({ ...x.item, team: x.team }));
   A.init(); A.tick();
-  publishG({ ...g, phase: 'play', gid: rid(), setup: { players, dist: g.dist, goal: g.goal, kind: roomKind(g.kind), ...pickRules(g), teams: nT }, snap: null, last: null, ver: g.ver + 1 });
+  const base = { players, dist: g.dist, goal: g.goal, kind: roomKind(g.kind), ...pickRules(g), teams: nT };
+  const setup = base.kind === 'champ' ? champSetup(base, { ...newChamp(g.goal), dist: g.dist }, players) : base;
+  publishG({ ...g, phase: 'play', gid: rid(), setup, snap: null, last: null, ver: g.ver + 1 });
   applyG();
 }
 
@@ -653,7 +672,7 @@ function renderSala() {
   else if (full) info.textContent = `La sala está llena: ya hay ${MAX_PLAYERS} jugadores. Si alguien sale, entras de una; si no, crea otra sala.`;
   else if (host) info.textContent = seats.length < 2 ? 'Pásale el código a tus amigos. Cuando entren, aparecen aquí.' : 'Están listos. Empieza cuando quieras.';
   else info.textContent = 'Esperando a que el anfitrión empiece la partida.';
-  $('salaRules').textContent = g ? `${g.kind === 'bolo' ? 'Bolo · partida a ' + g.goal : g.kind === 'rana' ? 'Rana · partida a ' + fmtGoal(g.goal) : fmtD(g.dist) + ' · partida a ' + g.goal} · mira ${g.aimHelp ? 'sí' : 'no'} · lupa ${g.aimHelp && g.lupa !== false ? 'sí' : 'no'} · barra de fuerza ${g.power !== false ? 'sí' : 'no'} · cámara ${!(+g.zoom) ? 'cerca' : +g.zoom >= 1 ? 'lejos' : 'media'} · hasta ${MAX_PLAYERS} jugadores` : '';
+  $('salaRules').textContent = g ? `${g.kind === 'champ' ? 'Campeonato: tejo, rana y bolo · partidas ' + (g.goal === 'larga' ? 'largas' : 'cortas') + ' · ' + fmtD(g.dist) : g.kind === 'bolo' ? 'Bolo · partida a ' + g.goal : g.kind === 'rana' ? 'Rana · partida a ' + fmtGoal(g.goal) : fmtD(g.dist) + ' · partida a ' + g.goal} · mira ${g.aimHelp ? 'sí' : 'no'} · lupa ${g.aimHelp && g.lupa !== false ? 'sí' : 'no'} · barra de fuerza ${g.power !== false ? 'sí' : 'no'} · cámara ${!(+g.zoom) ? 'cerca' : +g.zoom >= 1 ? 'lejos' : 'media'} · hasta ${MAX_PLAYERS} jugadores` : '';
   // forma de juego: la escoge el anfitrión; los equipos se arman al azar al empezar
   const lobby = !!(g && g.phase === 'lobby'), nHere = seats.filter(s => here.has(s.pid)).length, allowed = teamsAllowed(nHere), want = (g && g.teams) || 0;
   $('salaTeams').hidden = !lobby;
@@ -682,7 +701,7 @@ function renderMyDesign(g, seats) {
   $('myDzImg').src = designIcon(got || want, COLORS[i] || COLORS[0], myName());
   $('myDzName').textContent = mine && !mine.design ? `${designName(want)} está ocupado: escoge otro` : designName(got || want);
   $('myDz').disabled = !!(g && g.phase !== 'lobby');
-  $('myDz').hidden = (g ? roomKind(g.kind) : settings.game) !== 'tejo';   // el grabado es del tejo: en la rana y el bolo no se escoge
+  $('myDz').hidden = ['rana', 'bolo'].includes(g ? roomKind(g.kind) : settings.game);   // el grabado es del tejo: en la rana y el bolo no se escoge (en el campeonato sí)
 }
 function netPickDesign() {
   const g = NET.g || NET.lastG; const seats = g ? (g.seats || []) : [];

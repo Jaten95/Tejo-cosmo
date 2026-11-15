@@ -24,6 +24,7 @@ src/
     04-partida.js    turnos, rondas, Don Chepe, cámaras y bucle principal
     04b-rana.js      el juego de la rana: la mesa, la física de la argolla, las tandas y Don Chepe
     04c-bolo.js      el bolo criollo: los tres palos, la bola, derecho o zurdo, la chuza y Don Chepe
+    04d-campeonato.js el campeonato: tejo, rana y bolo en orden al azar, puntos por puesto y la tabla
     05-brazo.js      brazo en primera persona, mano 3D y manilla
     06-salas.js      salas en línea (salas de Claude o Supabase Realtime)
     07-interfaz.js   menú, marcador, controles y arranque
@@ -159,6 +160,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.57.2 | Arreglado | salas: el código se borra de la casilla al entrar; si se escribe un código donde no hay nadie, avisa en vez de abrir una sala vacía con ese número |
 | — | 1.57.3 | Cambiado | menú nuevo: el juego en tarjetas con dibujo, el modo en baldosas con ícono, lo de cada modo en una tarjeta, la partida en un resumen que abre una hoja con la distancia, la meta, las ayudas y la música, y "A jugar" siempre a la vista abajo |
 | — | 1.57.4 | Cambiado | menú: íconos de línea para escoger el juego: el tejo con sus escalones, la rana de lado con la boca abierta y la bola con los palos cayéndose |
+| — | 1.58.0 | Agregado | campeonato: tejo, rana y bolo en orden al azar con los mismos jugadores; en cada juego 3, 2 y 1 puntos de campeonato al primero, segundo y tercero; partidas cortas (15, 500, 10) o largas; contra Don Chepe, por turnos (con equipos fijos) y en salas |
 
 </details>
 

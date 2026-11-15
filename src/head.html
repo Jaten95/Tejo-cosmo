@@ -200,6 +200,14 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 .stats td:first-child,.stats th:first-child{text-align:left;}
 .stats td:first-child{font-weight:600;border-left:4px solid var(--c);padding-left:8px;}
 .stats tr.win td{color:var(--yellow);}
+.champT{margin-bottom:6px;}
+.champT td.m3{color:var(--yellow);font-weight:800;}
+.champT td.m2{color:#d4d7da;font-weight:800;}
+.champT td.m1{color:#d9945a;font-weight:800;}
+.champT td.m0,.champT td.dim{color:var(--dim);}
+.champT td.tot{font-family:var(--display);font-size:17px;color:var(--paper);}
+.champT tr.win td.tot{color:var(--yellow);}
+.champT th.now{color:var(--yellow);}
 .winner{font-family:var(--display);font-size:clamp(34px,10vw,48px);line-height:1;color:var(--paper);text-shadow:3px 3px 0 var(--red);}
 .loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--night);color:var(--muted);font-weight:600;z-index:5;}
 .joinRow{display:flex;gap:8px;}
@@ -262,7 +270,13 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 #menu .group > h3{color:var(--yellow);}
 
 /* el juego: tres tarjetas con dibujo */
-#menu #segGame{gap:8px;background:none;padding:0;}
+#menu #segGame{gap:8px;background:none;padding:0;grid-auto-flow:row;grid-template-columns:repeat(3,minmax(0,1fr));}
+#menu #segGame button.champCard{grid-column:1/-1;flex-direction:row;justify-content:center;gap:14px;padding:10px 14px;}
+#menu #segGame button.champCard svg{width:38px;height:38px;margin:0;}
+#menu #segGame button.champCard span{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;}
+#menu #segGame button.champCard b{font-weight:400;}
+#menu #segGame button.champCard small{margin-top:3px;}
+#menu .brand h1.long{font-size:clamp(30px,10vw,44px);line-height:1.05;}
 #menu #segGame button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 4px 9px;background:var(--ink);border:1.5px solid var(--wood-3);
   border-radius:8px;font:400 21px/1 var(--display);color:var(--paper);transition:transform .15s,box-shadow .15s,background .15s;}
 #menu #segGame button svg{width:46px;height:46px;margin:2px 0 7px;color:var(--yellow);}
