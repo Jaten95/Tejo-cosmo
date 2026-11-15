@@ -1,0 +1,17 @@
+name: Mantener vivo Supabase
+# Supabase pausa los proyectos gratis si la base no recibe consultas en una semana. Las salas usan Realtime
+# (no la base), así que esto llama cada 3 días la función ping (solo responde 1) con la clave pública del juego.
+# GitHub apaga las tareas programadas de un repositorio que pasa 60 días sin cambios: si pasa, se prende otra vez en Actions.
+on:
+  schedule:
+    - cron: '23 15 */3 * *'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consulta mínima
+        env:
+          URL: https://iqttymzbjjftjxdzgagn.supabase.co/rest/v1/rpc/ping
+          KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxdHR5bXpiampmdGp4ZHpnYWduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1MDQ0OTksImV4cCI6MjExMDA4MDQ5OX0._HKDTC7-nM8MLmXUSqugFsMyEXYKY9v9xwTsRv2nrzk
+        run: curl -fsS -X POST "$URL" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}'

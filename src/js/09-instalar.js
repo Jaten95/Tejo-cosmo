@@ -22,9 +22,11 @@ document.addEventListener('click', async e => {
 
 /* ---------- Versión nueva ----------
    Instalado, el celular puede dejar la app abierta en segundo plano con la versión vieja.
-   Al abrirla o volver a ella se consulta version.json; si hay otra versión, sale un aviso para actualizar. */
+   Al abrirla o volver a ella se consulta version.json; si hay otra versión, sale un aviso para actualizar.
+   Dentro de una sala el aviso se guarda y sale al salir: actualizar a la mitad de la partida recarga el juego
+   y, si la versión nueva cambia las reglas, ya no lo deja volver a la sala de los demás. */
 function versionNewer(a, b) { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; }
-let updChecking = false, updLast = 0;
+let updChecking = false, updLast = 0, updV = null;
 async function checkUpdate() {
   if (window.claude || !('serviceWorker' in navigator) || updChecking || Date.now() - updLast < 30000) return;
   updChecking = true; updLast = Date.now();
@@ -37,9 +39,13 @@ async function checkUpdate() {
 }
 function showUpdate(v) {
   const el = document.getElementById('updBar'); if (!el) return;
+  updV = v;
+  if (NET.sala) { el.hidden = true; return; }
   document.getElementById('updText').textContent = `Hay una versión nueva: v${v}`;
   el.hidden = false;
 }
+function holdUpdate() { const el = document.getElementById('updBar'); if (el) el.hidden = true; }
+function releaseUpdate() { if (updV && versionNewer(updV, GAME_VERSION)) showUpdate(updV); }
 document.addEventListener('click', e => {
   if (!e.target.closest || !e.target.closest('#updBtn')) return;
   const go = () => location.reload();

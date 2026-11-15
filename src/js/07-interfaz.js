@@ -406,6 +406,24 @@ function restore(data) {
   } catch (e) { game = null; return false; }
 }
 
+/* Si el celular le quita el 3D al juego (mucho rato en segundo plano o poca memoria), three.js lo recupera solo
+   cuando el sistema lo devuelve. Si con el juego a la vista pasan 4 s y no vuelve, se recarga guardando la
+   partida (el tejo contra Don Chepe o por turnos sigue donde iba; en las salas vuelve a su puesto). */
+let glLost = false, glLostVis = 0;
+function watchGL() {
+  const cv = renderer.domElement;
+  cv.addEventListener('webglcontextlost', () => { glLost = true; glLostVis = 0; });
+  cv.addEventListener('webglcontextrestored', () => { glLost = false; glLostVis = 0; resize(); camSafe(); });
+  setInterval(() => {
+    if (!glLost || document.hidden) { glLostVis = 0; return; }
+    const now = performance.now(); glLostVis = glLostVis || now;
+    if (now - glLostVis > 4000) { glLost = false; try { sessionStorage.setItem('tejo.resume.v1', JSON.stringify(snapshot())); } catch (e) { } location.reload(); }
+  }, 1000);
+}
+function takeResume() {
+  try { const s = sessionStorage.getItem('tejo.resume.v1'); sessionStorage.removeItem('tejo.resume.v1'); return s ? JSON.parse(s) : null; } catch (e) { return null; }
+}
+
 /* ================= Arranque ================= */
 async function boot(data) {
   const ld = $('loading');
@@ -416,7 +434,7 @@ async function boot(data) {
   buildRenderer(); buildTextures(); buildArm();
   setDistance(settings.dist); buildHall(); computeDvdP();
   resize(); addEventListener('resize', resize);
-  renderer.domElement.addEventListener('webglcontextrestored', () => { resize(); camSafe(); });
+  watchGL();
   document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(resize, 300); });
   delete settings.muted; A.muted = false;   // los efectos siempre suenan (antes había un botón para callarlos); la música se apaga con los parlantes o el menú
   netInit(); bindUI();
@@ -427,6 +445,6 @@ async function boot(data) {
 (function () {
   const hot = window.claude && window.claude.hot;
   try { hot && hot.snapshot && hot.snapshot(snapshot); } catch (e) { }
-  const go = d => boot(d || {});
+  const go = d => boot(d && Object.keys(d).length ? d : takeResume() || {});
   if (hot && hot.ready) hot.ready(go); else go(hot && hot.data || {});
 })();

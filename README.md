@@ -35,6 +35,7 @@ src/
 build.py             une todo y genera index.html y sw.js
 manifest.webmanifest e icon-*.png: datos para instalar el juego como app
 musica-vallenato.mp3 la música de fondo; el juego la baja al empezar a jugar y, instalado, queda guardada para sonar sin internet (ver LICENSES/)
+.github/workflows/supabase-ping.yml  cada 3 días hace una consulta mínima a Supabase para que el proyecto gratis no se pause
 ```
 
 ## Generar una versión nueva
@@ -153,17 +154,24 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.55.0 | Agregado | bolo (beta): el perro y la bola: si le pasa cerca brinca y sale corriendo; si le pega, chilla, huye, la bola se para ahí y el que lanzó pierde un punto por maltrato animal (en las salas de bolo no pasan perros) |
 | — | 1.55.1 | Arreglado | la música de fondo queda guardada al instalar el juego y suena sin internet, también después de cada actualización |
 | — | 1.56.0 | Agregado | el bolo criollo sale para todos (ya no es beta) |
+| — | 1.57.0 | Arreglado | salas: si el juego se cierra en plena partida, al abrirlo vuelve solo a su puesto; el anfitrión manda el marcador si un celular calcula distinto; una sala nueva no cae en un código ocupado; el aviso de versión nueva espera a que salgan de la sala; la mira en vivo manda menos mensajes. Instalado: con señal lenta abre la copia guardada a los 3,5 s, un error del servidor no la daña y no se vuelve a bajar el juego si no cambió. Menos batería (30 cuadros por segundo con todo quieto, nunca más de 60, y menos resolución si va lento) y el 3D se recupera si el celular lo quita |
 
 </details>
 
 ## Instalar en el celular
 
-En GitHub Pages el juego se puede instalar: en Android sale el botón **Instalar en el celular** en el menú; en iPhone, el mismo botón explica cómo agregarlo desde Safari con Compartir → Agregar a inicio. Instalado, se juega sin internet contra Don Chepe, por turnos y en el reto; las salas necesitan conexión. El service worker pide la página a la red primero, así que las versiones nuevas llegan solas.
+En GitHub Pages el juego se puede instalar: en Android sale el botón **Instalar en el celular** en el menú; en iPhone, el mismo botón explica cómo agregarlo desde Safari con Compartir → Agregar a inicio. Instalado, se juega sin internet contra Don Chepe, por turnos y en el reto; las salas necesitan conexión. El service worker pide la página a la red revalidando (si no cambió, no se baja otra vez); si en 3,5 s no llega, abre la copia guardada y la nueva queda lista para la próxima. Three.js, las fuentes y la música se guardan aparte y no se vuelven a bajar con cada versión. Dentro de una sala, el aviso de versión nueva espera a que salgan.
 
 ## Servicios
 
 - **Three.js r128** desde cdnjs y su GLTFLoader desde jsDelivr.
-- **Supabase Realtime** para las salas fuera de Claude. Solo usa canales (presence y broadcast), sin tablas. La clave del código es la pública (anon). En el plan gratis el proyecto se pausa tras una semana sin uso.
+- **Supabase Realtime** para las salas fuera de Claude. Solo usa canales (presence y broadcast), sin tablas. La clave del código es la pública (anon). En el plan gratis el proyecto se pausa si la base no recibe consultas en una semana, y las salas no cuentan (no usan la base): por eso el juego llama la función `ping` (solo responde 1) al abrir, y `.github/workflows/supabase-ping.yml` la llama cada 3 días. El tope del plan gratis es de 100 mensajes por segundo en todo el proyecto: la mira en vivo sale cada 0,32 s y solo si se movió.
+
+### Cómo se mantienen iguales las salas
+- Cada celular corre el mismo motor con los mismos tiros. El anfitrión publica una foto de la partida en cada turno y al final; si otro celular calculó distinto (iPhone y Android pueden diferir en el último decimal), se pone la del anfitrión. Solo se toman fotos del anfitrión.
+- Si el juego se cierra en plena partida (el sistema lo mata, se recarga, se acaba la batería), al abrirlo otra vez vuelve solo a la sala y a su puesto, si fue hace menos de 20 min. Salir con el botón borra ese registro.
+- Al crear una sala se revisa que el código esté libre.
+- Un celular modificado que sea el anfitrión todavía podría hacer trampa: evitarlo del todo necesita un servidor que lleve la partida.
 
 ## Licencias de terceros
 

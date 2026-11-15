@@ -533,7 +533,32 @@ function render() {
     renderer.clear(); renderer.render(scene, lupaCam); renderer.setScissorTest(false);
   }
 }
+/* Batería y calor: con algo en movimiento (apuntando con el dedo, tejo en el aire, Don Chepe, brazo, repetición,
+   resultado) se dibuja a 60 cuadros por segundo como mucho, también en pantallas de 90 o 120 Hz; con todo quieto
+   (menú, esperando, apuntando sin tocar) a 30. Y si con todo en movimiento va lento unos segundos seguidos
+   (celular sencillo o caliente), se baja la resolución un paso: 2 → 1,5 → 1,25 → 1. Nunca vuelve a subir en la misma sesión. */
+const QUALITY = { steps: [2, 1.5, 1.25, 1], lvl: 0, acc: 0, n: 0, lastDraw: 0 };
+function frameBusy() {
+  return !!drag || !!replay || !!breplay || phase === 'flight' || phase === 'cpu' || phase === 'result' || phase === 'roundEnd' || ['swing', 'follow', 'drop'].includes(ARM.state);
+}
+function framePace(now) {
+  const busy = frameBusy(), gap = now - QUALITY.lastDraw;
+  if (gap < (busy ? 13 : 28)) return false;
+  if (busy && QUALITY.lastDraw && gap < 1000) {   // las pausas largas (volver del segundo plano) no cuentan
+    QUALITY.acc += gap; QUALITY.n++;
+    if (QUALITY.acc > 4000) { const avg = QUALITY.acc / QUALITY.n; QUALITY.acc = QUALITY.n = 0; if (avg > 26) qualityDown(); }
+  }
+  QUALITY.lastDraw = now; return true;
+}
+function qualityDown() {
+  const dpr = window.devicePixelRatio || 1, cur = renderer.getPixelRatio();
+  while (QUALITY.lvl < QUALITY.steps.length - 1) {
+    QUALITY.lvl++; const pr = Math.min(dpr, QUALITY.steps[QUALITY.lvl]);
+    if (pr < cur - .01) { renderer.setPixelRatio(pr); resize(); return; }
+  }
+}
 function frame(now) {
+  if (!framePace(now)) { requestAnimationFrame(frame); return; }
   const dt = clamp((now - lastT) / 1000, 0, .05); lastT = now;
   try {
     if (!paused) { tickTimers(dt); updateGame(dt, now); updateFx(dt); }

@@ -20,17 +20,66 @@ function pickRules(o) { const r = {}; RULE_KEYS.forEach(k => { if (o[k] !== unde
 function myName() { return (settings.names[0] || 'Jugador').slice(0, 14); }
 
 function netInit() {
+  let back = null;
   try { NET.pid = sessionStorage.getItem('tejo.pid'); } catch (e) { }
-  if (!NET.pid) { NET.pid = rid() + rid(); try { sessionStorage.setItem('tejo.pid', NET.pid); } catch (e) { } }
+  if (NET.pid) back = backFor(NET.pid);                       // se recargó la página: el mismo jugador
+  else {
+    back = backPick(); NET.pid = back ? back.pid : rid() + rid(); NET.adopted = !!back; try { sessionStorage.setItem('tejo.pid', NET.pid); } catch (e) { }
+    if (!back) setTimeout(backLater, BACK_LIVE + 500);   // si se cerró hace un instante, su latido todavía parece vivo: mirar otra vez
+  }
+  const ready = r => { NET.room = r; NET.ready = true; renderMenu(); back = back || NET.backWait; if (r && back) netAutoBack(back); };
   const c = window.claude;
   if (c && typeof c.use === 'function') {
     NET.via = 'claude';
-    c.use('room').then(r => { NET.room = r; NET.ready = true; renderMenu(); }).catch(() => { NET.ready = true; renderMenu(); });
+    c.use('room').then(ready).catch(() => { NET.ready = true; renderMenu(); });
   } else {
     NET.via = 'supabase';
-    supaRoom().then(r => { NET.room = r; NET.ready = true; renderMenu(); }).catch(() => { NET.ready = true; renderMenu(); });
+    supaRoom().then(ready).catch(() => { NET.ready = true; renderMenu(); });
+    supaPing();
   }
   setInterval(netTick, 1000);
+}
+
+/* ---------- Volver a la sala después de que el juego se cerró ----------
+   Si el celular cierra el juego (pasa mucho en iPhone al ir a WhatsApp), se recarga o se apaga, el jugador
+   vuelve a su puesto: cada celular guarda quién era y en qué sala estaba, con un latido cada segundo.
+   Al abrir, toma el registro sin latido (nadie lo está usando) de hace menos de 20 min y entra solo a esa sala.
+   Salir de la sala con el botón borra el registro. Si resulta que ese jugador sigue abierto en otra pestaña
+   (su latido vuelve), la pestaña nueva le cede el puesto y queda como otro jugador. */
+const BACK_KEY = 'tejo.salas.v1', BACK_MAX = 20 * 60000, BACK_LIVE = 6000, TAB = rid();
+function backList() { const l = store.get(BACK_KEY, {}); return l && typeof l === 'object' && !Array.isArray(l) ? l : {}; }
+function backFor(pid) { const r = backList()[pid]; return r && typeof r.code === 'string' && Date.now() - r.at < BACK_MAX ? { pid, ...r } : null; }
+function backPick() {
+  const l = backList(), now = Date.now(); let best = null;
+  for (const pid in l) {
+    const r = l[pid];
+    if (!r || typeof r.code !== 'string' || !(now - r.at < BACK_MAX)) { delete l[pid]; continue; }
+    if (now - r.at > BACK_LIVE && (!best || r.at > best.at)) best = { pid, ...r };   // con latido reciente lo está usando otra pestaña
+  }
+  store.set(BACK_KEY, l); return best;
+}
+function backSave() {
+  if (!NET.code || !NET.pid) return;
+  const l = backList(), r = l[NET.pid], now = Date.now();
+  if (NET.adopted && r && r.tab && r.tab !== TAB && now - r.at < BACK_LIVE) return backYield();
+  l[NET.pid] = { code: NET.code, at: now, tab: TAB }; store.set(BACK_KEY, l);
+}
+function backYield() {
+  NET.adopted = false; NET.pid = rid() + rid(); try { sessionStorage.setItem('tejo.pid', NET.pid); } catch (e) { }
+  showMenu(); $('onlineMsg').textContent = 'Ese jugador sigue abierto en otra pestaña. Para entrar como otro jugador, escribe el código de la sala.';
+}
+function backClear() { const l = backList(); if (l[NET.pid]) { delete l[NET.pid]; store.set(BACK_KEY, l); } }
+function backLater() {
+  if (NET.sala || game) return;
+  const b = backPick(); if (!b) return;
+  NET.pid = b.pid; NET.adopted = true; try { sessionStorage.setItem('tejo.pid', NET.pid); } catch (e) { }
+  if (NET.room) netAutoBack(b); else NET.backWait = b;
+}
+function netAutoBack(back) {
+  if (game || NET.sala || !(settings.names[0] || '').trim()) return;
+  settings.mode = 'online'; renderMenu();
+  toast(`Volviendo a la sala ${back.code}…`);
+  NET.auto = true; netEnter(back.code, false);
 }
 
 /* ---------- Salas fuera de Claude: Supabase Realtime ----------
@@ -41,6 +90,11 @@ const SUPA = {
   key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxdHR5bXpiampmdGp4ZHpnYWduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1MDQ0OTksImV4cCI6MjExMDA4MDQ5OX0._HKDTC7-nM8MLmXUSqugFsMyEXYKY9v9xwTsRv2nrzk',
   lib: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js'
 };
+/* Supabase pausa los proyectos gratis si la base no recibe consultas en una semana (las salas no cuentan:
+   no usan la base). Al abrir el juego se hace una consulta mínima (ping, una función que solo responde 1). */
+function supaPing() {
+  try { if (navigator.onLine === false) return; fetch(SUPA.url + '/rest/v1/rpc/ping', { method: 'POST', headers: { apikey: SUPA.key, Authorization: 'Bearer ' + SUPA.key, 'Content-Type': 'application/json' }, body: '{}' }).catch(() => { }); } catch (e) { }
+}
 function loadScript(src) {
   return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.async = true; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
 }
@@ -167,7 +221,12 @@ async function netEnter(code, create) {
   try {
     if (NET.sala) await netLeave();
     const sala = await NET.room.join('tejo-' + code);
+    if (create) {   // ¿ya hay alguien con ese código? entonces se busca otro, para no caer en la sala de otro grupo
+      await new Promise(r => setTimeout(r, 1200));
+      if (sala.peers().some(p => !p.isMe)) { try { await sala.leave(); } catch (e) { } throw { code: 'busy' }; }
+    }
     Object.assign(NET, { sala, code, g: null, lastG: null, myG: null, pending: {}, lostAt: 0, absent: {}, creator: create, watching: false, joinedAt: performance.now() });
+    holdUpdate(); backSave();
     NET.unsub = sala.onPeers(netSync, netError);
     fixLocalDesigns();
     const me = { v: 1, pid: NET.pid, name: myName(), design: settings.designs[0], z: settings.hands[0] === 'Z' ? 1 : 0, gv: GAME_VERSION };
@@ -176,14 +235,18 @@ async function netEnter(code, create) {
     await sala.presence(me);
     showSala(); netSync();
   } catch (e) {
+    NET.auto = false;
+    if (e && e.code === 'busy') throw e;
     msg.textContent = e && e.code === 'limit_reached' ? 'No se pudo abrir la sala ahora. Intenta en un momento.' : 'No se pudo entrar a la sala. Revisa tu conexión e intenta otra vez.';
   }
 }
 async function netLeave() {
   const s = NET.sala, un = NET.unsub;
-  Object.assign(NET, { sala: null, unsub: null, code: null, g: null, lastG: null, myG: null, pending: {}, watching: false });
+  backClear();
+  Object.assign(NET, { sala: null, unsub: null, code: null, g: null, lastG: null, myG: null, pending: {}, watching: false, auto: false });
   try { un && un(); } catch (e) { }
   if (s) { try { await s.leave(); } catch (e) { } }
+  releaseUpdate();
 }
 function netError(e) {
   const code = NET.code;
@@ -215,7 +278,12 @@ document.addEventListener('visibilitychange', () => {
   if (!$('hud').hidden) keepAwake(true);
   if (NET.sala && performance.now() - hiddenAt > 2000) netRejoin();
 });
-function netCreate() { netEnter(String(1000 + Math.floor(Math.random() * 9000)), true); }
+async function netCreate() {
+  for (let i = 0; i < 4; i++) {
+    try { await netEnter(String(1000 + Math.floor(Math.random() * 9000)), true); return; } catch (e) { if (!e || e.code !== 'busy') return; }
+  }
+  $('onlineMsg').textContent = 'No se pudo abrir la sala ahora. Intenta en un momento.';
+}
 function netJoinClick() {
   const code = $('codeIn').value.replace(/\D/g, '');
   if (code.length !== 4) { $('onlineMsg').textContent = 'El código de la sala tiene 4 números.'; return; }
@@ -233,7 +301,7 @@ function netSync() {
       if (!best || g.ver > best.ver || (g.ver === best.ver && g.host < best.host)) best = g;
   }
   if (best && best.host !== NET.pid && !sameGameVersion(best.gv)) { versionMismatch(best.gv); return; }
-  if (best) { NET.g = best; NET.lastG = best; NET.lostAt = 0; }
+  if (best) { NET.g = best; NET.lastG = best; NET.lostAt = 0; NET.auto = false; }
   else { NET.g = null; if (NET.lastG && !NET.lostAt) NET.lostAt = performance.now(); }
   if (NET.myG && best && best.host !== NET.pid) { NET.myG = null; NET.sala.presence({ g: null }).catch(() => { }); }
   if (NET.g && amHost()) hostDuties(peers);
@@ -294,20 +362,34 @@ function applyG() {
     const s = aheadSnap();
     if (s) { restoreSnap(s); return; }
   }
+  // el anfitrión manda: si en el mismo tiro su foto dice otra cosa (otro celular calculó distinto), se usa la suya
+  if ((phase === 'aim' || phase === 'wait' || phase === 'over') && !drag && !NET.pending[game.thrown]) {
+    const hs = hostSnap();
+    if (hs && hs.seq === game.thrown && snapKey(hs) !== snapKey(makeSnap())) {
+      const k = game.gid + ':' + game.thrown; NET.fix = NET.fix && NET.fix.k === k ? NET.fix : { k, n: 0 };
+      if (NET.fix.n++ < 2) { restoreSnap(hs); return; }   // por si acaso, nunca en bucle
+    }
+  }
   if (g.phase === 'over' && !game.over && (phase === 'aim' || phase === 'wait') && !aheadSnap()) {
     gameOver([...game.players].sort((a, b) => b.score - a.score)[0]);
   }
 }
-/* La foto de la partida más avanzada que publique cualquier jugador. Como todos corren
-   el mismo motor con los mismos tiros, la más avanzada es la correcta: solo se adelanta, nunca se retrocede. */
-function aheadSnap() {
-  if (!NET.sala || !online()) return null;
-  let best = null;
+/* La foto de la partida que publica el anfitrión. Todos corren el mismo motor con los mismos tiros, pero
+   iPhone y Android pueden diferir en el último decimal de algunas cuentas y, muy de vez en cuando, dar otro
+   resultado. Por eso el anfitrión es el que manda: si su foto va más adelante, el que se quedó atrás se pone
+   al día con ella; y si en el mismo tiro dice otra cosa, se usa la suya. Solo se toman fotos del anfitrión. */
+function hostSnap() {
+  if (!NET.sala || !online() || !NET.g || amHost()) return null;
   for (const peer of NET.sala.peers()) {
-    const s = peer.presence && peer.presence.s;
-    if (s && s.gid === game.gid && typeof s.seq === 'number' && s.seq > game.thrown && Array.isArray(s.sc) && Array.isArray(s.order) && (!best || s.seq > best.seq)) best = s;
+    const pr = peer.presence || {}, s = pr.s;
+    if (pr.pid === NET.g.host && s && s.gid === game.gid && typeof s.seq === 'number' && Array.isArray(s.sc) && Array.isArray(s.order)) return s;
   }
-  return best;
+  return null;
+}
+function aheadSnap() { const s = hostSnap(); return s && s.seq > game.thrown ? s : null; }
+// lo que cuenta de una foto: marcador, turnos, mechas y dónde quedó cada tejo o argolla (sin la forma exacta de cada uno)
+function snapKey(s) {
+  return JSON.stringify([s.round, s.idx, s.order, s.scored, s.sc, s.mk, (s.tj || []).map(a => [a[0], a[1], a[2], a[3], a[4], a[12]]), s.ra || 0, (s.rg || []).map(a => a.slice(0, 3))]);
 }
 function tryConsume() {
   if (!online() || game.over || !(phase === 'aim' || phase === 'wait')) return;
@@ -348,7 +430,7 @@ function applyMechas(mk) {
 function makeSnap() {
   return {
     gid: game.gid, seq: game.thrown, round: game.round, idx: game.idx, order: game.order, scored: game.scored ? 1 : 0,
-    sc: game.players.map(p => [p.score, p.st.mechas, p.st.emb, p.st.mon, p.st.manos, p.st.nulos, p.st.tiros]),
+    sc: game.players.map(p => [p.score, p.st.mechas, p.st.emb, p.st.mon, p.st.manos, p.st.nulos, p.st.tiros, p.st.perros || 0]),
     mk: mechaMeshes.map(m => m.userData.alive ? 1 : 0),
     tj: game.tejos.map(t => [t.owner, t.valid ? 1 : 0, r4(t.u || 0), r4(t.v || 0), isFinite(t.d) ? r4(t.d) : -1, ...t.mesh.position.toArray().map(r4), ...t.mesh.quaternion.toArray().map(r4), t.pts || 0]),
     ...(isRana() ? { ra: [game.arg, game.turnPts], rg: game.rings.map(r => [r.owner, r.slot, r.pts, ...r.mesh.position.toArray().map(r4)]) } : {})   // rana: argolla de la tanda y las que ya cayeron
@@ -359,7 +441,7 @@ function restoreSnap(s) {
   timers.length = 0; if (flight && flight.mesh) scene.remove(flight.mesh); flight = null; drag = null;
   clearCancha();
   Object.assign(game, { round: s.round, idx: s.idx, order: s.order.slice(), scored: !!s.scored, thrown: s.seq, over: false });
-  game.players.forEach((p, i) => { const a = s.sc[i] || []; p.score = a[0] | 0; p.st = { mechas: a[1] | 0, emb: a[2] | 0, mon: a[3] | 0, manos: a[4] | 0, nulos: a[5] | 0, tiros: a[6] | 0 }; });
+  game.players.forEach((p, i) => { const a = s.sc[i] || []; p.score = a[0] | 0; p.st = { mechas: a[1] | 0, emb: a[2] | 0, mon: a[3] | 0, manos: a[4] | 0, nulos: a[5] | 0, tiros: a[6] | 0 }; if (a[7]) p.st.perros = a[7] | 0; });
   applyMechas(s.mk);
   (s.tj || []).forEach(a => {
     const [owner, valid, u, v, d, px, py, pz, qx, qy, qz, qw] = a;
@@ -404,8 +486,11 @@ function netThrow(a) {
 }
 function netAim(aim, now) {
   if (!NET.sala) return;
-  if (aim === null) { NET.sala.presence({ aim: null }).catch(() => { }); return; }
-  if (now - NET.lastAimSent < (NET.via === 'supabase' ? 220 : 80)) return; NET.lastAimSent = now;
+  if (aim === null) { NET.lastAim = null; NET.sala.presence({ aim: null }).catch(() => { }); return; }
+  if (now - NET.lastAimSent < (NET.via === 'supabase' ? 320 : 80)) return;
+  const la = NET.lastAim;   // quieto no se manda nada: cada mensaje le llega a todos los de la sala y Supabase gratis tiene tope
+  if (la && la.n === game.thrown && Math.abs(la.L - aim.L) < .004 && Math.abs(la.P - aim.P) < .006 && now - NET.lastAimSent < 2500) return;
+  NET.lastAimSent = now; NET.lastAim = { L: aim.L, P: aim.P, n: game.thrown };
   NET.sala.presence({ aim: { L: r4(aim.L), P: r4(aim.P), n: game.thrown } }).catch(() => { });
 }
 function netWatch() {
@@ -419,7 +504,11 @@ function netWatch() {
     showReticle(NET.watch); setGauge(NET.watch.P);
   } else { reticle.visible = false; setGauge(0); }
 }
-function netGameOver() { if (NET.sala && amHost()) publishG({ ...NET.g, phase: 'over', ver: NET.g.ver + 1 }); }
+function netGameOver() {
+  if (!NET.sala) return;
+  NET.sala.presence({ s: makeSnap() }).catch(() => { });   // la foto final: con la del anfitrión todos ven el mismo ganador
+  if (amHost()) publishG({ ...NET.g, phase: 'over', ver: NET.g.ver + 1 });
+}
 function netRematch() {
   if (!amHost() || !NET.g || !NET.g.setup) return;
   const g = NET.g, here = presentPids(NET.sala.peers());
@@ -456,14 +545,21 @@ function netTick() {
     if (now - NET.discSince > 4000) { NET.discSince = 0; netRejoin(); }
   } else NET.discSince = 0;
   if (online()) applyG();
-  if (!NET.g && !NET.lastG && now - NET.joinedAt > 3000 && [...here.keys()].sort()[0] === NET.pid) {
+  backSave();
+  if (NET.auto && !NET.g && !NET.lastG && now - NET.joinedAt > 3500) {
+    if (here.size <= 1) {   // volvía a la sala, pero ya no hay nadie
+      const code = NET.code; showMenu(); $('onlineMsg').textContent = `La sala ${code} ya se cerró.`; return;
+    }
+    if (now - NET.joinedAt > 15000) NET.auto = false;
+  }
+  if (!NET.auto && !NET.g && !NET.lastG && now - NET.joinedAt > 3000 && [...here.keys()].sort()[0] === NET.pid) {
     publishG({ code: NET.code, ver: 1, host: NET.pid, gv: GAME_VERSION, phase: 'lobby', seats: [{ pid: NET.pid, name: myName() }], ...roomGame(), ...hostRules() });
     netSync();
   }
   if (!NET.g && NET.lastG && NET.lostAt && now - NET.lostAt > 2500) {
     const lg = NET.lastG;
     const order = (lg.phase === 'lobby' || !lg.setup ? lg.seats : lg.setup.players).map(s => s.pid);
-    const next = order.find(pid => here.has(pid)) || [...here.keys()].sort()[0];
+    const next = order.find(pid => here.has(pid) && pid !== lg.host) || [...here.keys()].sort()[0];   // sin contar al anfitrión que se fue (si vuelve, ya no tiene la sala)
     if (next === NET.pid) {
       const g = { ...lg, host: NET.pid, ver: lg.ver + 1 };
       if (lg.phase === 'lobby') g.seats = lg.seats.filter(s => here.has(s.pid));
