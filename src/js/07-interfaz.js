@@ -194,7 +194,7 @@ function renderMenu() {
     const l = document.createElement('label'); l.style.setProperty('--c', COLORS[i]);
     const inp = document.createElement('input'); inp.id = 'name' + i; inp.maxLength = 14; inp.value = settings.names[i] || ''; inp.placeholder = n === 1 ? 'Escribe tu nombre' : `Jugador ${i + 1}`; inp.autocomplete = 'off';
     inp.setAttribute('aria-label', `Nombre del jugador ${i + 1}`);
-    inp.addEventListener('input', () => { settings.names[i] = inp.value.trim(); saveSettings(); const im = l.querySelector('img'); if (settings.designs[i] === 'ini') im.src = designIcon('ini', COLORS[i], settings.names[i]); });
+    inp.addEventListener('input', () => { settings.names[i] = inp.value.trim(); saveSettings(); const im = l.querySelector('img'); if (im && settings.designs[i] === 'ini') im.src = designIcon('ini', COLORS[i], settings.names[i]); });
     const dz = document.createElement('button'); dz.type = 'button'; dz.className = 'dz'; dz.id = 'dz' + i;
     dz.setAttribute('aria-label', `Grabado del jugador ${i + 1}: ${designName(settings.designs[i])}`);
     const im = document.createElement('img'); im.alt = ''; im.src = designIcon(settings.designs[i], COLORS[i], settings.names[i]); dz.appendChild(im);
@@ -204,7 +204,7 @@ function renderMenu() {
       openPicker({ title: settings.mode === 'local' ? `Grabado de ${settings.names[i] || 'Jugador ' + (i + 1)}` : 'Escoge tu grabado', current: settings.designs[i], taken, color: COLORS[i], name: settings.names[i],
         onPick: id => { settings.designs[i] = id; saveSettings(); renderMenu(); } });
     });
-    l.append(dz, inp);
+    if (settings.game === 'tejo') l.append(dz, inp); else { l.append(inp); l.classList.add('noDz'); }   // el grabado es del tejo: en la rana y el bolo no se escoge
     if (bolo) {   // en el bolo cada uno dice con qué mano lanza: vale lo que tumbe por ese lado
       const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'hand'; const z = settings.hands[i] === 'Z';
       hb.textContent = z ? 'Z' : 'D'; hb.setAttribute('aria-label', `Mano del jugador ${i + 1}: ${z ? 'zurdo' : 'derecho'}`);

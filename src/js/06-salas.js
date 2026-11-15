@@ -676,6 +676,7 @@ function renderMyDesign(g, seats) {
   $('myDzImg').src = designIcon(got || want, COLORS[i] || COLORS[0], myName());
   $('myDzName').textContent = mine && !mine.design ? `${designName(want)} está ocupado: escoge otro` : designName(got || want);
   $('myDz').disabled = !!(g && g.phase !== 'lobby');
+  $('myDz').hidden = (g ? roomKind(g.kind) : settings.game) !== 'tejo';   // el grabado es del tejo: en la rana y el bolo no se escoge
 }
 function netPickDesign() {
   const g = NET.g || NET.lastG; const seats = g ? (g.seats || []) : [];

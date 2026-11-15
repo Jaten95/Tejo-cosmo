@@ -155,6 +155,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.55.1 | Arreglado | la música de fondo queda guardada al instalar el juego y suena sin internet, también después de cada actualización |
 | — | 1.56.0 | Agregado | el bolo criollo sale para todos (ya no es beta) |
 | — | 1.57.0 | Arreglado | salas: si el juego se cierra en plena partida, al abrirlo vuelve solo a su puesto; el anfitrión manda el marcador si un celular calcula distinto; una sala nueva no cae en un código ocupado; el aviso de versión nueva espera a que salgan de la sala; la mira en vivo manda menos mensajes. Instalado: con señal lenta abre la copia guardada a los 3,5 s, un error del servidor no la daña y no se vuelve a bajar el juego si no cambió. Menos batería (30 cuadros por segundo con todo quieto, nunca más de 60, y menos resolución si va lento) y el 3D se recupera si el celular lo quita |
+| — | 1.57.1 | Cambiado | el grabado solo se escoge en el tejo: en la rana y el bolo ya no sale el botón, ni en el menú ni en la sala |
 
 </details>
 
