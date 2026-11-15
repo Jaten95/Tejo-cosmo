@@ -32,89 +32,107 @@
     <div class="brand">
       <span class="eyebrow">Club de Tejo El Cosmo · Bucaramanga</span>
       <h1 id="brandTitle">TEJO</h1>
-      <p id="brandLine">Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.</p>
     </div>
     <div class="group" id="grpGame">
-      <h3>Juego</h3>
-      <div class="seg" id="segGame"><button data-v="tejo">Tejo<small>greda y bocín</small></button><button data-v="rana">Rana<small>argollas</small></button><button data-v="bolo">Bolo<small>tres palos</small></button></div>
+      <h3>Escoge el juego</h3>
+      <div class="seg" id="segGame">
+        <button data-v="tejo"><svg viewBox="0 0 68 54" aria-hidden="true"><rect x="7" y="3" width="54" height="42" rx="3" fill="#3b2d20"/><rect x="10.5" y="6.5" width="47" height="35" rx="1.5" fill="#a86f45"/><g fill="#8c5634" opacity=".75"><circle cx="17" cy="13" r="1.6"/><circle cx="48" cy="33" r="2"/><circle cx="19" cy="35" r="1.3"/><circle cx="51" cy="12" r="1.2"/><circle cx="44" cy="18" r=".9"/></g><circle cx="34" cy="24" r="8.2" fill="#5e3a22"/><circle cx="34" cy="24" r="8.2" fill="none" stroke="#b9c0c4" stroke-width="2.6"/><g fill="#f5eddd"><path d="M31 9.6h6l-3 4.2z"/><path d="M31 38.4h6l-3-4.2z"/><path d="M19.6 21v6l4.2-3z"/><path d="M48.4 21v6l-4.2-3z"/></g><ellipse cx="53" cy="47.4" rx="10" ry="4.6" fill="#555c62"/><ellipse cx="53" cy="45.4" rx="10" ry="4.6" fill="#9aa1a7"/><ellipse cx="53" cy="45.4" rx="5.4" ry="2.3" fill="#d8392d"/></svg>Tejo<small>greda y bocín</small></button>
+        <button data-v="rana"><svg viewBox="0 0 68 54" aria-hidden="true"><path d="M14 23h40l6 8H8z" fill="#3a8a5c"/><rect x="8" y="31" width="52" height="20" rx="1.5" fill="#2b6b47"/><rect x="8" y="31" width="52" height="3" fill="#f3c22f"/><g fill="#163a26"><circle cx="20" cy="42" r="3.3"/><circle cx="34" cy="42" r="3.3"/><circle cx="48" cy="42" r="3.3"/></g><g fill="#1d4a31"><ellipse cx="17" cy="28" rx="3" ry="1.4"/><ellipse cx="51" cy="28" rx="3" ry="1.4"/></g><ellipse cx="34" cy="22" rx="9.5" ry="5.6" fill="#b8862f"/><circle cx="29" cy="15.5" r="3.4" fill="#c99a3d"/><circle cx="39" cy="15.5" r="3.4" fill="#c99a3d"/><circle cx="29" cy="15" r="1.4" fill="#2a1a0c"/><circle cx="39" cy="15" r="1.4" fill="#2a1a0c"/><ellipse cx="34" cy="21.2" rx="4.6" ry="2.6" fill="#2a1a0c"/><circle cx="56" cy="9" r="4.5" fill="none" stroke="#c9ccd0" stroke-width="2.2"/><path d="M44 14c3-2 5-3 7-3.5" fill="none" stroke="#c9ccd0" stroke-width="1.2" stroke-dasharray="1.5 2" opacity=".7"/></svg>Rana<small>argollas</small></button>
+        <button data-v="bolo"><svg viewBox="0 0 68 54" aria-hidden="true"><ellipse cx="32" cy="49" rx="25" ry="3" fill="#000" opacity=".22"/><g fill="#ecdcb8"><rect x="13" y="9" width="8" height="39" rx="4"/><rect x="26" y="6" width="8" height="42" rx="4"/><rect x="39" y="9" width="8" height="39" rx="4"/></g><g fill="#cdb98f"><rect x="18" y="11" width="2.4" height="35" rx="1.2"/><rect x="31" y="8" width="2.4" height="38" rx="1.2"/><rect x="44" y="11" width="2.4" height="35" rx="1.2"/></g><g fill="#d8392d"><rect x="13" y="15" width="8" height="3"/><rect x="26" y="12" width="8" height="3"/><rect x="39" y="15" width="8" height="3"/></g><circle cx="54" cy="42" r="8.6" fill="#a9b0b6"/><circle cx="54" cy="42" r="5.6" fill="none" stroke="#7d858c" stroke-width="1.4"/><circle cx="51.2" cy="39.4" r="1.5" fill="#4a5056"/></svg>Bolo<small>tres palos</small></button>
+      </div>
+      <p class="gameDesc" id="brandLine">Greda, bocín y mecha. Revienta la pólvora, mete el tejo en el bocín y llega primero a la meta.</p>
     </div>
     <div class="group">
-      <h3>Modo</h3>
+      <h3>Cómo vas a jugar</h3>
       <div class="seg" id="segMode">
-        <button data-v="cpu">Contra<small>Don Chepe</small></button>
-        <button data-v="online">Salas<small>en línea</small></button>
-        <button data-v="local">Turnos<small>local</small></button>
-        <button data-v="reto">Reto<small>10 tejos</small></button>
+        <button data-v="cpu"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="16" rx="10" ry="3"/><path d="M7 15.2C7 10 9 7 12 7s5 3 5 8.2"/><path d="M7.6 12.4h8.8"/></svg></span><b>Contra</b><small>Don Chepe</small></button>
+        <button data-v="online"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9.5a13 13 0 0 1 18 0"/><path d="M6.5 13a8 8 0 0 1 11 0"/><path d="M10 16.5a3 3 0 0 1 4 0"/><circle cx="12" cy="19.6" r=".6" fill="currentColor"/></svg></span><b>Salas</b><small>en línea</small></button>
+        <button data-v="local"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8" r="3"/><circle cx="16.5" cy="9" r="2.5"/><path d="M3 19c0-3.3 2.4-5.5 5.5-5.5S14 15.7 14 19"/><path d="M14.6 14.2c.6-.4 1.2-.6 1.9-.6 2.7 0 4.5 2.1 4.5 5"/></svg></span><b>Turnos</b><small>local</small></button>
+        <button data-v="reto"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/></svg></span><b>Reto</b><small>10 tejos</small></button>
       </div>
     </div>
-    <div class="group" id="grpNames">
-      <h3 id="lblNames">Jugadores</h3>
-      <div class="seg" id="segCount"><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button><button data-v="6">6</button></div>
-      <div class="names" id="names"></div>
-    </div>
-    <div class="group" id="grpTeams" hidden>
-      <h3>Forma de juego</h3>
-      <div class="seg" id="segTeams"><button data-v="0">Individual</button><button data-v="2">2 equipos<small>al azar</small></button><button data-v="3">3 equipos<small>al azar</small></button></div>
-    </div>
-    <div class="group" id="grpCpuSize" hidden>
-      <h3>Forma de juego</h3>
-      <div class="seg" id="segCpuSize"><button data-v="1">Mano a mano</button><button data-v="2">Parejas<small>2 contra 2</small></button><button data-v="3">Tríos<small>3 contra 3</small></button></div>
-    </div>
-    <div class="group" id="grpOnline" hidden>
-      <h3>Unirme a una sala</h3>
-      <div class="joinRow"><input id="codeIn" inputmode="numeric" maxlength="4" placeholder="Código de 4 números" aria-label="Código de la sala" autocomplete="off"><button class="btn ghost" id="btnJoin">Unirme</button></div>
-      <p class="prose" id="onlineMsg"></p>
-    </div>
-    <div class="group" id="grpDiff">
-      <h3>Pulso de Don Chepe</h3>
-      <div class="seg" id="segDiff">
-        <button data-v="0">Fácil</button><button data-v="1">Normal</button><button data-v="2">Difícil</button><button data-v="3">Maestro</button>
+    <div class="mcard">
+      <div class="group" id="grpNames">
+        <h3 id="lblNames">Jugadores</h3>
+        <div class="seg" id="segCount"><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button><button data-v="6">6</button></div>
+        <div class="names" id="names"></div>
+      </div>
+      <div class="group" id="grpCpuSize" hidden>
+        <h3>Forma de juego</h3>
+        <div class="seg" id="segCpuSize"><button data-v="1">Mano a mano</button><button data-v="2">Parejas<small>2 contra 2</small></button><button data-v="3">Tríos<small>3 contra 3</small></button></div>
+      </div>
+      <div class="group" id="grpTeams" hidden>
+        <h3>Forma de juego</h3>
+        <div class="seg" id="segTeams"><button data-v="0">Individual</button><button data-v="2">2 equipos<small>al azar</small></button><button data-v="3">3 equipos<small>al azar</small></button></div>
+      </div>
+      <div class="group" id="grpDiff">
+        <h3>Pulso de Don Chepe</h3>
+        <div class="seg" id="segDiff">
+          <button data-v="0">Fácil</button><button data-v="1">Normal</button><button data-v="2">Difícil</button><button data-v="3">Maestro</button>
+        </div>
+      </div>
+      <div class="group" id="grpOnline" hidden>
+        <h3>Unirme a una sala</h3>
+        <div class="joinRow"><input id="codeIn" inputmode="numeric" maxlength="4" placeholder="Código de 4 números" aria-label="Código de la sala" autocomplete="off"><button class="btn ghost" id="btnJoin">Unirme</button></div>
+        <p class="prose" id="onlineMsg"></p>
       </div>
     </div>
-    <div class="group" id="grpDist">
-      <h3>Distancia</h3>
-      <div class="seg" id="segDist">
-        <button data-v="10">10 m<small>arrimada</small></button>
-        <button data-v="14">14 m<small>de barrio</small></button>
-        <button data-v="18.5">18,5 m<small>larga</small></button>
-      </div>
-    </div>
-    <div class="group" id="grpGoal">
-      <h3>Partida a</h3>
-      <div class="seg" id="segGoal"><button data-v="15">15</button><button data-v="21">21</button><button data-v="27">27</button><button data-v="otra" id="goalOther">Otra</button></div>
-      <div class="goalCustom" id="goalCustom" hidden>
-        <button class="step" id="goalMinus" type="button" aria-label="Menos puntos">−</button>
-        <label><input id="goalIn" type="number" inputmode="numeric" min="3" max="99" step="1" aria-label="Puntos para ganar" autocomplete="off"><span>puntos</span></label>
-        <button class="step" id="goalPlus" type="button" aria-label="Más puntos">+</button>
-      </div>
-    </div>
-    <div class="row">
-      <div class="lbl"><b>Mira en la cancha</b><span id="aimHint">Muestra dónde cae el tejo mientras apuntas</span></div>
-      <button class="switch" id="swAim" role="switch" aria-checked="true" aria-label="Mira en la cancha"></button>
-    </div>
-    <div class="row" id="rowLupa">
-      <div class="lbl"><b>Lupa</b><span id="lupaHint">Acerca la greda donde va la mira</span></div>
-      <button class="switch" id="swLupa" role="switch" aria-checked="true" aria-label="Lupa"></button>
-    </div>
-    <div class="row">
-      <div class="lbl"><b>Barra de fuerza</b><span>Muestra cuánta fuerza llevas al cargar</span></div>
-      <button class="switch" id="swPower" role="switch" aria-checked="true" aria-label="Barra de fuerza"></button>
-    </div>
-    <div class="row">
-      <div class="lbl"><b>Música de fondo</b><span>Un vallenato suave; en el juego toca un parlante para prenderla o apagarla</span></div>
-      <button class="switch" id="swMusic" role="switch" aria-checked="true" aria-label="Música de fondo"></button>
-    </div>
-    <div class="cta">
-      <button class="btn" id="btnPlay">A jugar</button>
-      <button class="btn ghost" id="btnRules">Cómo se juega</button>
+    <div class="group">
+      <div class="sumLbl"><h3>La partida</h3><button type="button" class="sumBtn" id="sumBtn">Cambiar</button></div>
+      <button type="button" class="msum" id="mSum" aria-label="Cambiar los ajustes de la partida"><span class="mchips" id="sumChips"></span></button>
     </div>
     <button class="btn ghost wide" id="btnInstall" type="button" hidden>Instalar en el celular</button>
     <div class="group" id="grpBeta" hidden>
       <h3>Modo beta</h3>
       <div class="joinRow"><input id="betaIn" placeholder="Código beta" aria-label="Código del modo beta" autocomplete="off" autocapitalize="off"><button class="btn ghost" id="btnBeta" type="button">Activar</button></div>
     </div>
+    <div class="cta">
+      <button class="btn" id="btnPlay">A jugar</button>
+      <button class="btn ghost" id="btnRules">Cómo se juega</button>
+    </div>
     <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v{{VERSION}}</span></div>
   </div></div>
+  <div id="mSheet" hidden>
+    <div class="shPanel" role="dialog" aria-labelledby="mSheetT">
+      <div class="shHead"><h2 id="mSheetT">Ajustes de la partida</h2><button class="mini" id="mSheetOk" type="button">Listo</button></div>
+      <div class="group" id="grpDist">
+        <h3>Distancia</h3>
+        <div class="seg" id="segDist">
+          <button data-v="10">10 m<small>arrimada</small></button>
+          <button data-v="14">14 m<small>de barrio</small></button>
+          <button data-v="18.5">18,5 m<small>larga</small></button>
+        </div>
+      </div>
+      <div class="group" id="grpGoal">
+        <h3>Partida a</h3>
+        <div class="seg" id="segGoal"><button data-v="15">15</button><button data-v="21">21</button><button data-v="27">27</button><button data-v="otra" id="goalOther">Otra</button></div>
+        <div class="goalCustom" id="goalCustom" hidden>
+          <button class="step" id="goalMinus" type="button" aria-label="Menos puntos">−</button>
+          <label><input id="goalIn" type="number" inputmode="numeric" min="3" max="99" step="1" aria-label="Puntos para ganar" autocomplete="off"><span>puntos</span></label>
+          <button class="step" id="goalPlus" type="button" aria-label="Más puntos">+</button>
+        </div>
+      </div>
+      <h3 class="shSub">Ayudas y sonido</h3>
+      <div class="rows">
+        <div class="row">
+          <div class="lbl"><b>Mira en la cancha</b><span id="aimHint">Muestra dónde cae el tejo mientras apuntas</span></div>
+          <button class="switch" id="swAim" role="switch" aria-checked="true" aria-label="Mira en la cancha"></button>
+        </div>
+        <div class="row" id="rowLupa">
+          <div class="lbl"><b>Lupa</b><span id="lupaHint">Acerca la greda donde va la mira</span></div>
+          <button class="switch" id="swLupa" role="switch" aria-checked="true" aria-label="Lupa"></button>
+        </div>
+        <div class="row">
+          <div class="lbl"><b>Barra de fuerza</b><span>Muestra cuánta fuerza llevas al cargar</span></div>
+          <button class="switch" id="swPower" role="switch" aria-checked="true" aria-label="Barra de fuerza"></button>
+        </div>
+        <div class="row">
+          <div class="lbl"><b>Música de fondo</b><span>Un vallenato suave; en el juego toca un parlante para prenderla o apagarla</span></div>
+          <button class="switch" id="swMusic" role="switch" aria-checked="true" aria-label="Música de fondo"></button>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <div id="picker" hidden>

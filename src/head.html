@@ -249,4 +249,73 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 .pk:disabled{opacity:.35;cursor:not-allowed;}
 @media (prefers-reduced-motion:reduce){#announce.show{animation-duration:1.4s;}.chip.bump .sc{animation:none;}#flash.go{animation:none;}}
 @media (min-width:760px){#turn .who{font-size:26px;}.chip .sc{font-size:26px;}#lupa{width:220px;}#zoomBtns.underLupa{top:calc(env(safe-area-inset-top,0px) + var(--bh, 60px) + 36px + 220px);}}
+/* ---------- menú ----------
+   Tarjetas con dibujo para el juego, baldosas para el modo, una tarjeta con lo del modo,
+   un resumen de la partida que abre una hoja de ajustes (distancia, meta, ayudas y música),
+   y "A jugar" siempre a la vista abajo. */
+#menu .panel{width:min(100%,460px);background:linear-gradient(180deg,var(--wood) 0%,#231a12 100%);}
+#menu .pin{gap:22px;padding:12px 16px 0;}
+#menu .brand{gap:3px;}
+#menu .brand .eyebrow{font-size:10px;letter-spacing:.22em;}
+#menu .brand h1{font-size:clamp(46px,14vw,60px);text-shadow:2px 2px 0 var(--red),4px 4px 0 var(--ink);}
+#menu .group{gap:10px;}
+#menu .group > h3{color:var(--yellow);}
+
+/* el juego: tres tarjetas con dibujo */
+#menu #segGame{gap:8px;background:none;padding:0;}
+#menu #segGame button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 4px 9px;background:var(--ink);border:1.5px solid var(--wood-3);
+  border-radius:8px;font:400 21px/1 var(--display);color:var(--paper);transition:transform .15s,box-shadow .15s,background .15s;}
+#menu #segGame button svg{width:64px;height:51px;margin-bottom:5px;}
+#menu #segGame button small{font:600 11px/1.2 var(--body);color:var(--dim);margin-top:4px;}
+#menu #segGame button[aria-pressed="true"]{background:var(--paper);color:var(--ink);border-color:var(--paper);box-shadow:3px 3px 0 var(--red);transform:translate(-2px,-2px);}
+#menu #segGame button[aria-pressed="true"] small{color:#6b5a45;}
+#menu .gameDesc{margin:1px 2px 0;font-size:13px;line-height:1.45;color:var(--muted);}
+
+/* el modo: baldosas con ícono */
+#menu #segMode{grid-auto-flow:row;grid-template-columns:1fr 1fr;gap:6px;background:none;padding:0;}
+#menu #segMode button{display:grid;grid-template-columns:36px minmax(0,1fr);column-gap:10px;align-items:center;text-align:left;padding:9px 10px;
+  background:var(--ink);border:1.5px solid transparent;border-radius:8px;color:var(--paper);}
+#menu #segMode .ic{grid-row:span 2;width:36px;height:36px;border-radius:50%;background:var(--wood-2);color:var(--yellow);display:grid;place-items:center;}
+#menu #segMode .ic svg{width:20px;height:20px;}
+#menu #segMode b{font-size:15px;font-weight:800;line-height:1.1;}
+#menu #segMode small{margin:1px 0 0;font-size:11.5px;}
+#menu #segMode button[aria-pressed="true"]{background:var(--paper);color:var(--ink);border-color:var(--paper);}
+#menu #segMode button[aria-pressed="true"] .ic{background:var(--red);color:var(--paper);}
+
+/* lo del modo, en una tarjeta */
+#menu .mcard{display:flex;flex-direction:column;gap:18px;padding:16px 14px;background:rgba(0,0,0,.24);border:1px solid var(--wood-3);border-radius:8px;margin-top:-10px;}
+#menu .mcard .names{gap:8px;}
+#menu .mcard .group > h3{color:var(--muted);}
+#menu .mcard:not(:has(> .group:not([hidden]))){display:none;}
+
+/* resumen de la partida: abre la hoja de ajustes */
+#menu .msum{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--ink);border:1px dashed var(--wood-3);border-radius:8px;text-align:left;width:100%;}
+#menu .msum .mchips{display:flex;flex-wrap:wrap;gap:8px;flex:1;min-width:0;}
+#menu .msum .mchip{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:999px;background:var(--wood-2);font-size:12.5px;font-weight:600;color:var(--paper);white-space:nowrap;}
+#menu .msum .mchip svg{width:14px;height:14px;color:var(--yellow);flex:none;}
+#menu .msum em{font-style:normal;font-weight:800;font-size:13px;color:var(--yellow);flex:none;}
+#menu .sumLbl{display:flex;justify-content:space-between;align-items:center;gap:12px;}
+#menu .sumBtn{font-weight:800;font-size:13px;color:var(--yellow);padding:4px 0 4px 8px;}
+
+/* "A jugar" siempre a la vista */
+#menu .cta{position:sticky;bottom:0;z-index:2;margin:4px -16px 0;padding:22px 16px 14px;gap:10px;flex-wrap:nowrap;
+  background:linear-gradient(180deg,rgba(35,26,18,0) 0,#231a12 30%);}
+#menu #btnPlay{flex:1 1 auto;font-size:25px;padding:15px 16px;}
+#menu #btnRules{flex:0 0 auto;padding:0 14px;font-size:14px;}
+#menu .foot{margin:-14px 0 0;padding-bottom:12px;justify-content:flex-end;}
+#menu #recordLine:empty{display:none;}
+
+/* hoja de ajustes */
+#mSheet{position:fixed;inset:0;z-index:30;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,7,4,.62);}
+#mSheet[hidden]{display:none!important;}
+#mSheet .shPanel{width:min(100%,460px);max-height:88%;overflow-y:auto;background:var(--wood);border-radius:14px 14px 0 0;
+  padding:0 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:16px;box-shadow:0 -12px 40px rgba(0,0,0,.5);animation:shUp .22s ease-out;}
+#mSheet .shPanel::before{content:"";display:block;flex:none;height:7px;margin:0 -16px;background:var(--stripes);border-radius:14px 14px 0 0;}
+#mSheet .shHead{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:1;background:var(--wood);padding:4px 0 6px;}
+#mSheet h2{font-size:25px;}
+#mSheet .group > h3{color:var(--yellow);}
+#mSheet .rows{display:flex;flex-direction:column;gap:14px;padding:14px 12px;background:var(--ink);border-radius:8px;}
+#mSheet .shSub{margin-bottom:-6px;color:var(--yellow);}
+@keyframes shUp{from{transform:translateY(48px);opacity:0;}to{transform:none;opacity:1;}}
+@media (prefers-reduced-motion:reduce){#mSheet .shPanel{animation:none;}#menu #segGame button{transition:none;}}
 </style>

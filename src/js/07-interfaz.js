@@ -216,9 +216,23 @@ function renderMenu() {
   try { renderInstall(); } catch (e) { }
   const r = records()[settings.dist];
   $('recordLine').textContent = r !== undefined ? `Tu récord en el reto a ${fmtD(settings.dist)}: ${r} puntos` : '';
+  renderSum();
 }
+/* La partida en resumen (distancia, meta, ayudas y música); al tocarlo se abre la hoja con los ajustes */
+const SUM_IC = {"dist": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\"><path d=\"M3 12h18\"/><path d=\"M6 8.5 3 12l3 3.5\"/><path d=\"M18 8.5l3 3.5-3 3.5\"/></svg>", "goal": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 21V4\"/><path d=\"M5 4h12l-2.5 4L17 12H5\"/></svg>", "eye": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\"><path d=\"M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg>", "music": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\"><path d=\"M9 18V5l11-2v13\"/><circle cx=\"6.5\" cy=\"18\" r=\"2.5\"/><circle cx=\"17.5\" cy=\"16\" r=\"2.5\"/></svg>", "mute": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\"><path d=\"M9 18V5l11-2v13\"/><circle cx=\"6.5\" cy=\"18\" r=\"2.5\"/><path d=\"M3 3l18 18\"/></svg>"};
+function renderSum() {
+  const chip = (ic, t) => `<span class="mchip">${SUM_IC[ic]}${t}</span>`, parts = [], gc = goalCfg();
+  if (settings.game === 'tejo') parts.push(chip('dist', fmtD(settings.dist)));
+  parts.push(chip('goal', settings.mode === 'reto' ? '10 tejos' : 'a ' + fmtGoal(settings[gc.key])));
+  const aids = [settings.aimHelp && 'Mira', settings.aimHelp && settings.lupa && 'Lupa', settings.power && 'Fuerza'].filter(Boolean);
+  parts.push(chip('eye', aids.length ? aids.join(' · ') : 'Sin ayudas'));
+  parts.push(settings.music !== false ? chip('music', 'Música') : chip('mute', 'Sin música'));
+  $('sumChips').innerHTML = parts.join('');
+}
+function openSheet(on) { $('mSheet').hidden = !on; if (!on) renderMenu(); else $('mSheetOk').focus(); }
 function showMenu() {
   if (NET.sala) netLeave();
+  $('mSheet').hidden = true;
   phase = 'menu'; paused = false; timers.length = 0; drag = null; cpuAim = null;
   if (flight) { scene.remove(flight.mesh); flight = null; }
   if (game) clearCancha(); game = null; reticle.visible = false;
@@ -322,6 +336,7 @@ function bindInput() {
   cv.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.id) { drag = null; reticle.visible = false; } });
   window.addEventListener('keydown', e => {
     if (e.target && e.target.tagName === 'INPUT') return;
+    if (e.key === 'Escape' && !$('mSheet').hidden) { openSheet(false); return; }
     if (e.key === 'Escape') { $('pause').hidden ? pause() : resume(); return; }
     if (paused || !game) return;
     if ((phase === 'result' || phase === 'roundEnd') && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); if (performance.now() - resultAt > 700) skipWait(); return; }
@@ -355,6 +370,8 @@ function bindUI() {
   $('btnZoomIn').addEventListener('click', () => zoomBy(-ZOOM_STEP)); $('btnZoomOut').addEventListener('click', () => zoomBy(ZOOM_STEP)); updateZoomBtns();
   $('btnPlay').addEventListener('click', () => { A.init(); A.tick(); if (settings.mode === 'online') netCreate(); else startGame(); });
   $('btnRules').addEventListener('click', () => showScreen('rules'));
+  $('mSum').addEventListener('click', () => openSheet(true)); $('sumBtn').addEventListener('click', () => openSheet(true));
+  $('mSheet').addEventListener('click', e => { if (e.target === $('mSheet') || e.target.id === 'mSheetOk') openSheet(false); });
   $('btnRulesBack').addEventListener('click', () => { showScreen('menu'); });
   $('btnPause').addEventListener('click', pause);
   $('btnResume').addEventListener('click', resume);
