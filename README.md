@@ -156,6 +156,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.56.0 | Agregado | el bolo criollo sale para todos (ya no es beta) |
 | — | 1.57.0 | Arreglado | salas: si el juego se cierra en plena partida, al abrirlo vuelve solo a su puesto; el anfitrión manda el marcador si un celular calcula distinto; una sala nueva no cae en un código ocupado; el aviso de versión nueva espera a que salgan de la sala; la mira en vivo manda menos mensajes. Instalado: con señal lenta abre la copia guardada a los 3,5 s, un error del servidor no la daña y no se vuelve a bajar el juego si no cambió. Menos batería (30 cuadros por segundo con todo quieto, nunca más de 60, y menos resolución si va lento) y el 3D se recupera si el celular lo quita |
 | — | 1.57.1 | Cambiado | el grabado solo se escoge en el tejo: en la rana y el bolo ya no sale el botón, ni en el menú ni en la sala |
+| — | 1.57.2 | Arreglado | salas: el código se borra de la casilla al entrar; si se escribe un código donde no hay nadie, avisa en vez de abrir una sala vacía con ese número |
 
 </details>
 
@@ -171,7 +172,7 @@ En GitHub Pages el juego se puede instalar: en Android sale el botón **Instalar
 ### Cómo se mantienen iguales las salas
 - Cada celular corre el mismo motor con los mismos tiros. El anfitrión publica una foto de la partida en cada turno y al final; si otro celular calculó distinto (iPhone y Android pueden diferir en el último decimal), se pone la del anfitrión. Solo se toman fotos del anfitrión.
 - Si el juego se cierra en plena partida (el sistema lo mata, se recarga, se acaba la batería), al abrirlo otra vez vuelve solo a la sala y a su puesto, si fue hace menos de 20 min. Salir con el botón borra ese registro.
-- Al crear una sala se revisa que el código esté libre.
+- Al crear una sala se revisa que el código esté libre. Al entrar con un código, si no hay nadie, avisa y no entra (las salas no se guardan: existen mientras haya alguien adentro).
 - Un celular modificado que sea el anfitrión todavía podría hacer trampa: evitarlo del todo necesita un servidor que lleve la partida.
 
 ## Licencias de terceros

@@ -79,7 +79,7 @@ function netAutoBack(back) {
   if (game || NET.sala || !(settings.names[0] || '').trim()) return;
   settings.mode = 'online'; renderMenu();
   toast(`Volviendo a la sala ${back.code}…`);
-  NET.auto = true; netEnter(back.code, false);
+  NET.auto = true; netEnter(back.code, false, `La sala ${back.code} ya se cerró.`);
 }
 
 /* ---------- Salas fuera de Claude: Supabase Realtime ----------
@@ -213,7 +213,8 @@ function publishG(g) {
   if (NET.sala) NET.sala.presence({ g }).catch(() => { });
 }
 
-async function netEnter(code, create) {
+// empty: si se pasa, la sala tiene que tener a alguien; si no hay nadie, no se entra y se muestra ese mensaje
+async function netEnter(code, create, empty) {
   if (!NET.room) return;
   if (!(settings.names[0] || '').trim()) { $('onlineMsg').textContent = 'Escribe tu nombre para entrar a una sala: así te ven los demás.'; const i = $('name0'); if (i) i.focus(); return; }
   A.init();
@@ -224,6 +225,10 @@ async function netEnter(code, create) {
     if (create) {   // ¿ya hay alguien con ese código? entonces se busca otro, para no caer en la sala de otro grupo
       await new Promise(r => setTimeout(r, 1200));
       if (sala.peers().some(p => !p.isMe)) { try { await sala.leave(); } catch (e) { } throw { code: 'busy' }; }
+    } else if (empty) {   // entrar con un código: si en 2,5 s no aparece nadie, esa sala no existe (o ya se cerró)
+      let found = false;
+      for (let t = 0; t < 10 && !found; t++) { await new Promise(r => setTimeout(r, 250)); found = sala.peers().some(p => !p.isMe); }
+      if (!found) { try { await sala.leave(); } catch (e) { } NET.auto = false; backClear(); msg.textContent = empty; return; }
     }
     Object.assign(NET, { sala, code, g: null, lastG: null, myG: null, pending: {}, lostAt: 0, absent: {}, creator: create, watching: false, joinedAt: performance.now() });
     holdUpdate(); backSave();
@@ -233,6 +238,7 @@ async function netEnter(code, create) {
     if (create) me.g = { code, ver: 1, host: NET.pid, gv: GAME_VERSION, phase: 'lobby', seats: [{ pid: NET.pid, name: myName() }], ...roomGame(), ...hostRules() };
     if (me.g) { NET.g = NET.lastG = NET.myG = me.g; }
     await sala.presence(me);
+    $('codeIn').value = '';   // ya entró: el código no se queda escrito para la próxima
     showSala(); netSync();
   } catch (e) {
     NET.auto = false;
@@ -287,7 +293,7 @@ async function netCreate() {
 function netJoinClick() {
   const code = $('codeIn').value.replace(/\D/g, '');
   if (code.length !== 4) { $('onlineMsg').textContent = 'El código de la sala tiene 4 números.'; return; }
-  netEnter(code, false);
+  netEnter(code, false, `No hay nadie en la sala ${code}. Revisa el número o crea una sala nueva.`);
 }
 
 /* ---------- sincronización ---------- */
