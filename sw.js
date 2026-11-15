@@ -8,7 +8,7 @@
      cada versión: sus direcciones llevan la versión de cada librería y la música no cambia, así que se bajan una
      sola vez. Si algún día cambia el mp3, subir KEEP a v2.
    - Las salas en línea necesitan internet: sus conexiones no pasan por aquí. */
-const VERSION = '1.58.0';
+const VERSION = '1.59.0';
 const CACHE = 'tejo-' + VERSION;
 const PRECACHE = [
   "./",
@@ -20,6 +20,7 @@ const PRECACHE = [
   "favicon.png",
   "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",
   "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js",
+  "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/meshopt_decoder.js",
   "https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap"
 ];
 const KEEP = 'tejo-media-v1';

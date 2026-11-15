@@ -18,6 +18,7 @@ src/
     01c-utileria.js  herramientas, canastas de cerveza y banderines del salón
     01d-ambiente.js  bombillos encendidos, polvo en la luz, mesa, sillas plásticas, caneca y parlantes
     01e-mascotas.js  de vez en cuando pasa un perro criollo o un husky
+    01f-garitero.js  el garitero de sombrero: arregla la cancha al acabar cada ronda y para los palos del bolo
     02-grabados.js   los diseños grabados en la cara del tejo
     03-fisica.js     vuelo, choques, puntaje, efectos y sonido
     03b-musica.js    música de fondo: se prende y apaga tocando un parlante o con el switch del menú
@@ -33,6 +34,7 @@ src/
   assets/
     mano-derecha.glb modelo de la mano (ver LICENSES/)
     perro.glb, husky.glb  los perros que pasan (Quaternius, CC0)
+    garitero.glb     el garitero (Quaternius, CC0)
 build.py             une todo y genera index.html y sw.js
 manifest.webmanifest e icon-*.png: datos para instalar el juego como app
 musica-vallenato.mp3 la música de fondo; el juego la baja al empezar a jugar y, instalado, queda guardada para sonar sin internet (ver LICENSES/)
@@ -161,6 +163,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.57.3 | Cambiado | menú nuevo: el juego en tarjetas con dibujo, el modo en baldosas con ícono, lo de cada modo en una tarjeta, la partida en un resumen que abre una hoja con la distancia, la meta, las ayudas y la música, y "A jugar" siempre a la vista abajo |
 | — | 1.57.4 | Cambiado | menú: íconos de línea para escoger el juego: el tejo con sus escalones, la rana de lado con la boca abierta y la bola con los palos cayéndose |
 | — | 1.58.0 | Agregado | campeonato: tejo, rana y bolo en orden al azar con los mismos jugadores; en cada juego 3, 2 y 1 puntos de campeonato al primero, segundo y tercero; partidas cortas (15, 500, 10) o largas; contra Don Chepe, por turnos (con equipos fijos) y en salas |
+| — | 1.59.0 | Agregado | el garitero: un campesino de sombrero junto a la cancha que, al acabar cada ronda de tejo, va, saca los tejos y pone mechas nuevas, y en el bolo para los palos que cayeron; saluda cuando alguien revienta mecha o embocina |
 
 </details>
 

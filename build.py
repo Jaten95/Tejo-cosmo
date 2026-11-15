@@ -37,6 +37,7 @@ js = ''.join(p.read_text() for p in sorted((SRC / 'js').glob('*.js')))
 (OUT / 'juego.js').write_text(js)
 
 hand = base64.b64encode((SRC / 'assets' / 'mano-derecha.glb').read_bytes()).decode()
+garitero = base64.b64encode((SRC / 'assets' / 'garitero.glb').read_bytes()).decode()
 pets = ', '.join(f'{n}: "' + base64.b64encode((SRC / 'assets' / f'{n}.glb').read_bytes()).decode() + '"' for n in ('perro', 'husky'))
 license_note = (ROOT / 'LICENSES' / 'webxr-input-profiles-hand.md').read_text().replace('*/', '')
 
@@ -45,10 +46,12 @@ page = (
     (SRC / 'head.html').read_text() + body
     + '\n<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>'
     + '\n<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>'
+    + '\n<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/meshopt_decoder.js"></script>'
     + '\n<script>\nconst GAME_VERSION = "' + VERSION + '";\n'
     + '/* ' + license_note + ' */\n'
     + 'const HAND_GLB = "' + hand + '";\n'
     + 'const PET_GLB = { ' + pets + ' };   /* Quaternius, CC0 */\n'
+    + 'const GARI_GLB = "' + garitero + '";   /* Quaternius, Ultimate Modular Men (Farmer), CC0 */\n'
     + js + '\n</script>\n'
 )
 (OUT / 'tejo-claude.html').write_text(page)
@@ -98,7 +101,8 @@ import json, re
 fonts = re.search(r'https://fonts\.googleapis\.com/css2[^"]+', (SRC / 'head.html').read_text()).group(0)
 precache = ['./', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon.png',
             'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
-            'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js', fonts.replace('&amp;', '&')]
+            'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js',
+            'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/meshopt_decoder.js', fonts.replace('&amp;', '&')]
 sw = (SRC / 'sw.js').read_text().replace('{{VERSION}}', VERSION).replace('{{PRECACHE}}', json.dumps(precache, indent=2))
 (ROOT / 'sw.js').write_text(sw)
 (ROOT / 'version.json').write_text(json.dumps({'version': VERSION}) + '\n')   # la página lo consulta para avisar de versiones nuevas

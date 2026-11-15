@@ -338,9 +338,11 @@ function boloFinish() {
     feed(p, lost ? 'Le pegó al perro −1' : 'Le pegó al perro'); bumpChip(f.owner);
   }
   renderBoard();
-  if (f.dog) { later(2.6, advance); return; }
-  if (r.chuza && !reduceMotion && !online()) later(1.6, () => boloStartReplay(f.sim, f.owner, advance));
-  else later(r.chuza ? 2.4 : 1.4, advance);
+  // si cayeron palos y sigue la partida, el garitero va y los para antes del siguiente tiro
+  const next = f.sim.falls.length && !winnerNow() ? () => gariRun('bolo', advance) : advance;
+  if (f.dog) { later(2.6, next); return; }
+  if (r.chuza && !reduceMotion && !online()) later(1.6, () => boloStartReplay(f.sim, f.owner, next));
+  else later(r.chuza ? 2.4 : 1.4, next);
 }
 function boloAdvance() {
   if (breplay) { const r = breplay; r.done = null; boloEndReplay(); }

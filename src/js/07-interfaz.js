@@ -31,6 +31,7 @@ function helpHint(text) { if (game && game.helpOff) hint('', false); else hint(t
 let toastTimer;
 function toast(text) { const t = $('toast'); t.textContent = text; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1900); }
 function announce(title, pts, big, nulo) {
+  if (!nulo) gariCheer();   // el garitero saluda
   const a = $('announce'); $('annT').textContent = title; $('annP').textContent = pts;
   a.classList.remove('show', 'big'); void a.offsetWidth;
   a.classList.toggle('big', !!big);

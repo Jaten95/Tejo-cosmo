@@ -406,21 +406,21 @@ function endRound() {
   phase = 'roundEnd'; resultAt = performance.now();
   if (game.scored) {   // hubo puntos: no hay mano y sale el que más puntos hizo en la ronda (si empatan, el que quedó más cerca del bocín)
     const top = topScorer();
-    if (!top) { toast('Hubo puntos: esta ronda no hay mano'); later(1.3, startRound); return; }
+    if (!top) { toast('Hubo puntos: esta ronda no hay mano'); later(1.3, () => gariRun('tejo', () => startRound())); return; }
     const name = game.players[top.first].name;
     toast(top.tie ? `Sin mano · empate en puntos: ${name} quedó más cerca y lanza primero`
       : top.several ? `Sin mano · ${name} hizo más puntos y lanza primero` : `Sin mano · ${name} hizo los puntos y lanza primero`);
-    later(1.6, () => startRound(top.first)); return;
+    later(1.6, () => gariRun('tejo', () => startRound(top.first))); return;   // el garitero arregla la cancha y empieza la otra ronda
   }
   const valid = game.tejos.filter(t => t.valid).sort((a, b) => a.d - b.d);
-  if (!valid.length) { toast('Nadie cayó en la greda: sin mano'); later(1.4, startRound); return; }
+  if (!valid.length) { toast('Nadie cayó en la greda: sin mano'); later(1.4, () => gariRun('tejo', () => startRound())); return; }
   const best = valid[0], p = game.players[best.owner];
   p.score += 1; p.st.manos++;
   manoRing = new THREE.Mesh(new THREE.RingGeometry(RT * 1.25, RT * 1.6, 40), new THREE.MeshBasicMaterial({ color: p.color, transparent: true, depthWrite: false }));
   manoRing.position.set(best.u, best.v, .006); manoRing.renderOrder = 6; cancha.add(manoRing);
   toast(`Mano para ${p.name}${teamOf(p) ? ' (' + teamOf(p).name + ')' : ''} +1 · lanza primero`); feed(p, 'Mano +1'); bumpChip(best.owner); renderBoard(); A.tick();
   closeup = { u: best.u, v: best.v };
-  later(1.9, () => { closeup = null; const leader = winnerNow(); if (leader) gameOver(leader); else startRound(best.owner); });   // sin puntos: sale el que quedó más cerca
+  later(1.9, () => { const leader = winnerNow(); if (leader) { closeup = null; return gameOver(leader); } gariRun('tejo', () => { closeup = null; startRound(best.owner); }); });   // sin puntos: sale el que quedó más cerca
 }
 
 // Quién hizo más puntos en esta ronda; si empatan, el que tiene el tejo más cerca del bocín (y si no, el que los hizo primero)
@@ -570,7 +570,7 @@ function frame(now) {
   try {
     if (!paused) { tickTimers(dt); updateGame(dt, now); updateFx(dt); }
     updateAmbience(paused ? 0 : dt);
-    updatePets(paused ? 0 : dt);
+    updatePets(paused ? 0 : dt); updateGaritero(paused ? 0 : dt);
     musicSync(); updateSpeakers(paused ? 0 : dt); ranaFrame(); boloFrame();
     updateArm(paused ? 0 : dt, now);
     updateCamera(paused ? 0 : dt);
