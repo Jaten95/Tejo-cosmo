@@ -14,4 +14,6 @@ jobs:
         env:
           URL: https://iqttymzbjjftjxdzgagn.supabase.co/rest/v1/rpc/ping
           KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxdHR5bXpiampmdGp4ZHpnYWduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1MDQ0OTksImV4cCI6MjExMDA4MDQ5OX0._HKDTC7-nM8MLmXUSqugFsMyEXYKY9v9xwTsRv2nrzk
-        run: curl -fsS -X POST "$URL" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}'
+        # en bloque (|): sin comillas, el "apikey: " del medio rompe el YAML y GitHub no corre nada
+        run: |
+          curl -fsS -X POST "$URL" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}'
