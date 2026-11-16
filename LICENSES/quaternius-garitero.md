@@ -7,5 +7,5 @@ Licencia: CC0 1.0 (dominio público). No exige atribución; se deja el crédito 
 
 Cambios: se dejó solo la ropa de campesino (Farmer, con sombrero) y las animaciones que usa el juego
 (quieto y caminar). Con Blender se le hicieron tres animaciones nuevas encima de las de Quaternius:
-sentado, saludando sentado y arrodillado poniendo mechas. Se comprimió con glTF-Transform (meshopt).
+sentado, saludando sentado, espantando al perro sentado y arrodillado poniendo mechas. Se comprimió con glTF-Transform (meshopt).
 En el juego se le pone el color de piel, pelo y cejas.

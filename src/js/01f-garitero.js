@@ -2,6 +2,7 @@
 /* ================= El garitero =================
    Un campesino de sombrero sentado en la silla de la mesa de la izquierda, la que mira a la cancha; sigue con
    la cabeza el tejo (o la bola) mientras va, y cuando alguien revienta mecha o embocina saluda desde la silla.
+   Si el perro pasa cerca, lo espanta con la mano: a veces el perro sale corriendo y a veces ni caso le hace.
    Al acabar una ronda de tejo en la que se reventaron mechas, se para, va a la cancha, se arrodilla y pone mechas
    nuevas solo donde se reventaron (cada una aparece cuando la pone); la cámara lo sigue. Luego empieza la otra ronda
    y él se devuelve a su silla. Si no se reventó ninguna, no se para. En el bolo, cuando caen palos, va y los para.
@@ -19,10 +20,11 @@ const GARI_SIT = .8;         // voltearse y sentarse
 const GARI_VISIT = GARI_UP + GARI_WALKT + GARI_DOWN + GARI_WORK;   // lo que se alarga el cambio de ronda cuando hay mechas por poner
 const GARI_PINS = GARI_UP + GARI_WALKT + GARI_DOWN;                // en el bolo: los palos quedan parados cuando llega
 const GARI_WALK = 1.15;      // m/s a los que se ve bien la animación de caminar a ritmo normal
-const GARI_CHAIR = { x: -2.55, dz: 4.45, yaw: 2.4 };   // la silla de adelante de la mesa de la izquierda (la pone 01d-ambiente), mirando a la cancha
+const GARI_CHAIR = { x: -2.55, dz: 4.45, yaw: 1.83 };   // la silla de adelante de la mesa de la izquierda (la pone 01d-ambiente): mirando al salón, un poquito hacia la cancha
 const GARI_HAND = V(-.325, .418, .578);   // dónde queda la mano derecha arrodillado, respecto a sus pies (mirando hacia +z)
 const GARI_COLORS = { Skin: '#c98e66', Eyebrows: '#1d140e', Hair: '#1d140e' };   // trigueño, pelo y cejas negras
 const GARI_NECK = 1.05;      // lo más que voltea la cabeza (rad)
+const GARI_SHOO = { d: 2.6, flee: .55, at: .7 };   // a qué distancia espanta al perro, qué tan seguido el perro le hace caso y cuándo (s)
 let GARI = null;
 
 function loadGaritero() {
@@ -64,13 +66,13 @@ function placeGaritero() {
   if (!GARI.p) {
     const mixer = new THREE.AnimationMixer(root), acts = {};
     GARI.src.animations.forEach(c => { acts[c.name] = mixer.clipAction(c); });
-    GARI.p = { root, mixer, acts, cur: null, plan: null, wave: 0, cheerIn: 0, neck: root.getObjectByName('Neck'), head: root.getObjectByName('Head'), ly: 0, lp: 0 };
+    GARI.p = { root, mixer, acts, cur: null, plan: null, wave: 0, cheerIn: 0, shoo: 0, shooFlee: 0, neck: root.getObjectByName('Neck'), head: root.getObjectByName('Head'), ly: 0, lp: 0 };
   }
   gariSeat(GARI.p);
 }
 function gariSeat(p) {
   const sp = gariSpots();
-  p.plan = null; p.wave = 0; p.cheerIn = 0; p.ly = p.lp = 0;
+  p.plan = null; p.wave = 0; p.cheerIn = 0; p.shoo = p.shooFlee = 0; p.ly = p.lp = 0;
   p.root.position.copy(sp.seat); p.root.rotation.set(0, sp.yaw, 0);
   gPlay(p, p.acts.Sentado, 0);
 }
@@ -83,13 +85,13 @@ function gPlay(p, act, fade = .3, once = false) {
   act.play(); if (p.cur && fade) p.cur.crossFadeTo(act, fade, false); else if (p.cur) p.cur.stop(); p.cur = act;
 }
 // Alguien hizo algo bueno: saluda desde la silla
-function gariCheer() { const p = GARI && GARI.p; if (p && !p.plan && !p.wave) p.cheerIn = .25 + Math.random() * .3; }
+function gariCheer() { const p = GARI && GARI.p; if (p && !p.plan && !p.wave && !p.shoo) p.cheerIn = .25 + Math.random() * .3; }
 
 /* ---------- Ir a la cancha y volver ----------
    El plan es una lista de pasos: pararse, caminar, arrodillarse, trabajar, pararse, caminar y sentarse. */
 function gariGo(p, kind, mechas) {
   const sp = gariSpots(), kn = gariKneel(kind);
-  p.wave = 0; p.cheerIn = 0;
+  p.wave = 0; p.cheerIn = 0; p.shoo = p.shooFlee = 0;
   p.plan = { kind, i: -1, t: 0, mechas: mechas || [], steps: [
     { k: 'up', dur: GARI_UP, from: p.root.position.clone(), to: sp.stand, yaw: sp.yaw },
     { k: 'walk', dur: GARI_WALKT, to: kn.pos },
@@ -178,7 +180,8 @@ function gariCamPose() {
 function updateGaritero(dt) {
   const p = GARI && GARI.p; if (!p || !dt) return;
   if (p.plan) gariStep(p, dt);
-  else {   // sentado: saluda cuando le toca y vuelve a quedarse quieto
+  else {   // sentado: saluda cuando le toca, espanta al perro si pasa cerca y vuelve a quedarse quieto
+    gariShoo(p, dt);
     const w = p.acts.SentadoSaludo;
     if (p.cheerIn > 0 && w) { p.cheerIn -= dt; if (p.cheerIn <= 0) { p.cheerIn = 0; gPlay(p, w, .3, true); p.wave = w.getClip().duration * .92; } }
     if (p.wave > 0) { p.wave -= dt; if (p.wave <= 0) { p.wave = 0; gPlay(p, p.acts.Sentado, .45); } }
@@ -190,6 +193,23 @@ function updateGaritero(dt) {
   p.mixer.update(dt);
   p.pose = bones.map((b, i) => (p.pose && p.pose[i] || new THREE.Quaternion()).copy(b.quaternion));
   gariLook(p, dt);
+}
+
+/* ---------- El perro ----------
+   Una vez por visita, si el perro le pasa cerca, le hace ¡chite! con la mano. A veces el perro sale corriendo (el mismo
+   susto de la bola del bolo) y a veces se queda ahí oliendo como si nada. */
+function gariShoo(p, dt) {
+  const dog = PETS && PETS.cur, sh = p.acts.SentadoEspantar;
+  if (dog && sh && !dog.scared && !dog.gari && !p.wave && !p.shoo && dog.p.root.visible && dog.p.root.position.distanceTo(p.root.position) < GARI_SHOO.d) {
+    dog.gari = true; p.cheerIn = 0;
+    gPlay(p, sh, .25, true); p.shoo = sh.getClip().duration * .95;
+    if (Math.random() < GARI_SHOO.flee) p.shooFlee = GARI_SHOO.at;
+    else if (!dog.stopDone && !dog.stopped) dog.stopAt = dog.s;   // ni caso: se para a oler ahí mismo
+  }
+  if (p.shoo <= 0) return;
+  p.shoo -= dt;
+  if (p.shooFlee > 0) { p.shooFlee -= dt; if (p.shooFlee <= 0 && dog && dog.gari && !dog.scared) petScare(p.root.position, false); }
+  if (p.shoo <= 0) { p.shoo = p.shooFlee = 0; gPlay(p, p.acts.Sentado, .45); }
 }
 
 /* ---------- A dónde mira ---------- */
@@ -208,7 +228,8 @@ const _gax = new THREE.Vector3(), _ghp = new THREE.Vector3(), _gup = new THREE.V
 // mira al frente. Va después de la animación: la cabeza se mueve encima de lo que esté haciendo.
 function gariLook(p, dt) {
   if (!p.head) return;
-  const r = p.root, T = !p.plan && gariTarget(); let yaw = 0, pitch = 0;
+  const dog = p.shoo > 0 && PETS && PETS.cur && PETS.cur.p.root.visible ? PETS.cur.p.root.position.clone().setY(.25) : null;   // espantando: mira al perro
+  const r = p.root, T = !p.plan && (dog || gariTarget()); let yaw = 0, pitch = 0;
   if (T) {
     r.updateMatrixWorld(true); p.head.getWorldPosition(_ghp);
     yaw = clamp(gWrap(Math.atan2(T.x - _ghp.x, T.z - _ghp.z) - r.rotation.y), -GARI_NECK, GARI_NECK);
