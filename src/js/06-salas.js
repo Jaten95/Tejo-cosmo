@@ -3,7 +3,9 @@
    Todo viaja por "presence" de una sala con nombre (tejo-<código>):
    - cada jugador publica {pid, name}; mientras apunta, {aim}; al soltar, {t}
    - el anfitrión publica {g}: asientos, configuración, último tiro aceptado y una foto del estado
-   - cada teléfono corre el mismo motor con los mismos tiros, así todos ven lo mismo */
+   - cada teléfono corre el mismo motor con los mismos tiros, así todos ven lo mismo
+   Las salas van solo por Supabase (la app instalada y la página). Dentro de Claude no hay salas: la página de
+   Claude no puede conectarse a otros servidores, así que el modo Salas manda a la página del juego. */
 const NET = { room: null, ready: false, sala: null, code: null, pid: null, g: null, lastG: null, myG: null, lostAt: 0, pending: {}, lastAimSent: 0, absent: {}, joinedAt: 0, creator: false, unsub: null };
 const r4 = x => Math.round(x * 1e4) / 1e4, r5 = x => Math.round(x * 1e5) / 1e5;
 const rid = () => Math.random().toString(36).slice(2, 8);
@@ -29,9 +31,8 @@ function netInit() {
   }
   const ready = r => { NET.room = r; NET.ready = true; renderMenu(); back = back || NET.backWait; if (r && back) netAutoBack(back); };
   const c = window.claude;
-  if (c && typeof c.use === 'function') {
-    NET.via = 'claude';
-    c.use('room').then(ready).catch(() => { NET.ready = true; renderMenu(); });
+  if (c && typeof c.use === 'function') {   // abierto dentro de Claude: sin salas (ver arriba)
+    NET.via = 'claude'; NET.ready = true; renderMenu();
   } else {
     NET.via = 'supabase';
     supaRoom().then(ready).catch(() => { NET.ready = true; renderMenu(); });
@@ -193,7 +194,7 @@ async function supaRoom() {
 function renderMenuOnline() {
   const msg = $('onlineMsg');
   if (!NET.ready) msg.textContent = 'Conectando…';
-  else if (!NET.room) msg.textContent = NET.via === 'supabase' ? 'No se pudo conectar con el servidor de salas. Revisa tu internet y recarga la página.' : 'Las salas funcionan cuando abres el juego dentro de Claude con tu sesión iniciada. Tus amigos también necesitan acceso a esta página.';
+  else if (!NET.room) msg.textContent = NET.via === 'supabase' ? 'No se pudo conectar con el servidor de salas. Revisa tu internet y recarga la página.' : `Las salas en línea se juegan en la app o en la página del juego: ${WEB_URL}. Ábrelo ahí para crear una sala o unirte.`;
   else msg.textContent = 'Crea una sala y pásale el código a tus amigos, o escribe el código que te mandaron.';
   $('btnJoin').disabled = !NET.room; $('codeIn').disabled = !NET.room;
 }
@@ -220,7 +221,7 @@ function publishG(g) {
 }
 
 // empty: si se pasa, la sala tiene que tener a alguien; si no hay nadie, no se entra y se muestra ese mensaje
-async function netEnter(code, create, empty, shortWait) {
+async function netEnter(code, create, empty) {
   if (!NET.room) return;
   if (!(settings.names[0] || '').trim()) { $('onlineMsg').textContent = 'Escribe tu nombre para entrar a una sala: así te ven los demás.'; const i = $('name0'); if (i) i.focus(); return; }
   A.init();
@@ -238,7 +239,7 @@ async function netEnter(code, create, empty, shortWait) {
       const tryN = NET.joinTry = (NET.joinTry || 0) + 1;
       let found = false;
       joinWaiting(true);
-      const waitS = NET.auto ? 6 : shortWait ? 3 : JOIN_WAIT;   // al volver solo a la sala de antes, o si el código es del otro servidor, se espera poco
+      const waitS = NET.auto ? 6 : JOIN_WAIT;   // al volver solo a la sala de antes (se cerró el juego en plena partida) se espera poco
       for (let t = 0; t < waitS * 4 && !found; t++) {
         await new Promise(r => setTimeout(r, 250));
         if (NET.joinTry !== tryN) { try { await sala.leave(); } catch (e) { } return; }   // canceló
@@ -302,16 +303,10 @@ document.addEventListener('visibilitychange', () => {
   if (!$('hud').hidden) keepAwake(true);
   if (NET.sala && performance.now() - hiddenAt > 2000) netRejoin();
 });
-/* Las salas de Claude (el juego abierto dentro de Claude) y las de la app o la página (Supabase) son servidores
-   distintos y no se ven entre ellos. Los códigos dicen de cuál es la sala: 1000–4999 Claude, 5000–9999 app y página.
-   Así, si alguien escribe un código del otro lado, se le dice por dónde entrar en vez de "no hay nadie". */
-const CODE_RANGE = { claude: [1000, 4999], supabase: [5000, 9999] };
-const WEB_URL = 'jaten95.github.io/Tejo-cosmo';
-function codeSide(code) { const n = +code; return n >= CODE_RANGE.supabase[0] ? 'supabase' : 'claude'; }
+const WEB_URL = 'jaten95.github.io/Tejo-cosmo';   // donde están las salas: la página del juego (y la app instalada desde ahí)
 async function netCreate() {
-  const [lo, hi] = CODE_RANGE[NET.via === 'claude' ? 'claude' : 'supabase'];
   for (let i = 0; i < 4; i++) {
-    try { await netEnter(String(lo + Math.floor(Math.random() * (hi - lo + 1))), true); return; } catch (e) { if (!e || e.code !== 'busy') return; }
+    try { await netEnter(String(1000 + Math.floor(Math.random() * 9000)), true); return; } catch (e) { if (!e || e.code !== 'busy') return; }
   }
   $('onlineMsg').textContent = 'No se pudo abrir la sala ahora. Intenta en un momento.';
 }
@@ -323,13 +318,6 @@ function netJoinClick() {
   if (NET.joinWaiting) { NET.joinTry++; joinWaiting(false); $('onlineMsg').textContent = 'Listo, no se entró a la sala.'; return; }
   const code = $('codeIn').value.replace(/\D/g, '');
   if (code.length !== 4) { $('onlineMsg').textContent = 'El código de la sala tiene 4 números.'; return; }
-  const mine = NET.via === 'claude' ? 'claude' : 'supabase';
-  if (codeSide(code) !== mine) {   // un código del otro servidor: se mira un momento (por si es de una versión vieja) y se explica por dónde entrar
-    netEnter(code, false, mine === 'claude'
-      ? `La sala ${code} es de la app o de la página del juego (${WEB_URL}). Para jugar juntos, entra desde ahí.`
-      : `La sala ${code} se creó dentro de Claude. Para jugar juntos, entren todos desde el enlace de Claude, o creen la sala desde la app.`, true);
-    return;
-  }
   netEnter(code, false, `No hay nadie en la sala ${code}. Revisa el número o crea una sala nueva.`);
 }
 
@@ -701,7 +689,7 @@ function renderSala() {
   else if (started && !inGame) info.textContent = `La partida de la sala ${NET.code} ya empezó, así que no puedes entrar a jugar. Si hay cupo, entras en la revancha cuando el anfitrión la inicie. Mientras tanto puedes mirarla.`;
   else if (started) info.textContent = 'La partida ya empezó.';
   else if (full) info.textContent = `La sala está llena: ya hay ${MAX_PLAYERS} jugadores. Si alguien sale, entras de una; si no, crea otra sala.`;
-  else if (host) info.textContent = seats.length < 2 ? `Pásale el código a tus amigos. ${NET.via === 'claude' ? 'Tienen que abrir el juego desde este mismo enlace de Claude' : `Tienen que abrir el juego en la app o en la página (${WEB_URL}), no desde Claude`}. Si sales del juego para mandarlo, vuelve: mientras estás afuera la sala no se ve, pero ellos te esperan.` : 'Están listos. Empieza cuando quieras.';
+  else if (host) info.textContent = seats.length < 2 ? `Pásale el código a tus amigos. Lo abren en la app o en la página (${WEB_URL}). Si sales del juego para mandarlo, vuelve: mientras estás afuera la sala no se ve, pero ellos te esperan.` : 'Están listos. Empieza cuando quieras.';
   else info.textContent = 'Esperando a que el anfitrión empiece la partida.';
   $('salaRules').textContent = g ? `${g.kind === 'champ' ? 'Campeonato: tejo, rana y bolo · partidas ' + (g.goal === 'larga' ? 'largas' : 'cortas') + ' · ' + fmtD(g.dist) : g.kind === 'bolo' ? 'Bolo · partida a ' + g.goal : g.kind === 'rana' ? 'Rana · partida a ' + fmtGoal(g.goal) : fmtD(g.dist) + ' · partida a ' + g.goal} · mira ${g.aimHelp ? 'sí' : 'no'} · lupa ${g.aimHelp && g.lupa !== false ? 'sí' : 'no'} · barra de fuerza ${g.power !== false ? 'sí' : 'no'} · cámara ${!(+g.zoom) ? 'cerca' : +g.zoom >= 1 ? 'lejos' : 'media'} · hasta ${MAX_PLAYERS} jugadores` : '';
   // forma de juego: la escoge el anfitrión; los equipos se arman al azar al empezar
@@ -800,7 +788,7 @@ function netBindUI() {
   $('btnSkip').addEventListener('click', netSkip);
   $('btnWatch').addEventListener('click', () => { NET.watching = true; applyG(); });
   $('btnCopy').addEventListener('click', () => {
-    const txt = NET.via === 'claude' ? `Juguemos tejo en el Club El Cosmo. Sala ${NET.code} (ábrelo desde el enlace de Claude)` : `Juguemos tejo en el Club El Cosmo: https://${WEB_URL}/ · Sala ${NET.code}`;
+    const txt = `Juguemos tejo en el Club El Cosmo: https://${WEB_URL}/ · Sala ${NET.code}`;
     try { navigator.clipboard.writeText(txt).then(() => toast('Código copiado'), () => toast(`El código es ${NET.code}`)); } catch (e) { toast(`El código es ${NET.code}`); }
   });
 }

@@ -27,7 +27,7 @@ src/
     04c-bolo.js      el bolo criollo: los tres palos, la bola, derecho o zurdo, la chuza y Don Chepe
     04d-campeonato.js el campeonato: tejo, rana y bolo en orden al azar, puntos por puesto y la tabla
     05-brazo.js      brazo en primera persona, mano 3D y manilla
-    06-salas.js      salas en línea (salas de Claude o Supabase Realtime)
+    06-salas.js      salas en línea (Supabase Realtime; dentro de Claude no hay salas)
     07-interfaz.js   menú, marcador, controles y arranque
     09-instalar.js   botón para instalar el juego en el celular
   sw.js              service worker: instalar y jugar sin internet
@@ -183,6 +183,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.62.9 | Cambiado | las figuras de la franja de debajo de los anuncios (¡MECHA!, ¡EMBOCINADA!…) van más suaves, casi del color de cada franja |
 | — | 1.62.10 | Cambiado | menú: arriba del título dice solo "Club de Tejo El Cosmo" (sin Bucaramanga) |
 | — | 1.62.11 | Arreglado | salas: al entrar con un código ya no sale "no hay nadie" si quien creó la sala salió un momento a mandar el código (se espera hasta 45 s y se puede cancelar). Los códigos dicen de qué servidor es la sala (1000–4999 dentro de Claude, 5000–9999 en la app o la página) y, si alguien entra por el otro lado, se le explica por dónde abrir el juego. "Copiar" incluye la dirección de la página |
+| — | 1.62.12 | Cambiado | las salas son solo de Supabase (la app y la página): dentro de Claude ya no se crean salas y el modo Salas dice que se abra el juego en jaten95.github.io/Tejo-cosmo. Los códigos vuelven a ser de 1000 a 9999 |
 
 </details>
 
@@ -193,7 +194,7 @@ En GitHub Pages el juego se puede instalar: en Android sale el botón **Instalar
 ## Servicios
 
 - **Three.js r128** desde cdnjs y su GLTFLoader desde jsDelivr.
-- **Supabase Realtime** para las salas fuera de Claude. Solo usa canales (presence y broadcast), sin tablas. La clave del código es la pública (anon). En el plan gratis el proyecto se pausa si la base no recibe consultas en una semana, y las salas no cuentan (no usan la base): por eso el juego llama la función `ping` (solo responde 1) al abrir, y `.github/workflows/supabase-ping.yml` la llama cada 3 días. El tope del plan gratis es de 100 mensajes por segundo en todo el proyecto: la mira en vivo sale cada 0,32 s y solo si se movió.
+- **Supabase Realtime** para las salas (solo en la app y en la página; dentro de Claude el modo Salas manda a la página, porque Claude no deja conectarse a otros servidores). Solo usa canales (presence y broadcast), sin tablas. La clave del código es la pública (anon). En el plan gratis el proyecto se pausa si la base no recibe consultas en una semana, y las salas no cuentan (no usan la base): por eso el juego llama la función `ping` (solo responde 1) al abrir, y `.github/workflows/supabase-ping.yml` la llama cada 3 días. El tope del plan gratis es de 100 mensajes por segundo en todo el proyecto: la mira en vivo sale cada 0,32 s y solo si se movió.
 
 ### Cómo se mantienen iguales las salas
 - Cada celular corre el mismo motor con los mismos tiros. El anfitrión publica una foto de la partida en cada turno y al final; si otro celular calculó distinto (iPhone y Android pueden diferir en el último decimal), se pone la del anfitrión. Solo se toman fotos del anfitrión.
