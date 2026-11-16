@@ -182,6 +182,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.62.8 | Cambiado | la bandera lleva figuras de los tejidos indígenas de Colombia: rombos con punto (kanaas wayuu) en el amarillo, zigzag en el azul y la greca escalonada del sombrero vueltiao en el rojo; en la franja de los menús, debajo de los anuncios y en la manilla de la mano |
 | — | 1.62.9 | Cambiado | las figuras de la franja de debajo de los anuncios (¡MECHA!, ¡EMBOCINADA!…) van más suaves, casi del color de cada franja |
 | — | 1.62.10 | Cambiado | menú: arriba del título dice solo "Club de Tejo El Cosmo" (sin Bucaramanga) |
+| — | 1.62.11 | Arreglado | salas: al entrar con un código ya no sale "no hay nadie" si quien creó la sala salió un momento a mandar el código (se espera hasta 45 s y se puede cancelar). Los códigos dicen de qué servidor es la sala (1000–4999 dentro de Claude, 5000–9999 en la app o la página) y, si alguien entra por el otro lado, se le explica por dónde abrir el juego. "Copiar" incluye la dirección de la página |
 
 </details>
 
