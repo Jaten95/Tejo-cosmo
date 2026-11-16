@@ -8,12 +8,12 @@
    (y el que lanzó pierde un punto, ver 04c-bolo.js). Por eso en las salas de bolo no pasan perros. */
 
 const PET_TIMING = { first: [20, 45], every: [45, 90] };   // segundos: primera visita y las siguientes
-const PET_SPEC = {   // qué tan seguido sale, escala, velocidad en m/s, ritmo de la caminada, qué hace al detenerse y sus colores
+const PET_SPEC = {   // qué tan seguido sale, escala, velocidad en m/s, ritmo de la caminada, tono del ladrido, qué hace al detenerse y sus colores
   perro: {   // perro criollo: el shiba con pelajes de la calle
-    weight: 3, scale: .2, speed: .9, walkRate: 1.9, stops: ['Eating', 'Idle_2_HeadLow', 'Idle'], mats: ['Main', 'Main_Light'],
+    weight: 3, scale: .2, speed: .9, walkRate: 1.9, bark: 1.04, stops: ['Eating', 'Idle_2_HeadLow', 'Idle'], mats: ['Main', 'Main_Light'],
     colors: [['#7a4420', '#dccbb0'], ['#121110', '#cdb999'], ['#b8894a', '#efe3cc'], ['#45291a', '#d6c3a3'], ['#e9e2d6', '#f4efe6']],   // canela, negro, mono, café, blanco
   },
-  husky: { weight: 1, scale: .22, speed: .95, walkRate: 1.9, stops: ['Eating', 'Idle_2_HeadLow', 'Idle'], mats: ['Material', 'Material.001'], colors: [['#4a4d52', '#ebe8e2']] },
+  husky: { weight: 1, scale: .22, speed: .95, walkRate: 1.9, bark: .88, stops: ['Eating', 'Idle_2_HeadLow', 'Idle'], mats: ['Material', 'Material.001'], colors: [['#4a4d52', '#ebe8e2']] },
 };
 let PETS = null;
 
@@ -99,7 +99,7 @@ function petScare(ball, hit) {
   if (c.stopped && c.stopAct && c.stopAct !== walk) petFade(c.stopAct, walk, c.p.spec.walkRate * PET_RUN); else { walk.timeScale = c.p.spec.walkRate * PET_RUN; if (!walk.isRunning()) { walk.reset(); walk.play(); } }
   c.stopped = false;
   if (hit) { A.tone(1250, .13, { f1: 820, type: 'triangle', gain: .32 }); A.tone(1350, .16, { f1: 760, type: 'triangle', gain: .3, delay: .2 }); A.tone(1200, .2, { f1: 650, type: 'triangle', gain: .26, delay: .45 }); }   // ¡cain, cain!
-  else { A.tone(520, .09, { f1: 380, type: 'sawtooth', gain: .12 }); A.tone(560, .1, { f1: 400, type: 'sawtooth', gain: .12, delay: .15 }); }   // ¡guau!
+  else A.woof(2, { rate: c.p.spec.bark });   // ¡guau, guau!
 }
 function updatePets(dt) {
   if (!PETS) return;

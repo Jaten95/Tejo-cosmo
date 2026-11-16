@@ -38,6 +38,7 @@ js = ''.join(p.read_text() for p in sorted((SRC / 'js').glob('*.js')))
 
 hand = base64.b64encode((SRC / 'assets' / 'mano-derecha.glb').read_bytes()).decode()
 garitero = base64.b64encode((SRC / 'assets' / 'garitero.glb').read_bytes()).decode()
+bark = base64.b64encode((SRC / 'assets' / 'ladrido.mp3').read_bytes()).decode()
 pets = ', '.join(f'{n}: "' + base64.b64encode((SRC / 'assets' / f'{n}.glb').read_bytes()).decode() + '"' for n in ('perro', 'husky'))
 license_note = (ROOT / 'LICENSES' / 'webxr-input-profiles-hand.md').read_text().replace('*/', '')
 
@@ -52,6 +53,7 @@ page = (
     + 'const HAND_GLB = "' + hand + '";\n'
     + 'const PET_GLB = { ' + pets + ' };   /* Quaternius, CC0 */\n'
     + 'const GARI_GLB = "' + garitero + '";   /* Quaternius, Ultimate Modular Men (Farmer), CC0 */\n'
+    + 'const BARK_MP3 = "' + bark + '";   /* "Free Dog Bark", Dragon Studio, Pixabay */\n'
     + js + '\n</script>\n'
 )
 (OUT / 'tejo-claude.html').write_text(page)

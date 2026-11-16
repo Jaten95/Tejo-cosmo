@@ -214,7 +214,7 @@ function gariShoo(p, dt) {
     dog.gari = true; p.cheerIn = 0;
     gPlay(p, sh, .25, true); p.shoo = sh.getClip().duration * .95;
     if (Math.random() < GARI_SHOO.flee) p.shooFlee = GARI_SHOO.at;
-    else if (!dog.stopDone && !dog.stopped) dog.stopAt = dog.s;   // ni caso: se para a oler ahí mismo
+    else { if (!dog.stopDone && !dog.stopped) dog.stopAt = dog.s; A.woof(1, { rate: dog.p.spec.bark, delay: .55 }); }   // ni caso: le ladra una vez y se para a oler ahí mismo
   }
   if (p.shoo <= 0) return;
   p.shoo -= dt;

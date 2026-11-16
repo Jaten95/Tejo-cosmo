@@ -35,6 +35,7 @@ src/
     mano-derecha.glb modelo de la mano (ver LICENSES/)
     perro.glb, husky.glb  los perros que pasan (Quaternius, CC0)
     garitero.glb     el garitero (Quaternius, CC0)
+    ladrido.mp3      el ladrido de los perros (Pixabay, ver LICENSES/)
 build.py             une todo y genera index.html y sw.js
 manifest.webmanifest e icon-*.png: datos para instalar el juego como app
 src/icono/          el dibujo del ícono (icono.svg y icono-maskable.svg para Android); los icon-*.png, apple-touch-icon.png y favicon.png salen de ahí
@@ -184,6 +185,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.62.10 | Cambiado | menú: arriba del título dice solo "Club de Tejo El Cosmo" (sin Bucaramanga) |
 | — | 1.62.11 | Arreglado | salas: al entrar con un código ya no sale "no hay nadie" si quien creó la sala salió un momento a mandar el código (se espera hasta 45 s y se puede cancelar). Los códigos dicen de qué servidor es la sala (1000–4999 dentro de Claude, 5000–9999 en la app o la página) y, si alguien entra por el otro lado, se le explica por dónde abrir el juego. "Copiar" incluye la dirección de la página |
 | — | 1.62.12 | Cambiado | las salas son solo de Supabase (la app y la página): dentro de Claude ya no se crean salas y el modo Salas dice que se abra el juego en jaten95.github.io/Tejo-cosmo. Los códigos vuelven a ser de 1000 a 9999 |
+| — | 1.62.13 | Cambiado | el perro ladra con un ladrido grabado en vez del sintetizado: «guau, guau» cuando se asusta o el garitero lo espanta, y uno solo cuando no le hace caso al garitero. El husky ladra más grave |
 
 </details>
 
@@ -209,3 +211,5 @@ El modelo de la mano es `generic-hand` de [WebXR Input Profiles](https://github.
 La música de fondo es "Vallenato con ritmo o aire de son" de vjgalaxy, vía [Pixabay](https://pixabay.com), con la licencia de contenido de Pixabay. La nota está en `LICENSES/musica-pixabay.md`.
 
 Los perros (Shiba Inu y Husky) son de [Quaternius](https://quaternius.com), con licencia CC0 (dominio público). La nota está en `LICENSES/quaternius-animales.md`.
+
+El ladrido es "Free Dog Bark" de Dragon Studio, vía [Pixabay](https://pixabay.com), con la licencia de contenido de Pixabay. La nota está en `LICENSES/ladrido-pixabay.md`.

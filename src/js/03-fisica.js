@@ -304,7 +304,7 @@ function explodeMecha(m) {
   shake = Math.max(shake, reduceMotion ? .006 : .03);
 }
 
-/* ================= Sonido (sintetizado) ================= */
+/* ================= Sonido (sintetizado, menos el ladrido) ================= */
 document.addEventListener('visibilitychange', () => { try { if (!A.ctx) return; if (document.hidden) A.ctx.suspend(); else A.wake(); } catch (e) { } });
 ['pointerdown', 'touchend', 'keydown'].forEach(ev => document.addEventListener(ev, () => A.wake(), { passive: true, capture: true }));
 const A = {
@@ -319,6 +319,7 @@ const A = {
       const len = this.ctx.sampleRate * 2, b = this.ctx.createBuffer(1, len, this.ctx.sampleRate), d = b.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
       this.noise = b;
+      this.loadBark();
     } catch (e) { this.ctx = null; }
   },
   setMuted(m) { this.muted = m; if (this.out) this.out.gain.setTargetAtTime(m ? 0 : .85, this.ctx.currentTime, .02); if (!m) this.wake(); },
@@ -339,6 +340,23 @@ const A = {
     const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     o.connect(g); g.connect(dest || this.out); o.start(t); o.stop(t + dur + .05);
   },
+  // el ladrido es grabado (Pixabay): trae dos «guau» seguidos y el primero dura BARK_ONE s
+  bark: null,
+  loadBark() {
+    try {
+      const s = atob(BARK_MP3), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+      const p = this.ctx.decodeAudioData(u.buffer, b => { this.bark = b; }, () => { });   // con callback: Safari viejo no da promesa
+      if (p && p.catch) p.catch(() => { });
+    } catch (e) { }
+  },
+  woof(n = 2, { rate = 1, gain = .6, delay = 0 } = {}) {
+    if (!this.ok()) return;
+    if (!this.bark) { for (let i = 0; i < n; i++) this.tone(520 + 40 * i, .1, { f1: 380 + 20 * i, type: 'sawtooth', gain: .12, delay: delay + .15 * i }); return; }   // aún no ha cargado
+    const c = this.ctx, t = c.currentTime + delay, r = rate * (.96 + Math.random() * .08), end = t + (n === 1 ? BARK_ONE : this.bark.duration) / r;
+    const s = c.createBufferSource(); s.buffer = this.bark; s.playbackRate.value = r;
+    const g = c.createGain(); g.gain.setValueAtTime(gain, t); g.gain.setValueAtTime(gain, end - .04); g.gain.linearRampToValueAtTime(0.0001, end);
+    s.connect(g); g.connect(this.out); s.start(t); s.stop(end + .02);
+  },
   whoosh() { this.nz(.55, { type: 'bandpass', f0: 380, f1: 1900, q: 1.4, gain: .22, attack: .2 }); },
   thud(k = 1) { this.tone(105, .28, { f1: 42, gain: .9 * k }); this.nz(.2, { f0: 900, f1: 160, gain: .55 * k }); },
   clank() { [523, 1187, 1964, 2875, 3920].forEach((f, i) => this.tone(f, .5 + .25 * Math.random(), { gain: .1 / (1 + i * .3), f1: f * .995 })); },
@@ -358,4 +376,5 @@ const A = {
   aww() { this.nz(1.2, { type: 'bandpass', f0: 900, f1: 420, q: 1.2, gain: .14, attack: .2 }); },
   tick() { this.tone(880, .05, { type: 'square', gain: .035 }); },
 };
+const BARK_ONE = .31;
 function buzz(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { } }
