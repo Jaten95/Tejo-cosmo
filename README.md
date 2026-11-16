@@ -16,7 +16,7 @@ src/
     01-escena.js     cancha, texturas, luces y el tejo
     01b-greda-tablero.js  la greda de barro y el tablero pintado de atrás
     01c-utileria.js  herramientas, canastas de cerveza y banderines del salón
-    01d-ambiente.js  bombillos encendidos, polvo en la luz, mesa, sillas plásticas, caneca y parlantes
+    01d-ambiente.js  bombillos encendidos, polvo en la luz, mesa, sillas plásticas, caneca, parlantes y el ventilador de pared
     01e-mascotas.js  de vez en cuando pasa un perro criollo o un husky
     01f-garitero.js  el garitero de sombrero: sentado en la mesa de la izquierda, pone las mechas reventadas y para los palos del bolo
     02-grabados.js   los diseños grabados en la cara del tejo
@@ -169,6 +169,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.60.1 | Cambiado | el garitero se arrodilla como pidiendo matrimonio: una rodilla en el piso, el otro pie plano adelante con la rodilla arriba y la mano libre apoyada en ella; el pie de adelante queda por fuera de la caja de la cancha. La cámara lo muestra desde atrás y arriba |
 | — | 1.61.0 | Cambiado | el garitero se sienta en la silla de la mesa de la izquierda (la que mira a la cancha) y ya no hay silla aparte; como queda más lejos, camina 2,6 s hasta la cancha o los palos (antes 1,6) |
 | — | 1.61.1 | Cambiado | la silla del garitero mira más hacia el salón, apenas girada hacia la cancha. Si el perro le pasa cerca lo espanta con la mano: a veces el perro sale corriendo y a veces se queda oliendo como si nada |
+| — | 1.61.2 | Agregado | un ventilador de pared metálico en la pared derecha, cerca de la cancha: las aspas giran y la cabeza va y viene de lado a lado |
 
 </details>
 

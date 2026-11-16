@@ -462,7 +462,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.61.1</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.61.2</span></div>
   </div></div>
   <div id="mSheet" hidden>
     <div class="shPanel" role="dialog" aria-labelledby="mSheetT">
@@ -626,7 +626,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/meshopt_decoder.js"></script>
 <script>
-const GAME_VERSION = "1.61.1";
+const GAME_VERSION = "1.61.2";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -1451,6 +1451,7 @@ function buildProps() {
    Bombillos encendidos con luz cálida (uno titila de vez en cuando) y polvo flotando en la luz;
    a los lados, una mesa de madera con botellas, sillas plásticas amarillas y una caneca azul con un trapo.
    Arriba en las esquinas del fondo, dos parlantes: tocarlos prende o apaga la música (ver 03b-musica.js).
+   En la pared derecha, cerca de la cancha, un ventilador de pared que gira despacio de lado a lado.
    Es decoración: el tejo no choca con esto. */
 
 let AMB = null;
@@ -1497,6 +1498,50 @@ function makeChair(color) {
   });
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
+}
+
+// Ventilador de pared metálico (genérico, sin marca): soporte en U, motor atrás, tres aspas y la reja en domo.
+// El grupo se pone con +z saliendo de la pared; pan gira de lado a lado y rotor da vueltas (ver updateAmbience).
+function makeWallFan() {
+  const g = new THREE.Group(), R = .24;
+  const chrome = std({ color: '#c8cbcf', metalness: .85, roughness: .3 }), dark = std({ color: '#3a3c3f', metalness: .6, roughness: .45 });
+  const wire = new THREE.LineBasicMaterial({ color: '#b9bdc2' });
+  const tube = (pts, r, m) => new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p => V(...p)), false, 'catmullrom', .05), 24, r, 6, false), m);
+  // en la pared: platina, brazo hacia afuera y el cable colgando
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(.12, .12, .025), chrome); plate.position.set(0, -.32, .012); g.add(plate);
+  g.add(tube([[0, -.32, .02], [0, -.32, .12], [0, -.31, .2], [0, -.3, .24]], .013, chrome));
+  g.add(tube([[.02, -.37, .015], [.03, -.6, .012], [.01, -1.0, .01], [.03, -1.35, .012]], .004, std({ color: '#111', roughness: .7 })));
+  // lo que gira de lado a lado: el soporte en U y la cabeza
+  const pan = new THREE.Group(); pan.position.set(0, -.3, .24); g.add(pan);
+  const k = R + .035;
+  pan.add(tube([[-k, .3, .02], [-k, .08, .02], [-k + .06, .015, .02], [0, .01, .02], [k - .06, .015, .02], [k, .08, .02], [k, .3, .02]], .01, chrome));
+  const head = new THREE.Group(); head.position.set(0, .3, 0); head.rotation.x = .2; pan.add(head);   // un poco hacia abajo
+  [-1, 1].forEach(sx => { const knob = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, .03, 10), dark); knob.rotation.z = Math.PI / 2; knob.position.set(sx * (k - .005), 0, .02); head.add(knob); });
+  const motor = new THREE.Mesh(new THREE.CylinderGeometry(.085, .075, .15, 20), chrome); motor.rotation.x = Math.PI / 2; motor.position.z = -.11; head.add(motor);
+  const back = new THREE.Mesh(new THREE.CylinderGeometry(.06, .07, .03, 18), dark); back.rotation.x = Math.PI / 2; back.position.z = -.2; head.add(back);
+  // aspas
+  const rotor = new THREE.Group(); head.add(rotor);
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(.045, .05, .05, 18), chrome); hub.rotation.x = Math.PI / 2; hub.position.z = .005; rotor.add(hub);
+  const bs = new THREE.Shape(); bs.moveTo(.035, -.025); bs.quadraticCurveTo(.12, -.09, .21, -.05); bs.quadraticCurveTo(.235, 0, .2, .05); bs.quadraticCurveTo(.12, .06, .035, .025); bs.closePath();
+  const bgeo = new THREE.ShapeGeometry(bs, 8), bmat = std({ color: '#b3b7bc', metalness: .7, roughness: .35, side: THREE.DoubleSide });
+  for (let i = 0; i < 3; i++) { const piv = new THREE.Group(); piv.rotation.z = i * Math.PI * 2 / 3; const bl = new THREE.Mesh(bgeo, bmat); bl.rotation.x = .38; piv.add(bl); rotor.add(piv); }
+  const blur = new THREE.Mesh(new THREE.CircleGeometry(.215, 32), new THREE.MeshBasicMaterial({ color: '#9da2a8', transparent: true, opacity: .16, depthWrite: false })); blur.position.z = .012; head.add(blur);   // el borrón de las aspas girando
+  // la reja: domo adelante, más plana atrás, con aros y radios de alambre
+  const domeF = r => .045 + .06 * (1 - (r / R) ** 2), domeB = r => -.03 - .035 * (1 - (r / R) ** 2);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(R, .007, 6, 48), chrome); rim.position.z = .01; head.add(rim);
+  [.05, .09, .13, .17, .21].forEach(r => { const ring = new THREE.Mesh(new THREE.TorusGeometry(r, .0022, 4, 40), chrome); ring.position.z = domeF(r); head.add(ring); });
+  [.08, .15, .21].forEach(r => { const ring = new THREE.Mesh(new THREE.TorusGeometry(r, .002, 4, 40), chrome); ring.position.z = domeB(r); head.add(ring); });
+  const seg = [];
+  [[domeF, 48, .05], [domeB, 28, .085]].forEach(([dome, n, r0]) => {
+    for (let i = 0; i < n; i++) {
+      const a = i / n * Math.PI * 2, c = Math.cos(a), sn = Math.sin(a);
+      for (let j = 0; j < 6; j++) { const r1 = r0 + (R - r0) * j / 6, r2 = r0 + (R - r0) * (j + 1) / 6; seg.push(c * r1, sn * r1, dome(r1), c * r2, sn * r2, dome(r2)); }
+    }
+  });
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(seg, 3)); head.add(new THREE.LineSegments(sg, wire));
+  const badge = new THREE.Mesh(new THREE.CircleGeometry(.035, 20), std({ color: '#e9eaec', roughness: .5 })); badge.position.z = domeF(0) + .004; head.add(badge);
+  const badgeRing = new THREE.Mesh(new THREE.TorusGeometry(.04, .006, 6, 24), dark); badgeRing.position.z = domeF(0) + .002; head.add(badgeRing);
+  return { g, pan, rotor };
 }
 
 // Parlante colgado de la pared con su soporte (genérico, sin marca). El cono se mueve con la música y el bombillito dice si está prendida.
@@ -1560,6 +1605,8 @@ function buildAmbience() {
     AMB.bulbs.push(b);
   });
   AMB.flicker = AMB.bulbs[2];   // este titila de vez en cuando
+  // ventilador de pared a la derecha, cerca de la cancha y debajo de los banderines
+  AMB.fan = makeWallFan(); AMB.fan.g.position.set(3.5, 2.85, -D + 1.25); AMB.fan.g.rotation.y = -Math.PI / 2; hall.add(AMB.fan.g);
   // parlantes arriba en las esquinas del fondo, mirando hacia quien lanza
   AMB.speakers = [-1, 1].map(sx => {
     const s = makeSpeaker(); s.g.position.set(sx * 2.35, 3.58, -D - 1.15); s.g.rotation.set(.22, -sx * .3, 0, 'YXZ'); hall.add(s.g); return s;
@@ -1593,6 +1640,8 @@ function updateAmbience(dt) {
     a.setXYZ(i, x + Math.sin(t * sp * 3 + ph) * .25, y + ((t * sp + ph) % 1.2) * .5 - .3, z + Math.cos(t * sp * 2 + ph) * .25);
   }
   a.needsUpdate = true;
+  // el ventilador: las aspas dan vueltas y la cabeza va y viene de lado a lado (unos 40° para cada lado, 10 s ida y vuelta)
+  if (AMB.fan) { AMB.fan.rotor.rotation.z -= dt * 21; AMB.fan.pan.rotation.y = .7 * Math.sin(t * Math.PI * 2 / 10); }
   // los bombillos respiran un poquito y uno titila de vez en cuando
   AMB.bulbs.forEach((b, i) => { b.halo.material.opacity = .85 + Math.sin(t * 2.1 + i) * .05; });
   const f = AMB.flicker;
