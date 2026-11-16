@@ -18,7 +18,7 @@ const GARI_PASSES = 4;
 const GARI_RISE = .45;       // pararse
 const GARI_SIT = .8;         // voltearse y sentarse
 const GARI_VISIT = GARI_UP + GARI_WALKT + GARI_DOWN + GARI_WORK;   // lo que se alarga el cambio de ronda cuando hay mechas por poner
-const GARI_PINS = GARI_UP + GARI_WALKT + GARI_DOWN;                // en el bolo: los palos quedan parados cuando llega
+const GARI_PINS = GARI_UP + GARI_WALKT + GARI_DOWN + .6;           // en el bolo: llega, se arrodilla y para los palos con la mano
 const GARI_WALK = 1.15;      // m/s a los que se ve bien la animación de caminar a ritmo normal
 const GARI_CHAIR = { x: -2.55, dz: 4.45, yaw: 1.83 };   // la silla de adelante de la mesa de la izquierda (la pone 01d-ambiente): mirando al salón, un poquito hacia la cancha
 const GARI_HAND = V(-.325, .418, .578);   // dónde queda la mano derecha arrodillado, respecto a sus pies (mirando hacia +z)
@@ -92,7 +92,7 @@ function gariCheer() { const p = GARI && GARI.p; if (p && !p.plan && !p.wave && 
 function gariGo(p, kind, mechas) {
   const sp = gariSpots(), kn = gariKneel(kind);
   p.wave = 0; p.cheerIn = 0; p.shoo = p.shooFlee = 0;
-  p.plan = { kind, i: -1, t: 0, mechas: mechas || [], steps: [
+  p.plan = { kind, i: -1, t: 0, mechas: mechas || [], pins: kind === 'bolo', steps: [
     { k: 'up', dur: GARI_UP, from: p.root.position.clone(), to: sp.stand, yaw: sp.yaw },
     { k: 'walk', dur: GARI_WALKT, to: kn.pos },
     { k: 'down', dur: GARI_DOWN, yaw: kn.yaw },
@@ -111,7 +111,7 @@ function gariBack(p) {
   const pl = p.plan; if (!pl) return;
   const s = pl.steps[pl.i];
   if (!s || s.k === 'rise' || (s.k === 'walk' && pl.i > 2) || s.k === 'sit') return;   // ya va de vuelta
-  pl.mechas = [];
+  pl.mechas = []; pl.pins = false;
   const back = gariBackSteps(p.root.position);
   pl.steps = s.k === 'down' || s.k === 'work' ? back : back.slice(1);
   pl.i = -1; gariNext(p);
@@ -144,11 +144,15 @@ function gariStep(p, dt) {
   } else if (s.k === 'down') gTurn(r, s.yaw, Math.min(1, dt * 7));
   else if (s.k === 'work') {   // cada vez que la mano llega a la greda pone una de las mechas que faltan
     const ag = p.acts.Agachado;
-    if (ag) { const ph = (ag.time / ag.getClip().duration) % 1; if (pl.phase < .5 && ph >= .5 && pl.mechas.length) gariPut(pl.mechas.shift()); pl.phase = ph; }
+    if (ag) {
+      const ph = (ag.time / ag.getClip().duration) % 1;
+      if (pl.phase < .5 && ph >= .5) { if (pl.mechas.length) gariPut(pl.mechas.shift()); if (pl.pins) { pl.pins = false; boloResetPins(); } }   // en el bolo: la primera vez que la mano llega, se paran los palos
+      pl.phase = ph;
+    }
   } else if (s.k === 'sit') {   // se voltea dándole la espalda a la silla y se sienta
     gTurn(r, s.yaw, Math.min(1, dt * 6)); r.position.lerpVectors(s.from, s.to, gEase(Math.max(0, (k - .25) / .75)));
   }
-  if (k >= 1) { if (s.k === 'work') pl.mechas.splice(0).forEach(gariPut); gariNext(p); }
+  if (k >= 1) { if (s.k === 'work') { pl.mechas.splice(0).forEach(gariPut); if (pl.pins) { pl.pins = false; boloResetPins(); } } gariNext(p); }
 }
 function gariPut(m) { if (!m || m.userData.alive) return; m.visible = true; m.userData.alive = true; m.scale.setScalar(.01); m.userData.grow = 0; }
 
@@ -168,6 +172,12 @@ function gariRun(kind, after) {
 }
 // La cámara lo sigue mientras va a poner las mechas: por detrás mientras camina y, al arrodillarse, desde atrás y
 // arriba (se ven la rodilla de arriba, la otra en el piso y la mano en la greda; de lado lo tapan las tablas)
+// En el bolo, mientras va a parar los palos: más lejos y más alto que la cámara de los palos, para verlo llegar y arrodillarse
+function gariBoloCam() {
+  const pl = GARI && GARI.p && GARI.p.plan; if (!pl || pl.kind !== 'bolo') return null;
+  const c = boloPinsCenter(), r = GARI.p.root.position, f = V(lerp(c.x, r.x, .5), .55, lerp(c.z, r.z, .5)), portrait = cam.aspect < 1;
+  return { pos: f.clone().add(portrait ? V(1.9, 1.35, 3.0) : V(1.6, 1.1, 2.5)), look: f, fov: portrait ? 46 : 38, k: 3 };
+}
 function gariCamOn() { return !!(GARI && GARI.show && GARI.p && GARI.p.plan && phase === 'roundEnd' && !isRana() && !isBolo()); }
 function gariCamPose() {
   const r = GARI.p.root.position, c = W.C, w = gEase(clamp(1 - r.distanceTo(gariKneel('tejo').pos) / 1.6, 0, 1));

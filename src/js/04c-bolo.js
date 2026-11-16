@@ -423,6 +423,7 @@ function boloCamPose() {
     if (f.t < .12) return { ...aimPose(), k: 6 };
     return { pos: b.clone().add(V(.15, .55, 1.7)).setY(Math.max(.6, b.y + .5)), look: b.clone().lerp(c, .55), fov: 46, k: 7 };
   }
+  if ((phase === 'result' || phase === 'roundEnd') && gariBoloCam()) return gariBoloCam();   // el garitero va a parar los palos
   if (phase === 'result' || phase === 'roundEnd') return { pos: V(1.15, .95, c.z + 2.1), look: c.clone().add(V(-.05, -.1, 0)), fov: 42, k: 3 };
   return { ...aimPose(), k: 5 };
 }

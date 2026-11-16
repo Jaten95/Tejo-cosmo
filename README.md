@@ -170,6 +170,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.61.0 | Cambiado | el garitero se sienta en la silla de la mesa de la izquierda (la que mira a la cancha) y ya no hay silla aparte; como queda más lejos, camina 2,6 s hasta la cancha o los palos (antes 1,6) |
 | — | 1.61.1 | Cambiado | la silla del garitero mira más hacia el salón, apenas girada hacia la cancha. Si el perro le pasa cerca lo espanta con la mano: a veces el perro sale corriendo y a veces se queda oliendo como si nada |
 | — | 1.61.2 | Agregado | un ventilador de pared metálico en la pared derecha, cerca de la cancha: las aspas giran y la cabeza va y viene de lado a lado |
+| — | 1.62.0 | Cambiado | bolo: mientras el garitero va a parar los palos la cámara se aleja para verlo llegar y arrodillarse, y los palos se paran cuando les pone la mano; el siguiente turno empieza medio segundo después |
 
 </details>
 
