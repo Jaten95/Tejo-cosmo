@@ -127,7 +127,7 @@ function buildAmbience() {
   AMB.seeds = seeds; hall.add(AMB.dust);
   // a la izquierda: mesa con botellas y dos sillas mirando la cancha
   const table = makeTable(); table.position.set(-2.75, 0, -D + 5.4); table.rotation.y = .2; hall.add(table);
-  const c1 = makeChair('#f2b400'); c1.position.set(-2.55, 0, -D + 4.45); c1.rotation.y = 2.4; hall.add(c1);
+  const c1 = makeChair('#f2b400'); c1.position.set(GARI_CHAIR.x, 0, -D + GARI_CHAIR.dz); c1.rotation.y = GARI_CHAIR.yaw; hall.add(c1);   // la del garitero
   const c2 = makeChair('#efb000'); c2.position.set(-2.2, 0, -D + 5.95); c2.rotation.y = 1.1; hall.add(c2);
   // a la derecha: dos sillas y la caneca azul
   const c3 = makeChair('#f2b400'); c3.position.set(2.6, 0, -D + 4.3); c3.rotation.y = -2.2; hall.add(c3);

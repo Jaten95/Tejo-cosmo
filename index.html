@@ -462,7 +462,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.60.1</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.61.0</span></div>
   </div></div>
   <div id="mSheet" hidden>
     <div class="shPanel" role="dialog" aria-labelledby="mSheetT">
@@ -626,7 +626,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/meshopt_decoder.js"></script>
 <script>
-const GAME_VERSION = "1.60.1";
+const GAME_VERSION = "1.61.0";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -1575,7 +1575,7 @@ function buildAmbience() {
   AMB.seeds = seeds; hall.add(AMB.dust);
   // a la izquierda: mesa con botellas y dos sillas mirando la cancha
   const table = makeTable(); table.position.set(-2.75, 0, -D + 5.4); table.rotation.y = .2; hall.add(table);
-  const c1 = makeChair('#f2b400'); c1.position.set(-2.55, 0, -D + 4.45); c1.rotation.y = 2.4; hall.add(c1);
+  const c1 = makeChair('#f2b400'); c1.position.set(GARI_CHAIR.x, 0, -D + GARI_CHAIR.dz); c1.rotation.y = GARI_CHAIR.yaw; hall.add(c1);   // la del garitero
   const c2 = makeChair('#efb000'); c2.position.set(-2.2, 0, -D + 5.95); c2.rotation.y = 1.1; hall.add(c2);
   // a la derecha: dos sillas y la caneca azul
   const c3 = makeChair('#f2b400'); c3.position.set(2.6, 0, -D + 4.3); c3.rotation.y = -2.2; hall.add(c3);
@@ -1739,7 +1739,7 @@ function updatePets(dt) {
 }
 
 /* ================= El garitero =================
-   Un campesino de sombrero sentado en una silla plástica al lado de la cancha, mirando un poco hacia ella; sigue con
+   Un campesino de sombrero sentado en la silla de la mesa de la izquierda, la que mira a la cancha; sigue con
    la cabeza el tejo (o la bola) mientras va, y cuando alguien revienta mecha o embocina saluda desde la silla.
    Al acabar una ronda de tejo en la que se reventaron mechas, se para, va a la cancha, se arrodilla y pone mechas
    nuevas solo donde se reventaron (cada una aparece cuando la pone); la cámara lo sigue. Luego empieza la otra ronda
@@ -1749,7 +1749,7 @@ function updatePets(dt) {
    poses hechas en Blender sobre sus animaciones. Es decoración: el tejo no choca con él. */
 
 const GARI_UP = .5;          // pararse de la silla
-const GARI_WALKT = 1.6;      // ir de la silla a la cancha (o a los palos)
+const GARI_WALKT = 2.6;      // ir de la silla a la cancha (o a los palos): son unos 4 m
 const GARI_DOWN = .45;       // arrodillarse
 const GARI_WORK = 2.1;       // poniendo mechas: cuatro pasadas de la mano, una por mecha
 const GARI_PASSES = 4;
@@ -1758,7 +1758,7 @@ const GARI_SIT = .8;         // voltearse y sentarse
 const GARI_VISIT = GARI_UP + GARI_WALKT + GARI_DOWN + GARI_WORK;   // lo que se alarga el cambio de ronda cuando hay mechas por poner
 const GARI_PINS = GARI_UP + GARI_WALKT + GARI_DOWN;                // en el bolo: los palos quedan parados cuando llega
 const GARI_WALK = 1.15;      // m/s a los que se ve bien la animación de caminar a ritmo normal
-const GARI_CHAIR = { x: -2.1, dz: 2.2, yaw: 2.09 };   // la silla: a la izquierda, a 2,2 m de la cancha, mirando al salón y un poco a la cancha
+const GARI_CHAIR = { x: -2.55, dz: 4.45, yaw: 2.4 };   // la silla de adelante de la mesa de la izquierda (la pone 01d-ambiente), mirando a la cancha
 const GARI_HAND = V(-.325, .418, .578);   // dónde queda la mano derecha arrodillado, respecto a sus pies (mirando hacia +z)
 const GARI_COLORS = { Skin: '#c98e66', Eyebrows: '#1d140e', Hair: '#1d140e' };   // trigueño, pelo y cejas negras
 const GARI_NECK = 1.05;      // lo más que voltea la cabeza (rad)
@@ -1766,7 +1766,7 @@ let GARI = null;
 
 function loadGaritero() {
   if (GARI || !THREE.GLTFLoader || typeof GARI_GLB !== 'string') return;
-  GARI = { src: null, p: null, chair: null, show: false };
+  GARI = { src: null, p: null, show: false };
   try {
     const bin = Uint8Array.from(atob(GARI_GLB), ch => ch.charCodeAt(0)).buffer;
     const L = new THREE.GLTFLoader();
@@ -1792,9 +1792,6 @@ function gariKneel(kind) {
 // Se sienta en su silla (se llama cada vez que se arma el salón, que cambia con la distancia)
 function placeGaritero() {
   if (!GARI || !GARI.src || !hall) return;
-  const sp = gariSpots();
-  if (GARI.chair && GARI.chair.parent) GARI.chair.parent.remove(GARI.chair);
-  GARI.chair = makeChair('#efb000'); GARI.chair.position.copy(sp.chair); GARI.chair.rotation.y = sp.yaw; hall.add(GARI.chair);
   if (GARI.p && GARI.p.root.parent) GARI.p.root.parent.remove(GARI.p.root);
   const root = GARI.src.scene;
   root.traverse(o => {
@@ -1912,7 +1909,7 @@ function gariCamOn() { return !!(GARI && GARI.show && GARI.p && GARI.p.plan && p
 function gariCamPose() {
   const r = GARI.p.root.position, c = W.C, w = gEase(clamp(1 - r.distanceTo(gariKneel('tejo').pos) / 1.6, 0, 1));
   const portrait = cam.aspect < 1, s = portrait ? 1 : .8;
-  const fWalk = V(lerp(r.x, c.x, .3), .8, lerp(r.z, c.z, .3)), pWalk = fWalk.clone().add(V(-.3 * s, 1.4, 3.8 * s));
+  const fWalk = V(lerp(r.x, c.x, .15), .8, lerp(r.z, c.z, .15)), pWalk = fWalk.clone().add(V(-.3 * s, 1.4, 3.8 * s));
   const fWork = V(c.x - .35, .45, c.z + .25), pWork = fWork.clone().add(V(-.15 * s, 2.05, 2.35 * s));
   return { pos: pWalk.lerp(pWork, w), look: fWalk.lerp(fWork, w), fov: portrait ? 48 : 36 };
 }

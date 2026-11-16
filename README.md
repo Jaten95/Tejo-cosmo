@@ -18,7 +18,7 @@ src/
     01c-utileria.js  herramientas, canastas de cerveza y banderines del salón
     01d-ambiente.js  bombillos encendidos, polvo en la luz, mesa, sillas plásticas, caneca y parlantes
     01e-mascotas.js  de vez en cuando pasa un perro criollo o un husky
-    01f-garitero.js  el garitero de sombrero: sentado junto a la cancha, pone las mechas reventadas y para los palos del bolo
+    01f-garitero.js  el garitero de sombrero: sentado en la mesa de la izquierda, pone las mechas reventadas y para los palos del bolo
     02-grabados.js   los diseños grabados en la cara del tejo
     03-fisica.js     vuelo, choques, puntaje, efectos y sonido
     03b-musica.js    música de fondo: se prende y apaga tocando un parlante o con el switch del menú
@@ -167,6 +167,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.59.1 | Cambiado | el garitero mira al que va a lanzar y sigue con la cabeza el tejo (o la bola) mientras va; si cae a su espalda, se da la vuelta para verlo |
 | — | 1.60.0 | Cambiado | el garitero queda sentado en una silla al lado de la cancha, mirando un poco hacia ella, y saluda desde ahí. Al acabar una ronda en la que se reventaron mechas se para, va a la cancha, se arrodilla y pone mechas nuevas solo donde se reventaron, con la cámara mostrándolo (tocar la pantalla lo salta); si no se reventó ninguna, sigue sentado. En el bolo se arrodilla a parar los palos |
 | — | 1.60.1 | Cambiado | el garitero se arrodilla como pidiendo matrimonio: una rodilla en el piso, el otro pie plano adelante con la rodilla arriba y la mano libre apoyada en ella; el pie de adelante queda por fuera de la caja de la cancha. La cámara lo muestra desde atrás y arriba |
+| — | 1.61.0 | Cambiado | el garitero se sienta en la silla de la mesa de la izquierda (la que mira a la cancha) y ya no hay silla aparte; como queda más lejos, camina 2,6 s hasta la cancha o los palos (antes 1,6) |
 
 </details>
 
