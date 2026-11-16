@@ -177,6 +177,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.62.3 | Cambiado | se devuelve lo de la 1.62.1 y la 1.62.2 (la franja de abajo en el iPhone instalado no se quitó): el juego queda como en la 1.62.0, con la barra de la hora transparente |
 | — | 1.62.4 | Cambiado | ícono nuevo: el tejo en línea continua con dos aros, en amarillo sobre fondo café oscuro y la bandera abajo (en Android, sin la bandera y un poco más pequeño para que no se recorte) |
 | — | 1.62.5 | Cambiado | menú: el tejo de la tarjeta es el mismo del ícono nuevo (línea continua con dos aros) |
+| — | 1.62.6 | Arreglado | "Cómo se juega" en el celular: las tablas de puntos ya no se salen a la derecha (la explicación de cada jugada se parte en renglones) |
 
 </details>
 

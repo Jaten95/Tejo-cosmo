@@ -186,11 +186,11 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:-4px;}
 .ver{margin-left:auto;font:800 11px/1 var(--body);letter-spacing:.08em;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap;}
 #verTag{padding:10px 0 10px 14px;margin:-10px 0;cursor:default;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;}
-.rulesT{width:100%;border-collapse:collapse;font-size:14px;}
+.rulesT{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed;}
 .rulesH{margin:20px 0 4px;font:700 11px/1 var(--body);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);}
 .rulesT td{padding:9px 4px;border-bottom:1px solid var(--wood-2);vertical-align:top;}
-.rulesT td:first-child{font-family:var(--display);font-size:16px;white-space:nowrap;padding-right:10px;}
-.rulesT td:last-child{text-align:right;font-family:var(--display);font-size:20px;color:var(--yellow);font-variant-numeric:tabular-nums;}
+.rulesT td:first-child{font-family:var(--display);font-size:16px;padding-right:10px;overflow-wrap:anywhere;}   /* la explicación se parte en renglones: nada se sale a la derecha */
+.rulesT td:last-child{width:3.1em;text-align:right;font-family:var(--display);font-size:20px;color:var(--yellow);font-variant-numeric:tabular-nums;white-space:nowrap;}
 .rulesT span{display:block;font-size:12.5px;color:var(--muted);font-family:var(--body);margin-top:2px;line-height:1.4;}
 .prose{margin:0;font-size:13.5px;line-height:1.55;color:var(--muted);}
 .prose b{color:var(--paper);}
