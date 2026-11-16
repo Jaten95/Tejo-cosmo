@@ -181,6 +181,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.62.7 | Cambiado | "Cómo se juega": la franja de la bandera y el título se quedan fijos arriba al bajar, con una X para cerrar |
 | — | 1.62.8 | Cambiado | la bandera lleva figuras de los tejidos indígenas de Colombia: rombos con punto (kanaas wayuu) en el amarillo, zigzag en el azul y la greca escalonada del sombrero vueltiao en el rojo; en la franja de los menús, debajo de los anuncios y en la manilla de la mano |
 | — | 1.62.9 | Cambiado | las figuras de la franja de debajo de los anuncios (¡MECHA!, ¡EMBOCINADA!…) van más suaves, casi del color de cada franja |
+| — | 1.62.10 | Cambiado | menú: arriba del título dice solo "Club de Tejo El Cosmo" (sin Bucaramanga) |
 
 </details>
 
