@@ -187,6 +187,13 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 .ver{margin-left:auto;font:800 11px/1 var(--body);letter-spacing:.08em;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap;}
 #verTag{padding:10px 0 10px 14px;margin:-10px 0;cursor:default;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;}
 .rulesT{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed;}
+/* "Cómo se juega": la franja de la bandera y el título se quedan quietos arriba mientras se baja, con una X para cerrar */
+#rules .panel::before{position:sticky;top:0;z-index:3;}
+#rules .pHead{position:sticky;top:12px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin:-18px -18px 0;padding:18px 14px 12px 18px;background:var(--wood);border-bottom:1px solid var(--wood-3);}
+.xBtn{flex:none;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:var(--ink);border:1px solid var(--wood-3);}
+.xBtn svg{width:18px;height:18px;fill:none;stroke:var(--paper);stroke-width:2.6;stroke-linecap:round;}
+.xBtn:active{transform:scale(.94);}
 .rulesH{margin:20px 0 4px;font:700 11px/1 var(--body);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);}
 .rulesT td{padding:9px 4px;border-bottom:1px solid var(--wood-2);vertical-align:top;}
 .rulesT td:first-child{font-family:var(--display);font-size:16px;padding-right:10px;overflow-wrap:anywhere;}   /* la explicación se parte en renglones: nada se sale a la derecha */

@@ -383,6 +383,7 @@ function bindUI() {
   $('mSum').addEventListener('click', () => openSheet(true)); $('sumBtn').addEventListener('click', () => openSheet(true));
   $('mSheet').addEventListener('click', e => { if (e.target === $('mSheet') || e.target.id === 'mSheetOk') openSheet(false); });
   $('btnRulesBack').addEventListener('click', () => { showScreen('menu'); });
+  $('btnRulesX').addEventListener('click', () => { showScreen('menu'); });
   $('btnPause').addEventListener('click', pause);
   $('btnResume').addEventListener('click', resume);
   $('btnReconnect').addEventListener('click', () => { resume(); toast('Reconectando a la sala…'); netRejoin(); });

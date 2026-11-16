@@ -222,6 +222,13 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 .ver{margin-left:auto;font:800 11px/1 var(--body);letter-spacing:.08em;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap;}
 #verTag{padding:10px 0 10px 14px;margin:-10px 0;cursor:default;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;}
 .rulesT{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed;}
+/* "Cómo se juega": la franja de la bandera y el título se quedan quietos arriba mientras se baja, con una X para cerrar */
+#rules .panel::before{position:sticky;top:0;z-index:3;}
+#rules .pHead{position:sticky;top:12px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin:-18px -18px 0;padding:18px 14px 12px 18px;background:var(--wood);border-bottom:1px solid var(--wood-3);}
+.xBtn{flex:none;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:var(--ink);border:1px solid var(--wood-3);}
+.xBtn svg{width:18px;height:18px;fill:none;stroke:var(--paper);stroke-width:2.6;stroke-linecap:round;}
+.xBtn:active{transform:scale(.94);}
 .rulesH{margin:20px 0 4px;font:700 11px/1 var(--body);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);}
 .rulesT td{padding:9px 4px;border-bottom:1px solid var(--wood-2);vertical-align:top;}
 .rulesT td:first-child{font-family:var(--display);font-size:16px;padding-right:10px;overflow-wrap:anywhere;}   /* la explicación se parte en renglones: nada se sale a la derecha */
@@ -463,7 +470,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.62.6</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.62.7</span></div>
   </div></div>
   <div id="mSheet" hidden>
     <div class="shPanel" role="dialog" aria-labelledby="mSheetT">
@@ -556,7 +563,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 
 <section class="screen" id="rules" hidden>
   <div class="panel"><div class="pin">
-    <h2>Cómo se juega</h2>
+    <div class="pHead"><h2>Cómo se juega</h2><button class="xBtn" id="btnRulesX" type="button" aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
     <table class="rulesT">
       <tr><td>Mano<span>El tejo que quede más cerca del bocín al final de la ronda, si nadie sumó con mecha, embocinada o moñona.</span></td><td>1</td></tr>
       <tr><td>Mecha<span>Revientas una de las mechas de pólvora que están sobre el bocín.</span></td><td>3</td></tr>
@@ -627,7 +634,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/meshopt_decoder.js"></script>
 <script>
-const GAME_VERSION = "1.62.6";
+const GAME_VERSION = "1.62.7";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -5802,6 +5809,7 @@ function bindUI() {
   $('mSum').addEventListener('click', () => openSheet(true)); $('sumBtn').addEventListener('click', () => openSheet(true));
   $('mSheet').addEventListener('click', e => { if (e.target === $('mSheet') || e.target.id === 'mSheetOk') openSheet(false); });
   $('btnRulesBack').addEventListener('click', () => { showScreen('menu'); });
+  $('btnRulesX').addEventListener('click', () => { showScreen('menu'); });
   $('btnPause').addEventListener('click', pause);
   $('btnResume').addEventListener('click', resume);
   $('btnReconnect').addEventListener('click', () => { resume(); toast('Reconectando a la sala…'); netRejoin(); });

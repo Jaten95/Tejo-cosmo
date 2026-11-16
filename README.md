@@ -178,6 +178,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.62.4 | Cambiado | ícono nuevo: el tejo en línea continua con dos aros, en amarillo sobre fondo café oscuro y la bandera abajo (en Android, sin la bandera y un poco más pequeño para que no se recorte) |
 | — | 1.62.5 | Cambiado | menú: el tejo de la tarjeta es el mismo del ícono nuevo (línea continua con dos aros) |
 | — | 1.62.6 | Arreglado | "Cómo se juega" en el celular: las tablas de puntos ya no se salen a la derecha (la explicación de cada jugada se parte en renglones) |
+| — | 1.62.7 | Cambiado | "Cómo se juega": la franja de la bandera y el título se quedan fijos arriba al bajar, con una X para cerrar |
 
 </details>
 
