@@ -37,6 +37,7 @@ src/
     garitero.glb     el garitero (Quaternius, CC0)
 build.py             une todo y genera index.html y sw.js
 manifest.webmanifest e icon-*.png: datos para instalar el juego como app
+src/icono/          el dibujo del ícono (icono.svg y icono-maskable.svg para Android); los icon-*.png, apple-touch-icon.png y favicon.png salen de ahí
 musica-vallenato.mp3 la música de fondo; el juego la baja al empezar a jugar y, instalado, queda guardada para sonar sin internet (ver LICENSES/)
 .github/workflows/supabase-ping.yml  cada 3 días hace una consulta mínima a Supabase para que el proyecto gratis no se pause
 ```
@@ -174,6 +175,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.62.1 | Arreglado | iPhone con el juego instalado: ya no queda una franja oscura abajo (iOS le daba a la página menos alto que la pantalla; ahora se mide y el juego se estira hasta el borde) |
 | — | 1.62.2 | Arreglado | iPhone con el juego instalado: estirar el juego no servía (iOS no deja pintar esa franja, error de WebKit 301994) y escondía los botones de abajo; se quitó y la barra de la hora pasa a negra sólida, así iOS pone el juego debajo de ella y llega hasta abajo. Tres toques en la versión muestran las medidas de la pantalla |
 | — | 1.62.3 | Cambiado | se devuelve lo de la 1.62.1 y la 1.62.2 (la franja de abajo en el iPhone instalado no se quitó): el juego queda como en la 1.62.0, con la barra de la hora transparente |
+| — | 1.62.4 | Cambiado | ícono nuevo: el tejo en línea continua con dos aros, en amarillo sobre fondo café oscuro y la bandera abajo (en Android, sin la bandera y un poco más pequeño para que no se recorte) |
 
 </details>
 
