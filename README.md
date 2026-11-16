@@ -173,6 +173,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.62.0 | Cambiado | bolo: mientras el garitero va a parar los palos la cámara se aleja para verlo llegar y arrodillarse, y los palos se paran cuando les pone la mano; el siguiente turno empieza medio segundo después |
 | — | 1.62.1 | Arreglado | iPhone con el juego instalado: ya no queda una franja oscura abajo (iOS le daba a la página menos alto que la pantalla; ahora se mide y el juego se estira hasta el borde) |
 | — | 1.62.2 | Arreglado | iPhone con el juego instalado: estirar el juego no servía (iOS no deja pintar esa franja, error de WebKit 301994) y escondía los botones de abajo; se quitó y la barra de la hora pasa a negra sólida, así iOS pone el juego debajo de ella y llega hasta abajo. Tres toques en la versión muestran las medidas de la pantalla |
+| — | 1.62.3 | Cambiado | se devuelve lo de la 1.62.1 y la 1.62.2 (la franja de abajo en el iPhone instalado no se quitó): el juego queda como en la 1.62.0, con la barra de la hora transparente |
 
 </details>
 

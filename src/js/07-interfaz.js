@@ -29,7 +29,7 @@ function hint(text, on, help = false) { const h = $('hint'); if (text) $('hintTe
 // ayudas de cómo lanzar: se pueden cerrar (vuelven a salir en la siguiente partida); los avisos de estado siempre salen
 function helpHint(text) { if (game && game.helpOff) hint('', false); else hint(text, true, true); }
 let toastTimer;
-function toast(text, ms = 1900) { const t = $('toast'); t.textContent = text; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), ms); }
+function toast(text) { const t = $('toast'); t.textContent = text; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1900); }
 function announce(title, pts, big, nulo) {
   if (!nulo) gariCheer();   // el garitero saluda
   const a = $('announce'); $('annT').textContent = title; $('annP').textContent = pts;
@@ -255,7 +255,6 @@ let betaOn = false, betaTaps = 0, betaTapAt = 0;
 try { betaOn = !!store.get('tejo.beta.v1', false); } catch (e) { }
 function betaTap() {
   const now = performance.now(); betaTaps = now - betaTapAt < 1500 ? betaTaps + 1 : 1; betaTapAt = now;
-  if (betaTaps === 3) screenDiag();
   if (betaTaps < 7) return;
   betaTaps = 0;
   if (betaOn) { betaOn = false; store.set('tejo.beta.v1', false); toast('Modo beta apagado'); renderMenu(); return; }
@@ -401,13 +400,6 @@ function resize() {
   if (!(w > 10 && h > 10)) return;   // al mandar la app a segundo plano el celular puede avisar un tamaño de 0
   renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix();
 }
-// Para revisar la pantalla en un celular: tres toques seguidos en la versión muestran las medidas
-function screenDiag() {
-  const p = document.createElement('div'); p.style.cssText = 'position:fixed;left:0;top:0;bottom:0;width:1px;visibility:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';
-  document.body.appendChild(p); const cs = getComputedStyle(p), r = p.getBoundingClientRect(), top = cs.paddingTop, bot = cs.paddingBottom; p.remove();
-  const vv = window.visualViewport, app = navigator.standalone === true ? 'instalado' : matchMedia('(display-mode: standalone)').matches ? 'app' : 'navegador';
-  toast(`${app} · pantalla ${screen.width}×${screen.height} · ventana ${innerWidth}×${innerHeight} · página ${document.documentElement.clientHeight} · fija ${Math.round(r.bottom)} · vista ${vv ? Math.round(vv.height) + '+' + Math.round(vv.offsetTop) : '-'} · borde arriba ${top}, abajo ${bot}`, 9000);
-}
 
 /* ================= Recarga en caliente ================= */
 function snapshot() {
@@ -468,7 +460,7 @@ async function boot(data) {
   try { await Promise.race([document.fonts.load(CLUB_FONT), new Promise(r => setTimeout(r, 1800))]); } catch (e) { }
   buildRenderer(); buildTextures(); buildArm();
   setDistance(settings.dist); buildHall(); computeDvdP();
-  resize(); addEventListener('resize', resize); addEventListener('orientationchange', () => setTimeout(resize, 300));
+  resize(); addEventListener('resize', resize);
   watchGL();
   document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(resize, 300); });
   delete settings.muted; A.muted = false;   // los efectos siempre suenan (antes había un botón para callarlos); la música se apaga con los parlantes o el menú
