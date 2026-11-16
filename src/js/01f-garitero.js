@@ -20,7 +20,7 @@ const GARI_VISIT = GARI_UP + GARI_WALKT + GARI_DOWN + GARI_WORK;   // lo que se 
 const GARI_PINS = GARI_UP + GARI_WALKT + GARI_DOWN;                // en el bolo: los palos quedan parados cuando llega
 const GARI_WALK = 1.15;      // m/s a los que se ve bien la animación de caminar a ritmo normal
 const GARI_CHAIR = { x: -2.1, dz: 2.2, yaw: 2.09 };   // la silla: a la izquierda, a 2,2 m de la cancha, mirando al salón y un poco a la cancha
-const GARI_HAND = V(.015, .41, .665);   // dónde queda la mano arrodillado, respecto a sus pies (mirando hacia +z)
+const GARI_HAND = V(-.325, .418, .578);   // dónde queda la mano derecha arrodillado, respecto a sus pies (mirando hacia +z)
 const GARI_COLORS = { Skin: '#c98e66', Eyebrows: '#1d140e', Hair: '#1d140e' };   // trigueño, pelo y cejas negras
 const GARI_NECK = 1.05;      // lo más que voltea la cabeza (rad)
 let GARI = null;
@@ -45,7 +45,8 @@ function gariSpots() {
 // dónde se arrodilla para que la mano caiga en las mechas (o en los palos del bolo)
 function gariKneel(kind) {
   const yaw = kind === 'bolo' ? Math.PI / 2 : Math.PI;
-  const tgt = kind === 'bolo' ? V(0, 0, BOLO.Z0 - BOLO.GAP) : V(W.C.x, 0, W.C.z - .03);
+  // en el tejo, un poquito a la izquierda del centro: así el pie de adelante queda por fuera de la caja de la cancha
+  const tgt = kind === 'bolo' ? V(0, 0, BOLO.Z0 - BOLO.GAP) : V(W.C.x - .04, 0, W.C.z - .05);
   return { pos: tgt.sub(gYaw(V(GARI_HAND.x, 0, GARI_HAND.z), yaw)), yaw };
 }
 
@@ -166,14 +167,15 @@ function gariRun(kind, after) {
     later(GARI_PINS, after);
   }
 }
-// La cámara lo sigue mientras va a poner las mechas: de lejos mientras camina y, al llegar, de lado para ver la mano en la greda
+// La cámara lo sigue mientras va a poner las mechas: por detrás mientras camina y, al arrodillarse, desde atrás y
+// arriba (se ven la rodilla de arriba, la otra en el piso y la mano en la greda; de lado lo tapan las tablas)
 function gariCamOn() { return !!(GARI && GARI.show && GARI.p && GARI.p.plan && phase === 'roundEnd' && !isRana() && !isBolo()); }
 function gariCamPose() {
   const r = GARI.p.root.position, c = W.C, w = gEase(clamp(1 - r.distanceTo(gariKneel('tejo').pos) / 1.6, 0, 1));
   const portrait = cam.aspect < 1, s = portrait ? 1 : .8;
-  const fWalk = V(lerp(r.x, c.x, .3), .8, lerp(r.z, c.z, .3)), pWalk = fWalk.clone().add(V(2.3 * s, 1.4, 3.9 * s));
-  const fWork = V(c.x + .05, .55, c.z + .3), pWork = fWork.clone().add(V(2.3 * s, 1.05, 1.7 * s));
-  return { pos: pWalk.lerp(pWork, w), look: fWalk.lerp(fWork, w), fov: portrait ? 44 : 36 };
+  const fWalk = V(lerp(r.x, c.x, .3), .8, lerp(r.z, c.z, .3)), pWalk = fWalk.clone().add(V(-.3 * s, 1.4, 3.8 * s));
+  const fWork = V(c.x - .35, .45, c.z + .25), pWork = fWork.clone().add(V(-.15 * s, 2.05, 2.35 * s));
+  return { pos: pWalk.lerp(pWork, w), look: fWalk.lerp(fWork, w), fov: portrait ? 48 : 36 };
 }
 
 function updateGaritero(dt) {

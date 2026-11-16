@@ -166,6 +166,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.59.0 | Agregado | el garitero: un campesino de sombrero junto a la cancha que, al acabar cada ronda de tejo, va, saca los tejos y pone mechas nuevas, y en el bolo para los palos que cayeron; saluda cuando alguien revienta mecha o embocina |
 | — | 1.59.1 | Cambiado | el garitero mira al que va a lanzar y sigue con la cabeza el tejo (o la bola) mientras va; si cae a su espalda, se da la vuelta para verlo |
 | — | 1.60.0 | Cambiado | el garitero queda sentado en una silla al lado de la cancha, mirando un poco hacia ella, y saluda desde ahí. Al acabar una ronda en la que se reventaron mechas se para, va a la cancha, se arrodilla y pone mechas nuevas solo donde se reventaron, con la cámara mostrándolo (tocar la pantalla lo salta); si no se reventó ninguna, sigue sentado. En el bolo se arrodilla a parar los palos |
+| — | 1.60.1 | Cambiado | el garitero se arrodilla como pidiendo matrimonio: una rodilla en el piso, el otro pie plano adelante con la rodilla arriba y la mano libre apoyada en ella; el pie de adelante queda por fuera de la caja de la cancha. La cámara lo muestra desde atrás y arriba |
 
 </details>
 
