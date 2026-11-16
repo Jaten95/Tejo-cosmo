@@ -466,7 +466,8 @@ function closePose(u = 0, v = 0) {
 function updateCamera(dt) {
   if (replay) { replayCamera(dt); return; }
   let tgt, k = 5;
-  if (phase === 'menu' || phase === 'boot' || phase === 'over') {
+  if (gariCamOn()) { tgt = gariCamPose(); k = 3.5;   // el garitero va a poner las mechas
+  } else if (phase === 'menu' || phase === 'boot' || phase === 'over') {
     orbit += dt * .12;
     const r = 3.4, c = W.C;
     tgt = { pos: V(Math.sin(orbit) * r * .8, 1.5 + Math.sin(orbit * .7) * .3, c.z + Math.cos(orbit) * r * .6 + 2.2), look: c.clone().add(V(0, .1, 0)), fov: 42 }; k = 2;
