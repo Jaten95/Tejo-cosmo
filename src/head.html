@@ -17,6 +17,8 @@
   /* la bandera con figuras de los tejidos indígenas de Colombia: rombos con punto (kanaas wayuu) en el amarillo,
      zigzag en el azul y la greca escalonada del sombrero vueltiao en el rojo */
   --flagband:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Crect width='16' height='8' fill='%23fcd116'/%3E%3Crect y='8' width='16' height='4' fill='%23003893'/%3E%3Crect y='12' width='16' height='4' fill='%23ce1126'/%3E%3Cg fill='none' stroke='%236b4a00' stroke-width='1' stroke-linejoin='round'%3E%3Cpath d='M8 1.2 12.6 4 8 6.8 3.4 4Z'/%3E%3Cpath d='M0 4h1.6M14.4 4H16'/%3E%3C/g%3E%3Ccircle cx='8' cy='4' r='.95' fill='%236b4a00'/%3E%3Cpath d='M0 10.9 4 9.1 8 10.9 12 9.1 16 10.9' fill='none' stroke='%23f5eddd' stroke-opacity='.75' stroke-width='.8' stroke-linejoin='round'/%3E%3Cpath d='M.5 15.3h2.5v-1.2h2v-1.2h2v1.2h2v1.2h2.5' fill='none' stroke='%235c0a10' stroke-width='.8' stroke-linejoin='round'/%3E%3Cpath d='M11 15.3h2v-1.2h2.5' fill='none' stroke='%235c0a10' stroke-width='.8'/%3E%3C/svg%3E") left top/auto 100% repeat-x,var(--stripes);
+  /* la de los anuncios (¡MECHA!, ¡EMBOCINADA!…): las mismas figuras pero suavecitas, casi del color de cada franja */
+  --flagband-soft:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Crect width='16' height='8' fill='%23fcd116'/%3E%3Crect y='8' width='16' height='4' fill='%23003893'/%3E%3Crect y='12' width='16' height='4' fill='%23ce1126'/%3E%3Cg fill='none' stroke='%23c99b0c' stroke-width='1' stroke-linejoin='round'%3E%3Cpath d='M8 1.2 12.6 4 8 6.8 3.4 4Z'/%3E%3Cpath d='M0 4h1.6M14.4 4H16'/%3E%3C/g%3E%3Ccircle cx='8' cy='4' r='.95' fill='%23c99b0c'/%3E%3Cpath d='M0 10.9 4 9.1 8 10.9 12 9.1 16 10.9' fill='none' stroke='%23f5eddd' stroke-opacity='.38' stroke-width='.8' stroke-linejoin='round'/%3E%3Cpath d='M.5 15.3h2.5v-1.2h2v-1.2h2v1.2h2v1.2h2.5' fill='none' stroke='%23a3161f' stroke-width='.8' stroke-linejoin='round'/%3E%3Cpath d='M11 15.3h2v-1.2h2.5' fill='none' stroke='%23a3161f' stroke-width='.8'/%3E%3C/svg%3E") left top/auto 100% repeat-x,var(--stripes);
   color-scheme:dark;
 }
 html,body{height:100%;overflow:hidden;}
@@ -117,7 +119,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
   text-shadow:3px 3px 0 var(--red),6px 6px 0 var(--ink);padding:0 16px;text-align:center;}
 #announce.big .t{font-size:clamp(52px,16vw,128px);text-shadow:3px 3px 0 var(--flag-y),6px 6px 0 var(--flag-b),9px 9px 0 var(--flag-r),12px 12px 0 var(--ink);}
 #announce .p{font:800 16px/1 var(--body);letter-spacing:.08em;background:var(--ink);padding:7px 12px;border-top:4px solid var(--yellow);}
-#announce .s{height:16px;width:min(70vw,360px);background:var(--flagband);}
+#announce .s{height:16px;width:min(70vw,360px);background:var(--flagband-soft);}
 @keyframes ann{0%{opacity:0;transform:scale(.6) rotate(-4deg);}12%{opacity:1;transform:scale(1.06) rotate(-2deg);}22%{transform:scale(1) rotate(-2deg);}80%{opacity:1;}100%{opacity:0;transform:scale(1) rotate(-2deg) translateY(-14px);}}
 .btn.wide{flex:none;width:100%;}
 .steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.5;color:var(--muted);}
