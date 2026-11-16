@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Tejo">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_CO">
@@ -55,10 +55,7 @@ html,body{height:100%;overflow:hidden;}
 body{background:var(--night);color:var(--paper);font-family:var(--body);font-size:15px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;overscroll-behavior:none;}
-#gl{position:fixed;inset:0;width:100%;height:calc(100% + var(--gapB,0px));display:block;touch-action:none;background:var(--night);}
-/* iPhone con el juego instalado: a veces iOS deja la pantalla corta por abajo (lo que mide la barra de arriba).
-   --gapB es lo que falta (lo mide resize() en 07-interfaz.js) y todo lo de pantalla completa se estira hasta el borde. */
-#hud,.screen,#picker,#mSheet,#flash,.loading{bottom:calc(-1 * var(--gapB,0px)) !important;}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;background:var(--night);}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;}
 button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
 
@@ -127,7 +124,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 #rxTray button b{font-size:24px;line-height:1;}
 #rxTray button span{font:600 11px/1 var(--body);color:var(--muted);}
 #rxTray button:active{transform:scale(.94);}
-#rxLayer{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 120px - var(--gapB,0px));z-index:30;pointer-events:none;
+#rxLayer{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 120px);z-index:30;pointer-events:none;
   display:flex;flex-direction:column-reverse;align-items:flex-end;gap:6px;}
 .rx{display:flex;align-items:center;gap:8px;background:rgba(18,13,8,.88);border-left:4px solid var(--c);padding:6px 10px 6px 8px;border-radius:3px;
   animation:rxUp 3.2s ease-out forwards;max-width:70vw;}
@@ -157,7 +154,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 .btn.wide{flex:none;width:100%;}
 .steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.5;color:var(--muted);}
 .steps b{color:var(--paper);}
-#updBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 74px - var(--gapB,0px));z-index:40;
+#updBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 74px);z-index:40;
   display:flex;align-items:center;gap:12px;background:var(--ink);border:2px solid var(--yellow);padding:8px 8px 8px 14px;border-radius:4px;
   box-shadow:0 10px 30px rgba(0,0,0,.6);font:600 13px/1.2 var(--body);color:var(--paper);width:max-content;max-width:calc(100% - 32px);}
 #updBar button{background:var(--yellow);color:var(--ink);font:400 15px/1 var(--display);padding:9px 12px;border-radius:3px;white-space:nowrap;}
@@ -168,7 +165,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 #flash{position:fixed;inset:0;background:#ffd38a;opacity:0;pointer-events:none;mix-blend-mode:screen;}
 #flash.go{animation:flash .45s ease-out;}
 @keyframes flash{0%{opacity:.75;}100%{opacity:0;}}
-#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 132px);transform:translateX(-50%);pointer-events:none;
+#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 132px);transform:translateX(-50%);pointer-events:none;z-index:45;
   background:var(--ink);border:2px solid var(--yellow);padding:9px 14px;font-weight:800;font-size:14px;text-align:center;
   max-width:min(84vw,380px);opacity:0;transition:opacity .3s, transform .3s;}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(4px);}
@@ -465,7 +462,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.62.1</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.62.2</span></div>
   </div></div>
   <div id="mSheet" hidden>
     <div class="shPanel" role="dialog" aria-labelledby="mSheetT">
@@ -629,7 +626,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/meshopt_decoder.js"></script>
 <script>
-const GAME_VERSION = "1.62.1";
+const GAME_VERSION = "1.62.2";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -5450,7 +5447,7 @@ function hint(text, on, help = false) { const h = $('hint'); if (text) $('hintTe
 // ayudas de cómo lanzar: se pueden cerrar (vuelven a salir en la siguiente partida); los avisos de estado siempre salen
 function helpHint(text) { if (game && game.helpOff) hint('', false); else hint(text, true, true); }
 let toastTimer;
-function toast(text) { const t = $('toast'); t.textContent = text; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1900); }
+function toast(text, ms = 1900) { const t = $('toast'); t.textContent = text; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), ms); }
 function announce(title, pts, big, nulo) {
   if (!nulo) gariCheer();   // el garitero saluda
   const a = $('announce'); $('annT').textContent = title; $('annP').textContent = pts;
@@ -5676,6 +5673,7 @@ let betaOn = false, betaTaps = 0, betaTapAt = 0;
 try { betaOn = !!store.get('tejo.beta.v1', false); } catch (e) { }
 function betaTap() {
   const now = performance.now(); betaTaps = now - betaTapAt < 1500 ? betaTaps + 1 : 1; betaTapAt = now;
+  if (betaTaps === 3) screenDiag();
   if (betaTaps < 7) return;
   betaTaps = 0;
   if (betaOn) { betaOn = false; store.set('tejo.beta.v1', false); toast('Modo beta apagado'); renderMenu(); return; }
@@ -5816,19 +5814,17 @@ function bindUI() {
   bindInput(); netBindUI();
 }
 
-// iPhone con el juego instalado (pantalla de inicio): iOS a veces le da a la página menos alto que la pantalla y abajo
-// queda una franja sin pintar del tamaño de la barra de la hora. Se mide contra el alto de la pantalla y se estira.
-function screenGap() {
-  if (navigator.standalone !== true || !screen.width || !screen.height) return 0;
-  const portrait = innerHeight >= innerWidth, full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
-  const g = Math.round(full - innerHeight);
-  return g > 0 && g < 140 ? g : 0;
-}
 function resize() {
-  const gap = screenGap(), w = innerWidth, h = innerHeight + gap;
-  if (!(w > 10 && innerHeight > 10)) return;   // al mandar la app a segundo plano el celular puede avisar un tamaño de 0
-  document.documentElement.style.setProperty('--gapB', gap + 'px');
+  const w = innerWidth, h = innerHeight;
+  if (!(w > 10 && h > 10)) return;   // al mandar la app a segundo plano el celular puede avisar un tamaño de 0
   renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix();
+}
+// Para revisar la pantalla en un celular: tres toques seguidos en la versión muestran las medidas
+function screenDiag() {
+  const p = document.createElement('div'); p.style.cssText = 'position:fixed;left:0;top:0;bottom:0;width:1px;visibility:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';
+  document.body.appendChild(p); const cs = getComputedStyle(p), r = p.getBoundingClientRect(), top = cs.paddingTop, bot = cs.paddingBottom; p.remove();
+  const vv = window.visualViewport, app = navigator.standalone === true ? 'instalado' : matchMedia('(display-mode: standalone)').matches ? 'app' : 'navegador';
+  toast(`${app} · pantalla ${screen.width}×${screen.height} · ventana ${innerWidth}×${innerHeight} · página ${document.documentElement.clientHeight} · fija ${Math.round(r.bottom)} · vista ${vv ? Math.round(vv.height) + '+' + Math.round(vv.offsetTop) : '-'} · borde arriba ${top}, abajo ${bot}`, 9000);
 }
 
 /* ================= Recarga en caliente ================= */
