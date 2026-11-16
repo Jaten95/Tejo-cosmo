@@ -171,6 +171,7 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.61.1 | Cambiado | la silla del garitero mira más hacia el salón, apenas girada hacia la cancha. Si el perro le pasa cerca lo espanta con la mano: a veces el perro sale corriendo y a veces se queda oliendo como si nada |
 | — | 1.61.2 | Agregado | un ventilador de pared metálico en la pared derecha, cerca de la cancha: las aspas giran y la cabeza va y viene de lado a lado |
 | — | 1.62.0 | Cambiado | bolo: mientras el garitero va a parar los palos la cámara se aleja para verlo llegar y arrodillarse, y los palos se paran cuando les pone la mano; el siguiente turno empieza medio segundo después |
+| — | 1.62.1 | Arreglado | iPhone con el juego instalado: ya no queda una franja oscura abajo (iOS le daba a la página menos alto que la pantalla; ahora se mide y el juego se estira hasta el borde) |
 
 </details>
 

@@ -395,9 +395,18 @@ function bindUI() {
   bindInput(); netBindUI();
 }
 
+// iPhone con el juego instalado (pantalla de inicio): iOS a veces le da a la página menos alto que la pantalla y abajo
+// queda una franja sin pintar del tamaño de la barra de la hora. Se mide contra el alto de la pantalla y se estira.
+function screenGap() {
+  if (navigator.standalone !== true || !screen.width || !screen.height) return 0;
+  const portrait = innerHeight >= innerWidth, full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+  const g = Math.round(full - innerHeight);
+  return g > 0 && g < 140 ? g : 0;
+}
 function resize() {
-  const w = innerWidth, h = innerHeight;
-  if (!(w > 10 && h > 10)) return;   // al mandar la app a segundo plano el celular puede avisar un tamaño de 0
+  const gap = screenGap(), w = innerWidth, h = innerHeight + gap;
+  if (!(w > 10 && innerHeight > 10)) return;   // al mandar la app a segundo plano el celular puede avisar un tamaño de 0
+  document.documentElement.style.setProperty('--gapB', gap + 'px');
   renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix();
 }
 
@@ -460,7 +469,7 @@ async function boot(data) {
   try { await Promise.race([document.fonts.load(CLUB_FONT), new Promise(r => setTimeout(r, 1800))]); } catch (e) { }
   buildRenderer(); buildTextures(); buildArm();
   setDistance(settings.dist); buildHall(); computeDvdP();
-  resize(); addEventListener('resize', resize);
+  resize(); addEventListener('resize', resize); addEventListener('orientationchange', () => setTimeout(resize, 300));
   watchGL();
   document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(resize, 300); });
   delete settings.muted; A.muted = false;   // los efectos siempre suenan (antes había un botón para callarlos); la música se apaga con los parlantes o el menú
