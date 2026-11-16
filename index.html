@@ -49,6 +49,9 @@
   --body:"Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
   --flag-y:#fcd116; --flag-b:#003893; --flag-r:#ce1126;
   --stripes:linear-gradient(180deg,var(--flag-y) 0 50%,var(--flag-b) 50% 75%,var(--flag-r) 75% 100%);
+  /* la bandera con figuras de los tejidos indígenas de Colombia: rombos con punto (kanaas wayuu) en el amarillo,
+     zigzag en el azul y la greca escalonada del sombrero vueltiao en el rojo */
+  --flagband:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Crect width='16' height='8' fill='%23fcd116'/%3E%3Crect y='8' width='16' height='4' fill='%23003893'/%3E%3Crect y='12' width='16' height='4' fill='%23ce1126'/%3E%3Cg fill='none' stroke='%236b4a00' stroke-width='1' stroke-linejoin='round'%3E%3Cpath d='M8 1.2 12.6 4 8 6.8 3.4 4Z'/%3E%3Cpath d='M0 4h1.6M14.4 4H16'/%3E%3C/g%3E%3Ccircle cx='8' cy='4' r='.95' fill='%236b4a00'/%3E%3Cpath d='M0 10.9 4 9.1 8 10.9 12 9.1 16 10.9' fill='none' stroke='%23f5eddd' stroke-opacity='.75' stroke-width='.8' stroke-linejoin='round'/%3E%3Cpath d='M.5 15.3h2.5v-1.2h2v-1.2h2v1.2h2v1.2h2.5' fill='none' stroke='%235c0a10' stroke-width='.8' stroke-linejoin='round'/%3E%3Cpath d='M11 15.3h2v-1.2h2.5' fill='none' stroke='%235c0a10' stroke-width='.8'/%3E%3C/svg%3E") left top/auto 100% repeat-x,var(--stripes);
   color-scheme:dark;
 }
 html,body{height:100%;overflow:hidden;}
@@ -149,7 +152,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
   text-shadow:3px 3px 0 var(--red),6px 6px 0 var(--ink);padding:0 16px;text-align:center;}
 #announce.big .t{font-size:clamp(52px,16vw,128px);text-shadow:3px 3px 0 var(--flag-y),6px 6px 0 var(--flag-b),9px 9px 0 var(--flag-r),12px 12px 0 var(--ink);}
 #announce .p{font:800 16px/1 var(--body);letter-spacing:.08em;background:var(--ink);padding:7px 12px;border-top:4px solid var(--yellow);}
-#announce .s{height:12px;width:min(70vw,360px);background:var(--stripes);}
+#announce .s{height:16px;width:min(70vw,360px);background:var(--flagband);}
 @keyframes ann{0%{opacity:0;transform:scale(.6) rotate(-4deg);}12%{opacity:1;transform:scale(1.06) rotate(-2deg);}22%{transform:scale(1) rotate(-2deg);}80%{opacity:1;}100%{opacity:0;transform:scale(1) rotate(-2deg) translateY(-14px);}}
 .btn.wide{flex:none;width:100%;}
 .steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.5;color:var(--muted);}
@@ -176,7 +179,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
   background:linear-gradient(180deg,rgba(22,17,12,.35),rgba(22,17,12,.75));overflow-y:auto;}
 .panel{width:min(100%,440px);max-height:100%;overflow-y:auto;background:var(--wood);border:1px solid var(--wood-3);
   box-shadow:0 20px 50px rgba(0,0,0,.55);border-radius:4px;position:relative;margin:auto;}
-.panel::before{content:"";display:block;height:12px;background:var(--stripes);}
+.panel::before{content:"";display:block;height:16px;background:var(--flagband);}
 .pin{padding:18px 18px 20px;display:flex;flex-direction:column;gap:16px;}
 .brand{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;}
 .brand .eyebrow{font-size:11px;font-weight:800;letter-spacing:.2em;color:var(--yellow);text-transform:uppercase;}
@@ -224,7 +227,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 .rulesT{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed;}
 /* "Cómo se juega": la franja de la bandera y el título se quedan quietos arriba mientras se baja, con una X para cerrar */
 #rules .panel::before{position:sticky;top:0;z-index:3;}
-#rules .pHead{position:sticky;top:12px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;
+#rules .pHead{position:sticky;top:16px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;
   margin:-18px -18px 0;padding:18px 14px 12px 18px;background:var(--wood);border-bottom:1px solid var(--wood-3);}
 .xBtn{flex:none;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:var(--ink);border:1px solid var(--wood-3);}
 .xBtn svg{width:18px;height:18px;fill:none;stroke:var(--paper);stroke-width:2.6;stroke-linecap:round;}
@@ -286,8 +289,9 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 .myDz:disabled em{display:none;}
 #picker{position:fixed;inset:0;z-index:20;background:rgba(10,7,4,.72);display:flex;align-items:flex-end;justify-content:center;
   padding:calc(env(safe-area-inset-top,0px) + 16px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));}
-.pkPanel{width:min(100%,520px);max-height:86%;overflow-y:auto;background:var(--wood);border-top:12px solid transparent;border-image:var(--stripes) 1;
+.pkPanel{width:min(100%,520px);max-height:86%;overflow-y:auto;background:var(--wood);
   padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;flex-direction:column;gap:14px;}
+.pkPanel::before{content:"";display:block;flex:none;height:16px;margin:-16px -16px 0;background:var(--flagband);}
 .pkHead{display:flex;align-items:center;justify-content:space-between;gap:12px;}
 .pkHead h2{font-size:24px;}
 .pkGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;}
@@ -368,7 +372,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 #mSheet[hidden]{display:none!important;}
 #mSheet .shPanel{width:min(100%,460px);max-height:88%;overflow-y:auto;background:var(--wood);border-radius:14px 14px 0 0;
   padding:0 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:16px;box-shadow:0 -12px 40px rgba(0,0,0,.5);animation:shUp .22s ease-out;}
-#mSheet .shPanel::before{content:"";display:block;flex:none;height:7px;margin:0 -16px;background:var(--stripes);border-radius:14px 14px 0 0;}
+#mSheet .shPanel::before{content:"";display:block;flex:none;height:14px;margin:0 -16px;background:var(--flagband);border-radius:14px 14px 0 0;}
 #mSheet .shHead{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:1;background:var(--wood);padding:4px 0 6px;}
 #mSheet h2{font-size:25px;}
 #mSheet .group > h3{color:var(--yellow);}
@@ -470,7 +474,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.62.7</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.62.8</span></div>
   </div></div>
   <div id="mSheet" hidden>
     <div class="shPanel" role="dialog" aria-labelledby="mSheetT">
@@ -634,7 +638,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/meshopt_decoder.js"></script>
 <script>
-const GAME_VERSION = "1.62.7";
+const GAME_VERSION = "1.62.8";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -4611,19 +4615,35 @@ function poseModel(c) {
   bendChain(['thumb-metacarpal', 'thumb-phalanx-proximal', 'thumb-phalanx-distal', 'thumb-tip'], mix(G.thumb, HAND_POSE.open.thumb), 0);
 }
 
-/* ---------- Manilla tricolor en la muñeca (tapa la unión de la mano con el antebrazo) ---------- */
+/* ---------- Manilla tricolor en la muñeca (tapa la unión de la mano con el antebrazo) ----------
+   Tejida con figuras indígenas de Colombia: rombos dobles con punto (kanaas wayuu) en el amarillo, zigzag en el azul
+   y la greca escalonada del sombrero vueltiao en el rojo. */
 function manillaTex() {
   const c = document.createElement('canvas'); c.width = 512; c.height = 64; const g = c.getContext('2d');
   g.fillStyle = '#fcd116'; g.fillRect(0, 0, 512, 32);          // amarillo: la mitad
   g.fillStyle = '#003893'; g.fillRect(0, 32, 512, 16);
   g.fillStyle = '#ce1126'; g.fillRect(0, 48, 512, 16);
-  // tejido en espiga
-  for (let x = -64; x < 576; x += 8) {
-    g.strokeStyle = 'rgba(0,0,0,.22)'; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 8, 16); g.lineTo(x, 32); g.lineTo(x + 8, 48); g.lineTo(x, 64); g.stroke();
-    g.strokeStyle = 'rgba(255,255,255,.18)'; g.lineWidth = 1;
-    g.beginPath(); g.moveTo(x + 3, 0); g.lineTo(x + 11, 16); g.lineTo(x + 3, 32); g.lineTo(x + 11, 48); g.lineTo(x + 3, 64); g.stroke();
+  g.lineJoin = 'round';
+  for (let x = 0; x < 512; x += 32) {   // amarillo: rombo doble con un punto en el medio, unidos por una raya
+    const cx = x + 16;
+    g.strokeStyle = '#6b4a00'; g.lineWidth = 2.6;
+    g.beginPath(); g.moveTo(cx, 3); g.lineTo(cx + 12, 16); g.lineTo(cx, 29); g.lineTo(cx - 12, 16); g.closePath(); g.stroke();
+    g.strokeStyle = '#ce1126'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(cx, 9); g.lineTo(cx + 6.5, 16); g.lineTo(cx, 23); g.lineTo(cx - 6.5, 16); g.closePath(); g.stroke();
+    g.fillStyle = '#6b4a00'; g.beginPath(); g.arc(cx, 16, 2, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#6b4a00'; g.lineWidth = 2.6; g.beginPath(); g.moveTo(x, 16); g.lineTo(x + 4, 16); g.moveTo(x + 28, 16); g.lineTo(x + 32, 16); g.stroke();
   }
+  g.strokeStyle = 'rgba(245,237,221,.85)'; g.lineWidth = 1.8; g.beginPath();   // azul: zigzag
+  for (let x = 0; x <= 512; x += 8) g.lineTo(x, (x / 8) % 2 ? 35.5 : 44.5);
+  g.stroke();
+  g.strokeStyle = '#2a0508'; g.lineWidth = 1.8;   // rojo: greca escalonada
+  for (let x = 0; x < 512; x += 32) {
+    g.beginPath(); g.moveTo(x + 1, 61); g.lineTo(x + 6, 61); g.lineTo(x + 6, 57.5); g.lineTo(x + 11, 57.5); g.lineTo(x + 11, 54); g.lineTo(x + 21, 54);
+    g.lineTo(x + 21, 57.5); g.lineTo(x + 26, 57.5); g.lineTo(x + 26, 61); g.lineTo(x + 31, 61); g.stroke();
+  }
+  // el tejido: hilos finitos en diagonal por encima de todo
+  g.lineWidth = 1;
+  for (let x = -64; x < 576; x += 6) { g.strokeStyle = 'rgba(0,0,0,.08)'; g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 16, 64); g.stroke(); }
   g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 0, 512, 2); g.fillRect(0, 62, 512, 2);
   const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.wrapS = THREE.RepeatWrapping; t.repeat.set(3, 1); t.anisotropy = 4;
   return t;

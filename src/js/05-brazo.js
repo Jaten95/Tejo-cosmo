@@ -299,19 +299,35 @@ function poseModel(c) {
   bendChain(['thumb-metacarpal', 'thumb-phalanx-proximal', 'thumb-phalanx-distal', 'thumb-tip'], mix(G.thumb, HAND_POSE.open.thumb), 0);
 }
 
-/* ---------- Manilla tricolor en la muñeca (tapa la unión de la mano con el antebrazo) ---------- */
+/* ---------- Manilla tricolor en la muñeca (tapa la unión de la mano con el antebrazo) ----------
+   Tejida con figuras indígenas de Colombia: rombos dobles con punto (kanaas wayuu) en el amarillo, zigzag en el azul
+   y la greca escalonada del sombrero vueltiao en el rojo. */
 function manillaTex() {
   const c = document.createElement('canvas'); c.width = 512; c.height = 64; const g = c.getContext('2d');
   g.fillStyle = '#fcd116'; g.fillRect(0, 0, 512, 32);          // amarillo: la mitad
   g.fillStyle = '#003893'; g.fillRect(0, 32, 512, 16);
   g.fillStyle = '#ce1126'; g.fillRect(0, 48, 512, 16);
-  // tejido en espiga
-  for (let x = -64; x < 576; x += 8) {
-    g.strokeStyle = 'rgba(0,0,0,.22)'; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 8, 16); g.lineTo(x, 32); g.lineTo(x + 8, 48); g.lineTo(x, 64); g.stroke();
-    g.strokeStyle = 'rgba(255,255,255,.18)'; g.lineWidth = 1;
-    g.beginPath(); g.moveTo(x + 3, 0); g.lineTo(x + 11, 16); g.lineTo(x + 3, 32); g.lineTo(x + 11, 48); g.lineTo(x + 3, 64); g.stroke();
+  g.lineJoin = 'round';
+  for (let x = 0; x < 512; x += 32) {   // amarillo: rombo doble con un punto en el medio, unidos por una raya
+    const cx = x + 16;
+    g.strokeStyle = '#6b4a00'; g.lineWidth = 2.6;
+    g.beginPath(); g.moveTo(cx, 3); g.lineTo(cx + 12, 16); g.lineTo(cx, 29); g.lineTo(cx - 12, 16); g.closePath(); g.stroke();
+    g.strokeStyle = '#ce1126'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(cx, 9); g.lineTo(cx + 6.5, 16); g.lineTo(cx, 23); g.lineTo(cx - 6.5, 16); g.closePath(); g.stroke();
+    g.fillStyle = '#6b4a00'; g.beginPath(); g.arc(cx, 16, 2, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#6b4a00'; g.lineWidth = 2.6; g.beginPath(); g.moveTo(x, 16); g.lineTo(x + 4, 16); g.moveTo(x + 28, 16); g.lineTo(x + 32, 16); g.stroke();
   }
+  g.strokeStyle = 'rgba(245,237,221,.85)'; g.lineWidth = 1.8; g.beginPath();   // azul: zigzag
+  for (let x = 0; x <= 512; x += 8) g.lineTo(x, (x / 8) % 2 ? 35.5 : 44.5);
+  g.stroke();
+  g.strokeStyle = '#2a0508'; g.lineWidth = 1.8;   // rojo: greca escalonada
+  for (let x = 0; x < 512; x += 32) {
+    g.beginPath(); g.moveTo(x + 1, 61); g.lineTo(x + 6, 61); g.lineTo(x + 6, 57.5); g.lineTo(x + 11, 57.5); g.lineTo(x + 11, 54); g.lineTo(x + 21, 54);
+    g.lineTo(x + 21, 57.5); g.lineTo(x + 26, 57.5); g.lineTo(x + 26, 61); g.lineTo(x + 31, 61); g.stroke();
+  }
+  // el tejido: hilos finitos en diagonal por encima de todo
+  g.lineWidth = 1;
+  for (let x = -64; x < 576; x += 6) { g.strokeStyle = 'rgba(0,0,0,.08)'; g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 16, 64); g.stroke(); }
   g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 0, 512, 2); g.fillRect(0, 62, 512, 2);
   const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.wrapS = THREE.RepeatWrapping; t.repeat.set(3, 1); t.anisotropy = 4;
   return t;
