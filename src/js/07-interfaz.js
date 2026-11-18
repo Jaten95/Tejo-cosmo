@@ -393,7 +393,7 @@ function bindUI() {
   $('btnOverMenu').addEventListener('click', showMenu);
   $('pickClose').addEventListener('click', closePicker);
   $('picker').addEventListener('click', e => { if (e.target === $('picker')) closePicker(); });
-  bindInput(); netBindUI();
+  bindInput(); netBindUI(); jcInit();
 }
 
 function resize() {

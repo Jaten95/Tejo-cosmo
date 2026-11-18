@@ -111,7 +111,9 @@ async function supaRoom() {
     join(name) {
       return new Promise((resolve, reject) => {
         const key = NET.pid + '.' + rid();
-        const ch = client.channel(name, { config: { presence: { key }, broadcast: { self: false } } });
+        /* enabled: true es obligatorio: el servidor de Supabase ya no le manda la lista de presentes a quien solo escucha
+           (sin anunciarse), y el que entra con el código escucha antes de anunciarse: sin esto nunca veía al anfitrión. */
+        const ch = client.channel(name, { config: { presence: { key, enabled: true }, broadcast: { self: false } } });
         const handlers = new Set(), remote = {}, aims = {};
         let my = {}, peers = [], joined = false, closed = false, tracked = false, resendT = 0, lastFull = 0, notifyQ = false, sendQ = false, lastBody = '';
         const ident = () => ({ pid: my.pid, name: my.name });
@@ -502,7 +504,7 @@ function netTurn(p) {
   const mine = p.pid === NET.pid;
   phase = mine ? 'aim' : 'wait';
   NET.turnAt = performance.now(); NET.turnN = game.thrown;
-  if (mine) { helpHint('Te toca: arrastra hacia abajo y suelta'); toast('Te toca'); buzz(25); }
+  if (mine) { helpHint(jcOn() ? 'Te toca · ' + jcHint() : 'Te toca: arrastra hacia abajo y suelta'); toast('Te toca'); buzz(25); }
   else hint(`Esperando el tiro de ${p.name}…`, true);
   if (NET.sala) { NET.sala.presence({ s: makeSnap() }).catch(() => { }); if (amHost()) hostCheckThrow(presentPids(NET.sala.peers())); }
   tryConsume();

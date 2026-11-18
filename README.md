@@ -29,6 +29,7 @@ src/
     05-brazo.js      brazo en primera persona, mano 3D y manilla
     06-salas.js      salas en línea (Supabase Realtime; dentro de Claude no hay salas)
     07-interfaz.js   menú, marcador, controles y arranque
+    07b-joycon.js    Joy-Con por WebHID: palanca, lance con el brazo y vibración
     09-instalar.js   botón para instalar el juego en el celular
   sw.js              service worker: instalar y jugar sin internet
   assets/
@@ -186,6 +187,8 @@ En las salas todos deben tener la misma **MAYOR.MENOR** (así las reglas y la f�
 | — | 1.62.11 | Arreglado | salas: al entrar con un código ya no sale "no hay nadie" si quien creó la sala salió un momento a mandar el código (se espera hasta 45 s y se puede cancelar). Los códigos dicen de qué servidor es la sala (1000–4999 dentro de Claude, 5000–9999 en la app o la página) y, si alguien entra por el otro lado, se le explica por dónde abrir el juego. "Copiar" incluye la dirección de la página |
 | — | 1.62.12 | Cambiado | las salas son solo de Supabase (la app y la página): dentro de Claude ya no se crean salas y el modo Salas dice que se abra el juego en jaten95.github.io/Tejo-cosmo. Los códigos vuelven a ser de 1000 a 9999 |
 | — | 1.62.13 | Cambiado | el perro ladra con un ladrido grabado en vez del sintetizado: «guau, guau» cuando se asusta o el garitero lo espanta, y uno solo cuando no le hace caso al garitero. El husky ladra más grave |
+| — | 1.62.14 | Arreglado | salas: el que entraba con el código nunca veía al que la creó y le salía «No hay nadie en la sala». El servidor de Supabase dejó de mandar la lista de presentes a quien todavía no se ha anunciado; ahora el juego la pide al entrar |
+| — | 1.62.14 | Nuevo | Joy-Con en Chrome o Edge de computador (Ajustes → Control → Conectar): la palanca apunta, se mantiene ZR, se echa el brazo y al soltar sale el tejo, la bola o el tejito; la fuerza sale de qué tan rápido gira el brazo. Vibra con los golpes, + pausa, A salta la espera y cada Joy-Con prende su luz de jugador. En Ajustes se ve cuánta fuerza da cada lance para practicar |
 
 </details>
 

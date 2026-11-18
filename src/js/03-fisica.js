@@ -377,4 +377,4 @@ const A = {
   tick() { this.tone(880, .05, { type: 'square', gain: .035 }); },
 };
 const BARK_ONE = .31;
-function buzz(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { } }
+function buzz(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { } jcBuzz(ms); }   // el Joy-Con vibra igual

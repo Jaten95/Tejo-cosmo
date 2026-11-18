@@ -141,7 +141,7 @@ function nextThrow() {
     planCpu(p);
   } else {
     phase = 'aim';
-    helpHint(game.thrown < 2 ? 'Arrastra hacia abajo para cargar,\na los lados para apuntar • suelta' : 'Arrastra y suelta para lanzar');
+    helpHint(jcOn() ? jcHint() : game.thrown < 2 ? 'Arrastra hacia abajo para cargar,\na los lados para apuntar • suelta' : 'Arrastra y suelta para lanzar');
     if (settings.mode === 'local' && game.players.length > 1 && !(isRana() && game.arg)) toast(isRana() ? `Tanda de ${p.name}: 6 argollas` : `Turno de ${p.name}`);
   }
 }
@@ -509,6 +509,7 @@ const lupaCur = { u: 0, v: 0 };
 /* ================= Bucle ================= */
 let lastT = performance.now();
 function updateGame(dt, now) {
+  jcUpdate(dt);
   if (phase === 'aim' && drag) {
     const aim = currentAim(now); drag.aim = aim;
     setGauge(drag.P, lastP[current().name]); showReticle(aim);
