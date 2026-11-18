@@ -37,6 +37,7 @@ const W = {
 function setDistance(D) {
   W.D = D; W.C.set(0, CY, -D); W.ZB = -D - 0.8;
 }
+const vFinite = p => !!p && isFinite(p.x) && isFinite(p.y) && isFinite(p.z);
 function toUV(p) { const d = p.clone().sub(W.C); return { u: d.dot(W.a), v: d.dot(W.s) }; }
 function fromUV(u, v, lift = 0) { return W.C.clone().addScaledVector(W.a, u).addScaledVector(W.s, v).addScaledVector(W.n, lift); }
 

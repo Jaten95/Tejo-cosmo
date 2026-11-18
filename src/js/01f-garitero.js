@@ -239,13 +239,14 @@ const _gax = new THREE.Vector3(), _ghp = new THREE.Vector3(), _gup = new THREE.V
 function gariLook(p, dt) {
   if (!p.head) return;
   const dog = p.shoo > 0 && PETS && PETS.cur && PETS.cur.p.root.visible ? PETS.cur.p.root.position.clone().setY(.25) : null;   // espantando: mira al perro
-  const r = p.root, T = !p.plan && (dog || gariTarget()); let yaw = 0, pitch = 0;
+  const r = p.root, T0 = !p.plan && (dog || gariTarget()), T = vFinite(T0) ? T0 : null; let yaw = 0, pitch = 0;
   if (T) {
     r.updateMatrixWorld(true); p.head.getWorldPosition(_ghp);
     yaw = clamp(gWrap(Math.atan2(T.x - _ghp.x, T.z - _ghp.z) - r.rotation.y), -GARI_NECK, GARI_NECK);
     pitch = clamp(Math.atan2(T.y - _ghp.y, Math.hypot(T.x - _ghp.x, T.z - _ghp.z)), -.55, .5);
   }
   const k = Math.min(1, dt * 7); p.ly += (yaw - p.ly) * k; p.lp += (pitch - p.lp) * k;
+  if (!isFinite(p.ly) || !isFinite(p.lp)) { p.ly = p.lp = 0; return; }   // si algo llegó dañado, no se le daña la cabeza para siempre
   if (Math.abs(p.ly) + Math.abs(p.lp) < 1e-3) return;
   r.updateMatrixWorld(true);
   const look = r.rotation.y + p.ly; _gax.set(-Math.cos(look), 0, Math.sin(look));   // el eje para subir o bajar la cara

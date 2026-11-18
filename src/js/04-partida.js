@@ -255,7 +255,9 @@ function updateFlight(dt) {
 function impactEvent(e, f) {
   const strong = clamp(e.speed / 12, .3, 1);
   if (e.kind === 'clay') {
-    const r = f.res, u = r.u, v = r.v;
+    const r = f.res; let u = r.u, v = r.v;
+    // nulo que pegó primero en el piso (o en las tablas) y rodó hasta la greda: no tiene punto de caída; queda donde paró
+    if (!isFinite(u) || !isFinite(v)) ({ u, v } = toUV(f.sim.end));
     const pose = embedPose(u, v, f.sim.vEnd, r.emb);
     f.mesh.quaternion.copy(pose.q); f.landed = true;
     A.thud(strong); buzz(30);
@@ -490,6 +492,8 @@ function updateCamera(dt) {
     else tgt = aimPose();
     k = 3;
   } else tgt = aimPose();
+  if (!vFinite(tgt.pos) || !vFinite(tgt.look)) tgt = aimPose();   // nunca seguir algo con la posición dañada
+  if (!vFinite(camCur.pos) || !vFinite(camCur.look)) { camCur.pos.copy(tgt.pos); camCur.look.copy(tgt.look); }
   const a = 1 - Math.exp(-k * dt);
   camCur.pos.lerp(tgt.pos, a); camCur.look.lerp(tgt.look, a); camCur.fov = lerp(camCur.fov, tgt.fov, a);
   cam.position.copy(camCur.pos);

@@ -480,7 +480,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.62.14</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.62.15</span></div>
   </div></div>
   <div id="mSheet" hidden>
     <div class="shPanel" role="dialog" aria-labelledby="mSheetT">
@@ -652,7 +652,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/meshopt_decoder.js"></script>
 <script>
-const GAME_VERSION = "1.62.14";
+const GAME_VERSION = "1.62.15";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -721,6 +721,7 @@ const W = {
 function setDistance(D) {
   W.D = D; W.C.set(0, CY, -D); W.ZB = -D - 0.8;
 }
+const vFinite = p => !!p && isFinite(p.x) && isFinite(p.y) && isFinite(p.z);
 function toUV(p) { const d = p.clone().sub(W.C); return { u: d.dot(W.a), v: d.dot(W.s) }; }
 function fromUV(u, v, lift = 0) { return W.C.clone().addScaledVector(W.a, u).addScaledVector(W.s, v).addScaledVector(W.n, lift); }
 
@@ -2054,13 +2055,14 @@ const _gax = new THREE.Vector3(), _ghp = new THREE.Vector3(), _gup = new THREE.V
 function gariLook(p, dt) {
   if (!p.head) return;
   const dog = p.shoo > 0 && PETS && PETS.cur && PETS.cur.p.root.visible ? PETS.cur.p.root.position.clone().setY(.25) : null;   // espantando: mira al perro
-  const r = p.root, T = !p.plan && (dog || gariTarget()); let yaw = 0, pitch = 0;
+  const r = p.root, T0 = !p.plan && (dog || gariTarget()), T = vFinite(T0) ? T0 : null; let yaw = 0, pitch = 0;
   if (T) {
     r.updateMatrixWorld(true); p.head.getWorldPosition(_ghp);
     yaw = clamp(gWrap(Math.atan2(T.x - _ghp.x, T.z - _ghp.z) - r.rotation.y), -GARI_NECK, GARI_NECK);
     pitch = clamp(Math.atan2(T.y - _ghp.y, Math.hypot(T.x - _ghp.x, T.z - _ghp.z)), -.55, .5);
   }
   const k = Math.min(1, dt * 7); p.ly += (yaw - p.ly) * k; p.lp += (pitch - p.lp) * k;
+  if (!isFinite(p.ly) || !isFinite(p.lp)) { p.ly = p.lp = 0; return; }   // si algo llegó dañado, no se le daña la cabeza para siempre
   if (Math.abs(p.ly) + Math.abs(p.lp) < 1e-3) return;
   r.updateMatrixWorld(true);
   const look = r.rotation.y + p.ly; _gax.set(-Math.cos(look), 0, Math.sin(look));   // el eje para subir o bajar la cara
@@ -3004,7 +3006,9 @@ function updateFlight(dt) {
 function impactEvent(e, f) {
   const strong = clamp(e.speed / 12, .3, 1);
   if (e.kind === 'clay') {
-    const r = f.res, u = r.u, v = r.v;
+    const r = f.res; let u = r.u, v = r.v;
+    // nulo que pegó primero en el piso (o en las tablas) y rodó hasta la greda: no tiene punto de caída; queda donde paró
+    if (!isFinite(u) || !isFinite(v)) ({ u, v } = toUV(f.sim.end));
     const pose = embedPose(u, v, f.sim.vEnd, r.emb);
     f.mesh.quaternion.copy(pose.q); f.landed = true;
     A.thud(strong); buzz(30);
@@ -3239,6 +3243,8 @@ function updateCamera(dt) {
     else tgt = aimPose();
     k = 3;
   } else tgt = aimPose();
+  if (!vFinite(tgt.pos) || !vFinite(tgt.look)) tgt = aimPose();   // nunca seguir algo con la posición dañada
+  if (!vFinite(camCur.pos) || !vFinite(camCur.look)) { camCur.pos.copy(tgt.pos); camCur.look.copy(tgt.look); }
   const a = 1 - Math.exp(-k * dt);
   camCur.pos.lerp(tgt.pos, a); camCur.look.lerp(tgt.look, a); camCur.fov = lerp(camCur.fov, tgt.fov, a);
   cam.position.copy(camCur.pos);
