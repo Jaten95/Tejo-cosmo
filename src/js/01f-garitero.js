@@ -210,15 +210,16 @@ function updateGaritero(dt) {
    susto de la bola del bolo) y a veces se queda ahí oliendo como si nada. */
 function gariShoo(p, dt) {
   const dog = PETS && PETS.cur, sh = p.acts.SentadoEspantar;
-  if (dog && sh && !dog.scared && !dog.gari && !p.wave && !p.shoo && dog.p.root.visible && dog.p.root.position.distanceTo(p.root.position) < GARI_SHOO.d) {
+  const ballOut = online() && bflight;   // en las salas, con la bola de bolo andando no lo espanta: cambiaría si la bola le pega en unos celulares y en otros no
+  if (dog && sh && !ballOut && !dog.scared && !dog.gari && !p.wave && !p.shoo && dog.p.root.visible && dog.p.root.position.distanceTo(p.root.position) < GARI_SHOO.d) {
     dog.gari = true; p.cheerIn = 0;
     gPlay(p, sh, .25, true); p.shoo = sh.getClip().duration * .95;
-    if (Math.random() < GARI_SHOO.flee) p.shooFlee = GARI_SHOO.at;
+    if (dog.flee) p.shooFlee = GARI_SHOO.at;   // sorteado al empezar la visita: en las salas todos ven lo mismo
     else { if (!dog.stopDone && !dog.stopped) dog.stopAt = dog.s; A.woof(1, { rate: dog.p.spec.bark, delay: .55 }); }   // ni caso: le ladra una vez y se para a oler ahí mismo
   }
   if (p.shoo <= 0) return;
   p.shoo -= dt;
-  if (p.shooFlee > 0) { p.shooFlee -= dt; if (p.shooFlee <= 0 && dog && dog.gari && !dog.scared) petScare(p.root.position, false); }
+  if (p.shooFlee > 0) { p.shooFlee -= dt; if (p.shooFlee <= 0 && dog && dog.gari && !dog.scared && !ballOut) petScare(p.root.position, false); }
   if (p.shoo <= 0) { p.shoo = p.shooFlee = 0; gPlay(p, p.acts.Sentado, .45); }
 }
 

@@ -3,9 +3,11 @@
    De vez en cuando un perro cruza el salón: entra por un lado, se mete hasta cerca de la cancha,
    cruza el carril y vuelve por el otro lado. En algún punto del camino se detiene a oler o a mirar y sigue.
    Modelos de Quaternius (CC0, ver LICENSES/quaternius-animales.md).
-   Es decoración: el tejo no choca con ellos y en las salas cada quien ve los suyos.
+   Es decoración: el tejo no choca con ellos. En las salas el anfitrión decide cuándo sale y manda una semilla:
+   con ella todos sacan el mismo perro, el mismo pelaje, el mismo camino y las mismas paradas (ver petOnline).
    En el bolo sí: si la bola le pasa cerca se asusta (brinca y sale corriendo) y si le pega, chilla y huye
-   (y el que lanzó pierde un punto, ver 04c-bolo.js). Por eso en las salas de bolo no pasan perros. */
+   (y el que lanzó pierde un punto, ver 04c-bolo.js). En las salas de bolo, el que lanza manda cómo iba su perro al
+   soltar la bola y todos ponen el suyo igual (petState / petSync): así la bola le pega, o no, en todos los celulares. */
 
 const PET_TIMING = { first: [20, 45], every: [45, 90] };   // segundos: primera visita y las siguientes
 const PET_SPEC = {   // qué tan seguido sale, escala, velocidad en m/s, ritmo de la caminada, tono del ladrido, qué hace al detenerse y sus colores
@@ -42,23 +44,33 @@ function loadPets() {
   });
 }
 
+// Números al azar a partir de una semilla (mulberry32): con la misma semilla, la misma visita en todos los celulares
+function petRng(seed) {
+  let a = seed >>> 0;
+  return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
 // El recorrido: entra por detrás de quien lanza, se mete hasta cerca de la cancha, cruza y vuelve por el otro lado
-function petPath(rev) {
+function petPath(rev, R = Math.random) {
   const zt = Math.min(-6, -(W.D - 4.6)), f = k => k * zt;
   const pts = [[-3.1, 2.7], [-2.95, -1.2], [-2.3, f(.33)], [-1.6, f(.47)], [-1.15, f(.7)], [-.7, f(.94)], [.1, f(1)], [.9, f(1.02)],
     [1.5, f(.97)], [1.8, f(.88)], [1.75, f(.72)], [1.6, f(.56)], [1.5, f(.42)], [2.3, -2.4], [2.95, .2], [3.1, 2.7]];
   if (rev) pts.reverse();
-  return new THREE.CatmullRomCurve3(pts.map(([x, z], i) => V(x + (i && i < pts.length - 1 ? rand(-.15, .15) : 0), 0, z)), false, 'centripetal');
+  return new THREE.CatmullRomCurve3(pts.map(([x, z], i) => V(x + (i && i < pts.length - 1 ? (R() - .5) * .3 : 0), 0, z)), false, 'centripetal');
 }
 
-function startPet() {
-  const pets = Object.values(PETS.list); if (!pets.length) return;
-  let r = Math.random() * pets.reduce((a, q) => a + q.spec.weight, 0), p = pets[0];
+/* Todo lo que se sortea en la visita sale de la semilla y de una vez, en el mismo orden en todos los celulares
+   (sortear después, en plena caminada, podría caer en otro orden en cada uno) */
+function startPet(seed = Math.random() * 4294967296) {
+  const pets = Object.values(PETS.list).sort((a, b) => a.name < b.name ? -1 : 1); if (!pets.length) return;   // el orden en que cargan los modelos cambia de un celular a otro
+  if (PETS.cur) endPet();
+  const R = petRng(seed);
+  let r = R() * pets.reduce((a, q) => a + q.spec.weight, 0), p = pets[0];
   for (const q of pets) { r -= q.spec.weight; if (r < 0) { p = q; break; } }
-  const col = p.spec.colors[Math.floor(Math.random() * p.spec.colors.length)];   // cada visita con su pelaje
+  const col = p.spec.colors[Math.floor(R() * p.spec.colors.length)];   // cada visita con su pelaje
   p.spec.mats.forEach((n, i) => { if (p.mats[n]) p.mats[n].color.set(col[i]); });
-  const curve = petPath(Math.random() < .5), len = curve.getLength();
-  PETS.cur = { p, curve, len, s: 0, stopAt: rand(.15, .85) * len, stopT: 0, stopped: false, stopDone: false, yaw: null };
+  const curve = petPath(R() < .5, R), len = curve.getLength();
+  const stopAt = (.15 + R() * .7) * len, stopFor = 2.5 + R() * 2.5, stopPick = R(), flee = R() < GARI_SHOO.flee;   // flee: si el garitero lo espanta, ¿le hace caso?
+  PETS.cur = { p, seed, curve, len, s: 0, stopAt, stopFor, stopPick, flee, stopT: 0, stopped: false, stopDone: false, yaw: null };
   p.mixer.stopAllAction();
   const w = p.acts.Walk; w.reset(); w.timeScale = p.spec.walkRate; w.setEffectiveWeight(1); w.play();
   p.root.visible = true; placePet(PETS.cur, 0);
@@ -74,6 +86,56 @@ function endPet() {
   const c = PETS.cur;
   if (c) { c.p.root.visible = false; c.p.mixer.stopAllAction(); }
   PETS.cur = null; PETS.wait = rand(...PET_TIMING.every);
+}
+
+/* En las salas: solo el anfitrión cuenta el tiempo y sortea la semilla. La manda en su estado (pet: {n, s}) y
+   cada uno arranca la visita apenas le llega (petHear, desde netSync). Si el anfitrión se va, el nuevo sigue contando. */
+function petOnline() { return online() && !!NET.sala; }
+function petHostStart() {
+  const seed = Math.floor(Math.random() * 4294967296);
+  PETS.n = (PETS.n || 0) + 1;
+  NET.sala.presence({ pet: { n: PETS.n, s: seed } }).catch(() => { });
+  startPet(seed);
+}
+function petHear(peers) {
+  if (!PETS || !NET.g) return;
+  NET.petSeen = NET.petSeen || {};
+  const host = NET.g.host; if (host === NET.pid) return;
+  for (const peer of peers) {
+    const pr = peer.presence || {}; if (pr.pid !== host) continue;
+    const v = pr.pet, n = v && Number.isInteger(v.n) ? v.n : 0, seen = NET.petSeen[host];
+    if (seen === undefined || n <= seen) { if (seen === undefined) NET.petSeen[host] = n; return; }   // al llegar a la sala no se repite una visita vieja
+    NET.petSeen[host] = n;
+    if (Number.isFinite(v.s) && phase !== 'menu' && phase !== 'boot' && !isRana() && !(PETS.cur && PETS.cur.seed === v.s)) startPet(v.s);   // (si ya la arrancó un tiro de bolo, sigue)
+    return;
+  }
+}
+
+/* Bolo en las salas: cómo va el perro al soltar la bola (en qué punto del camino, si está parado y cuánto le falta,
+   si ya se paró antes y si el garitero ya lo espantó). Viaja con el tiro. */
+function petState() {
+  const c = PETS && PETS.cur; if (!c || c.scared || !c.p.root.visible || !Number.isFinite(c.seed)) return null;
+  const r3 = x => Math.round(x * 1e3) / 1e3;
+  return { k: c.seed, s: r3(c.s), a: r3(c.stopAt), w: c.stopped ? r3(Math.max(0, c.stopT)) : -1, d: c.stopDone ? 1 : 0, g: c.gari ? 1 : 0 };
+}
+function petStateOk(d) {
+  return d && typeof d === 'object' && [d.k, d.s, d.a, d.w].every(Number.isFinite) ? { k: d.k, s: d.s, a: d.a, w: d.w, d: d.d ? 1 : 0, g: d.g ? 1 : 0 } : null;
+}
+/* Pone el perro tal cual venía en el celular del que lanzó (también en el del que lanzó: sin fundido de animaciones a
+   medias, que cambiaría lo que avanza). Dice si esta vez se revisa la bola contra el perro. */
+function petSync(d) {
+  d = petStateOk(d); if (!PETS || !d) return false;
+  let c = PETS.cur;
+  if (c && c.scared) return false;   // aquí ya iba corriendo asustado: este tiro no lo toca
+  if (!c || c.seed !== d.k) { startPet(d.k); c = PETS.cur; if (!c) return false; }   // aquí todavía no había llegado esa visita
+  const walk = c.p.acts.Walk, st = c.p.spec.stops;
+  c.s = clamp(d.s, 0, c.len); c.stopAt = d.a; c.stopDone = !!d.d; if (d.g) c.gari = true;
+  c.stopped = d.w >= 0; c.stopT = c.stopped ? d.w : 0;
+  c.stopAct = c.stopped ? c.p.acts[st[Math.floor(c.stopPick * st.length)]] || c.p.acts.Idle || walk : null;
+  const act = c.stopped ? c.stopAct : walk;
+  c.p.mixer.stopAllAction(); act.reset(); act.timeScale = act === walk ? c.p.spec.walkRate : 1; act.setEffectiveWeight(1); act.play();
+  placePet(c, 0);
+  return true;
 }
 
 /* Bolo: el perro y la bola. petBallCheck dice si la bola le pegó (hit) y a qué distancia le pasa por el piso (d) */
@@ -103,11 +165,12 @@ function petScare(ball, hit) {
 }
 function updatePets(dt) {
   if (!PETS) return;
-  if (isRana() || (isBolo() && online())) { if (PETS.cur) endPet(); return; }   // en la rana no pasan perros; en las salas de bolo tampoco (cada quien vería el suyo y un golpe cambiaría los puntos)
+  if (isRana()) { if (PETS.cur) endPet(); return; }   // en la rana no pasan perros
   const c = PETS.cur, inGame = phase !== 'menu' && phase !== 'boot';
   if (!c) {
     if (!inGame || !dt) return;
     PETS.wait -= dt;
+    if (petOnline()) { if (amHost() && PETS.wait <= 0 && (phase === 'aim' || phase === 'wait')) petHostStart(); return; }   // los demás esperan la semilla del anfitrión
     if (PETS.wait <= 0 && (phase === 'aim' || phase === 'cpu')) startPet();
     return;
   }
@@ -119,8 +182,8 @@ function updatePets(dt) {
     c.stopT -= dt;
     if (c.stopT <= 0) { c.stopped = false; c.stopDone = true; petFade(c.stopAct, walk, c.p.spec.walkRate); }
   } else if (!c.stopDone && c.s >= c.stopAt) {
-    c.stopped = true; c.stopT = rand(2.5, 5);
-    const st = c.p.spec.stops; c.stopAct = c.p.acts[st[Math.floor(Math.random() * st.length)]] || c.p.acts.Idle || walk;
+    c.stopped = true; c.stopT = c.stopFor;
+    const st = c.p.spec.stops; c.stopAct = c.p.acts[st[Math.floor(c.stopPick * st.length)]] || c.p.acts.Idle || walk;
     if (c.stopAct !== walk) petFade(walk, c.stopAct, 1);
   }
   // avanza al ritmo de la caminada: frena suave al detenerse y arranca suave al seguir

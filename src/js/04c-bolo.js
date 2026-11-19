@@ -7,7 +7,8 @@
    palos tumben al caer. Los que tumba por el otro lado o de rebote en las tablas no valen. Los tres de un tiro: ¡CHUZA!
    La física es propia y determinista (el aleatorio sale de una semilla), así en las salas todos ven lo mismo.
    Si pasa el perro y la bola le pega, la bola se para ahí, el perro chilla y huye, y el que lanzó pierde un punto
-   por maltrato animal (si le pasa cerca, solo se asusta). En las salas de bolo no pasan perros.
+   por maltrato animal (si le pasa cerca, solo se asusta). En las salas, el tiro lleva cómo iba el perro del que lanzó
+   y la bola se revisa contra el perro en pasos fijos: así todos ven el mismo golpe (ver boloDogCheck).
    Estadísticas por jugador (en los mismos campos del tejo para que las salas no cambien):
    st.mechas = palos que valieron · st.mon = chuzas · st.manos = palos que no valieron · st.nulos = tiros en blanco · st.tiros = tiros. */
 
@@ -254,7 +255,8 @@ function boloLaunch(a, opts) {
   lastP[p.name] = a.P;
   const sim = boloSimulate(a, hand, game.thrown);
   const mesh = makeBola(); mesh.position.copy(sim.path[0].p); scene.add(mesh);
-  bflight = { sim, mesh, t: 0, ev: 0, owner: game.order[game.idx], timeout: !!(opts && opts.timeout), done: false, hit: false, roll: new THREE.Quaternion() };
+  const dogOk = !online() || petSync(opts && opts.dog);   // en la sala, el perro como lo tenía el que lanzó (si no tenía, este tiro no lo toca)
+  bflight = { sim, mesh, t: 0, ev: 0, owner: game.order[game.idx], timeout: !!(opts && opts.timeout), done: false, hit: false, roll: new THREE.Quaternion(), dogOk };
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
   game.thrown++;
   A.whoosh(); A.thud(.25 + .35 * a.P); buzz([30 + Math.round(40 * a.P), 20, 20]);   // la bola pesa: sale con un golpe
@@ -292,20 +294,31 @@ function boloUpdate(dt) {
   boloEvents(f, sim, f.t);
   boloBallAt(f.mesh, sim, f.t, f.roll);
   if (BOLO_M) BOLO_M.pins.forEach((m, i) => boloPinAt(m, i, sim.falls.find(x => x.i === i), f.t));
-  if (!online() && typeof petBallCheck === 'function') {
-    // el perro: si la bola le pega, golpe; si le pasa cerca, se asusta cuando ya pasó (o cuando la bola se queda quieta cerca)
-    const c = petBallCheck(f.mesh.position, BOLO.BR);
-    if (c && !c.hit) { if (f.near === undefined || c.d < f.near) f.near = c.d; else if (f.near < 1.3 && c.d > f.near + .05) petScare(f.mesh.position, false); }
-    if (c && !c.hit && f.t >= sim.ballEnd && f.near < 1.3) petScare(f.mesh.position, false);
-    if (c && c.hit) {
-      const b = f.mesh.position.clone(), next = samplePath(sim.path, Math.min(f.t + .05, sim.ballEnd)), back = b.clone().sub(next).setY(0);
-      if (back.lengthSq() < 1e-6) back.set(0, 0, 1); back.normalize();
-      const last = sim.falls.filter(x => x.t < f.t).reduce((m, x) => Math.max(m, x.t), 0);
-      f.dog = { t: f.t, p: b, back, end: Math.max(1.1, last + .7 - f.t) };
-      petScare(b, true); A.thud(.5); buzz([30, 40, 30]);
+  if (f.dogOk && typeof petBallCheck === 'function') boloDogCheck(f, sim);
+  if (!f.dog && f.t >= sim.duration) boloFinish();
+}
+/* El perro: si la bola le pega, golpe; si le pasa cerca, se asusta cuando ya pasó (o cuando la bola se queda quieta cerca).
+   La bola se revisa en pasos fijos de tiempo y no en cada cuadro: un celular lento y uno rápido dan lo mismo. */
+const BOLO_DOG_STEP = 1 / 120;
+function boloDogCheck(f, sim) {
+  const end = Math.min(f.t, sim.duration);
+  for (let k = (f.dogK || 0) + 1; k * BOLO_DOG_STEP <= end; k++) {
+    f.dogK = k;
+    const t = k * BOLO_DOG_STEP, b = samplePath(sim.path, Math.min(t, sim.ballEnd)), c = petBallCheck(b, BOLO.BR);
+    if (!c) return;
+    if (!c.hit) {
+      if (f.near === undefined || c.d < f.near) f.near = c.d;
+      else if (f.near < 1.3 && c.d > f.near + .05) return petScare(b, false);
+      if (t >= sim.ballEnd && f.near < 1.3) return petScare(b, false);
+      continue;
     }
+    const next = samplePath(sim.path, Math.min(t + .05, sim.ballEnd)), back = b.clone().sub(next).setY(0);
+    if (back.lengthSq() < 1e-6) back.set(0, 0, 1); back.normalize();
+    const last = sim.falls.filter(x => x.t < t).reduce((m, x) => Math.max(m, x.t), 0);
+    f.dog = { t, p: b, back, end: Math.max(1.1, last + .7 - t) };
+    petScare(b, true); A.thud(.5); buzz([30, 40, 30]);
+    return;
   }
-  if (f.t >= sim.duration) boloFinish();
 }
 function boloFinish() {
   const f = bflight; if (!f || f.done) return; f.done = true;

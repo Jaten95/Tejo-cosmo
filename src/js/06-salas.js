@@ -251,7 +251,7 @@ async function netEnter(code, create, empty) {
       joinWaiting(false);
       if (!found) { try { await sala.leave(); } catch (e) { } NET.auto = false; backClear(); msg.textContent = empty; return; }
     }
-    Object.assign(NET, { sala, code, g: null, lastG: null, myG: null, pending: {}, lostAt: 0, absent: {}, creator: create, watching: false, joinedAt: performance.now() });
+    Object.assign(NET, { sala, code, g: null, lastG: null, myG: null, pending: {}, lostAt: 0, absent: {}, creator: create, watching: false, joinedAt: performance.now(), petSeen: {} });
     holdUpdate(); backSave();
     NET.unsub = sala.onPeers(netSync, netError);
     fixLocalDesigns();
@@ -340,6 +340,7 @@ function netSync() {
   if (NET.g && amHost()) hostDuties(peers);
   applyG();
   checkReactions(peers);
+  petHear(peers);
   if (online()) { const key = [...presentPids(peers).keys()].sort().join(','); if (key !== NET.hereKey) { NET.hereKey = key; renderBoard(); } }
   if (!$('sala').hidden) renderSala();
 }
@@ -366,7 +367,7 @@ function hostCheckThrow(here) {
   const p = current(); if (p.pid === NET.pid) return;
   const t = here.get(p.pid) && here.get(p.pid).t;
   if (t && t.n === game.thrown && t.gid === game.gid && isFinite(t.L) && isFinite(t.P))
-    acceptThrow({ n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0 });
+    acceptThrow({ n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0, dog: petStateOk(t.dog) });
 }
 function acceptThrow(t) {
   const g = NET.g; if (!g) return;
@@ -387,7 +388,7 @@ function applyG() {
     game.players.forEach(p => {
       const pr = here.get(p.pid), t = pr && pr.t;
       if (t && t.gid === game.gid && typeof t.n === 'number' && t.n >= game.thrown && !NET.pending[t.n] && isFinite(t.L) && isFinite(t.P))
-        NET.pending[t.n] = { n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0 };
+        NET.pending[t.n] = { n: t.n, L: clamp(+t.L, -AIM.L, AIM.L), P: clamp(+t.P, 0, 1), pid: p.pid, skip: t.skip ? 1 : 0, dog: petStateOk(t.dog) };
     });
   }
   tryConsume();
@@ -431,7 +432,7 @@ function tryConsume() {
   if (current().pid !== t.pid) return;
   drag = null;
   if (t.skip) toast(current().pid === NET.pid ? 'Se te acabó el tiempo: nulo' : `${current().name} no lanzó a tiempo: nulo`);
-  launch({ L: t.L, P: t.P }, { timeout: !!t.skip });
+  launch({ L: t.L, P: t.P }, { timeout: !!t.skip, dog: t.dog });
 }
 
 /* ---------- partida ---------- */
@@ -511,9 +512,9 @@ function netTurn(p) {
 }
 function netThrow(a) {
   if (phase !== 'aim' || current().pid !== NET.pid) return;
-  const t = { n: game.thrown, L: r5(a.L), P: r5(a.P), gid: game.gid, pid: NET.pid };
+  const t = { n: game.thrown, L: r5(a.L), P: r5(a.P), gid: game.gid, pid: NET.pid, dog: isBolo() ? petState() : null };   // bolo: cómo iba el perro al soltar
   NET.lastT = t;
-  launch({ L: t.L, P: t.P });
+  launch({ L: t.L, P: t.P }, { dog: t.dog });
   if (NET.sala) {
     NET.sala.presence({ t, aim: null }).catch(() => { });
     if (amHost()) publishG({ ...NET.g, last: t, ver: NET.g.ver + 1 });
