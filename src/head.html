@@ -68,6 +68,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 #gauge{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 86px);
   width:16px;height:min(34vh,260px);background:rgba(22,16,11,.8);border:2px solid rgba(245,237,221,.35);border-radius:3px;}
 #gaugeFill{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(0deg,var(--green),var(--yellow) 60%,var(--red));}
+#gauge.heavy #gaugeFill{background:linear-gradient(0deg,var(--yellow),var(--red) 55%,#7d1b12);}
 #gaugeLast{position:absolute;left:-7px;right:-7px;height:2px;background:var(--paper);bottom:0;display:none;}
 #gaugeLast::after{content:"último";position:absolute;right:calc(100% + 4px);top:-7px;font-size:10px;color:var(--muted);font-weight:600;}
 #gauge b{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:.12em;color:var(--muted);}

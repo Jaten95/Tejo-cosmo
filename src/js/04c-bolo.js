@@ -257,7 +257,8 @@ function boloLaunch(a, opts) {
   bflight = { sim, mesh, t: 0, ev: 0, owner: game.order[game.idx], timeout: !!(opts && opts.timeout), done: false, hit: false, roll: new THREE.Quaternion() };
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
   game.thrown++;
-  A.whoosh(); buzz(15);
+  A.whoosh(); A.thud(.25 + .35 * a.P); buzz([30 + Math.round(40 * a.P), 20, 20]);   // la bola pesa: sale con un golpe
+  if (!reduceMotion) shake = Math.max(shake, .004 + .006 * a.P);
 }
 function boloEvents(f, sim, t) {
   while (f.ev < sim.events.length && sim.events[f.ev].t <= t) {
@@ -266,7 +267,7 @@ function boloEvents(f, sim, t) {
     else if (e.kind === 'suelo') { A.floor(); dirt(e.p, V(0, 1, 0), 6); }
     else if (e.kind === 'toque') A.wood();
     else if (e.kind === 'tabla') { A.wood(); A.thud(.4); }
-    else if (e.kind === 'cae') { A.thud(.7); dirt(e.p.clone().setY(.02), V(0, 1, 0), 16); }
+    else if (e.kind === 'cae') { A.thud(1); dirt(e.p.clone().setY(.02), V(0, 1, 0), 22); buzz([45, 25, 20]); if (!reduceMotion) shake = Math.max(shake, .012); }   // cae pesada en la tierra
   }
 }
 // Mueve la bola por el camino y la hace rodar según lo que avanzó
@@ -384,6 +385,21 @@ function boloEndReplay() {
 function boloWobble(hold, t, P) {
   const [a, b, k, ky] = BOLO.TREM, u = clamp((P - a) / (b - a), 0, 1), near = u * u * (3 - 2 * u), w = wobble(hold, t), m = .35 + near * (1 + k);
   return { L: w.x * m * BOLO.KX, P: w.y * m * ky / BOLO.SPAN, amp: w.amp * m };
+}
+/* ---------- La bola pesa ----------
+   El mismo gesto del tejo (arrastrar hacia abajo y soltar), pero lanzar lejos pide estirar mucho más el brazo:
+   la fuerza completa está a DRAG de la pantalla (en el tejo, a 0,42), así que para llegar a los palos hay que
+   arrastrar casi media pantalla, desde donde se ponga el dedo casi hasta abajo. El brazo va un poquito detrás
+   del dedo (LAG, se nota en el brazo y en la barra) para que se sienta el peso. */
+const BOLO_HEAVY = { DRAG: .78, LAG: 12 };
+function boloDragMove(d, e) {
+  const dx = e.clientX - d.x0, dy = e.clientY - d.y0;
+  d.L = clamp(dx / (innerWidth * .5) * AIM.L, -AIM.L, AIM.L);
+  d.Pt = clamp(dy / ((innerHeight || 1) * BOLO_HEAVY.DRAG), 0, 1);
+}
+function boloDragUpdate(dt) {
+  const d = drag; if (!d || d.Pt === undefined || !isBolo() || phase !== 'aim' || !dt) return;
+  d.P += (d.Pt - d.P) * (1 - Math.exp(-(d.Pt > d.P ? BOLO_HEAVY.LAG : BOLO_HEAVY.LAG * 2) * dt));
 }
 function boloAimInfo(aim) {
   const p = current(), s = boloSimulate(aim, handOf(p), game.thrown, false);

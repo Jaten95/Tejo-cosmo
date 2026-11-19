@@ -1,7 +1,7 @@
 /* ================= Joy-Con (Chrome o Edge en computador, por WebHID) =================
    La palanca apunta; se mantiene ZR (o R), se echa el brazo como en la cancha y al soltar sale el tejo.
    La fuerza sale de qué tan rápido gira el Joy-Con al final del lance. Vibra con los golpes del juego. */
-const JC_POW = { lo: 120, hi: 820 };   // °/s del lance: lo = sin fuerza, hi = fuerza completa
+const JC_POW = { lo: 120, hi: 820, hiBolo: 1050 };   // °/s del lance: lo = sin fuerza, hi = fuerza completa (la bola pesa: pide más brazo)
 const JC_WIN = .35;                    // s: el lance que cuenta es el de este último pedacito antes de soltar
 const JC_DPS = .07;                    // °/s por unidad del giroscopio
 const JC_KIND = { 0x2006: 'L', 0x2007: 'R', 0x2009: 'Pro' };
@@ -11,7 +11,7 @@ const JC = { list: [], n: 0, last: null };
 function jcCan() { return 'hid' in navigator && !window.claude && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
 function jcOn() { return JC.list.length > 0; }
 function jcHint() { return 'Joy-Con: la palanca apunta · mantén ZR, echa el brazo y suelta'; }
-function jcPow(w) { return clamp((w - JC_POW.lo) / (JC_POW.hi - JC_POW.lo), 0, 1); }
+function jcPow(w) { return clamp((w - JC_POW.lo) / ((isBolo() ? JC_POW.hiBolo : JC_POW.hi) - JC_POW.lo), 0, 1); }
 
 /* ---------- Enviar ---------- */
 // cada Joy-Con lleva su propia fila de envíos: Windows se queja si se le mandan dos reportes a la vez

@@ -504,7 +504,7 @@ function netTurn(p) {
   const mine = p.pid === NET.pid;
   phase = mine ? 'aim' : 'wait';
   NET.turnAt = performance.now(); NET.turnN = game.thrown;
-  if (mine) { helpHint(jcOn() ? 'Te toca · ' + jcHint() : 'Te toca: arrastra hacia abajo y suelta'); toast('Te toca'); buzz(25); }
+  if (mine) { helpHint(jcOn() ? 'Te toca · ' + jcHint() : isBolo() ? 'Te toca: arrastra bien largo hacia abajo y suelta' : 'Te toca: arrastra hacia abajo y suelta'); toast('Te toca'); buzz(25); }
   else hint(`Esperando el tiro de ${p.name}…`, true);
   if (NET.sala) { NET.sala.presence({ s: makeSnap() }).catch(() => { }); if (amHost()) hostCheckThrow(presentPids(NET.sala.peers())); }
   tryConsume();

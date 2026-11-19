@@ -103,6 +103,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 #gauge{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 86px);
   width:16px;height:min(34vh,260px);background:rgba(22,16,11,.8);border:2px solid rgba(245,237,221,.35);border-radius:3px;}
 #gaugeFill{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(0deg,var(--green),var(--yellow) 60%,var(--red));}
+#gauge.heavy #gaugeFill{background:linear-gradient(0deg,var(--yellow),var(--red) 55%,#7d1b12);}
 #gaugeLast{position:absolute;left:-7px;right:-7px;height:2px;background:var(--paper);bottom:0;display:none;}
 #gaugeLast::after{content:"último";position:absolute;right:calc(100% + 4px);top:-7px;font-size:10px;color:var(--muted);font-weight:600;}
 #gauge b{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:.12em;color:var(--muted);}
@@ -480,7 +481,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <button class="btn" id="btnPlay">A jugar</button>
       <button class="btn ghost" id="btnRules">Cómo se juega</button>
     </div>
-    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.62.15</span></div>
+    <div class="foot"><span class="record" id="recordLine"></span><span class="ver" id="verTag" title="Versión del juego">v1.63.0</span></div>
   </div></div>
   <div id="mSheet" hidden>
     <div class="shPanel" role="dialog" aria-labelledby="mSheetT">
@@ -610,7 +611,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
       <tr><td>No vale<span>Lo que tumbe por el otro lado o de rebote en las tablas de atrás.</span></td><td>0</td></tr>
       <tr><td>El perro<span>Si la bola le pega al perro que pasa por el salón: maltrato animal. Contra Don Chepe y por turnos; en las salas no pasan perros.</span></td><td>−1</td></tr>
     </table>
-    <p class="prose"><b>Bolo:</b> tres palos de pino de 60 cm en fila, a unos 20 m de la raya. Un tiro por turno, siempre por el aire y en el mismo orden. La bola es pesada: al caer en la tierra rueda poco, más entre más duro la tires, y entre más fuerza le metas más difícil es que vaya derecha. En el menú cada jugador dice si es derecho (D) o zurdo (Z). Partida a 15 o a lo que se escoja.</p>
+    <p class="prose"><b>Bolo:</b> tres palos de pino de 60 cm en fila, a unos 20 m de la raya. Un tiro por turno, siempre por el aire y en el mismo orden. La bola es pesada: se lanza igual que el tejo, pero para llegar a los palos hay que arrastrar mucho más largo (casi media pantalla). Al caer en la tierra rueda poco, más entre más duro la tires, y entre más fuerza le metas más difícil es que vaya derecha. En el menú cada jugador dice si es derecho (D) o zurdo (Z). Partida a 15 o a lo que se escoja.</p>
     <h3 class="rulesH">Campeonato</h3>
     <p class="prose"><b>Campeonato:</b> se juegan los tres, tejo, rana y bolo, en un orden al azar y con los mismos jugadores. En cada juego el primero se lleva 3 puntos de campeonato, el segundo 2 y el tercero 1 (si empatan en puntos, el mismo puesto). Gana el que más sume al final de los tres; si empatan, el que más se acercó a las metas. Las partidas son cortas (tejo a 15, rana a 500, bolo a 10) o largas (27, 1.000 y 15). Con equipos cuenta el equipo, y cada juego lo empieza otro jugador.</p>
     <p class="prose"><b>Grabado:</b> cada jugador escoge un diseño para la cara de su tejo. No se pueden repetir en la misma partida.</p>
@@ -652,7 +653,7 @@ h3{margin:0;font:800 11px/1 var(--body);letter-spacing:.16em;text-transform:uppe
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/meshopt_decoder.js"></script>
 <script>
-const GAME_VERSION = "1.62.15";
+const GAME_VERSION = "1.63.0";
 /* Modelo de mano usado en el juego: generic-hand de WebXR Input Profiles
 https://github.com/immersive-web/webxr-input-profiles
 
@@ -2892,7 +2893,7 @@ function nextThrow() {
     planCpu(p);
   } else {
     phase = 'aim';
-    helpHint(jcOn() ? jcHint() : game.thrown < 2 ? 'Arrastra hacia abajo para cargar,\na los lados para apuntar • suelta' : 'Arrastra y suelta para lanzar');
+    helpHint(jcOn() ? jcHint() : isBolo() && game.thrown < 2 ? 'La bola pesa: arrastra bien largo hacia abajo para cargar,\na los lados para apuntar • suelta' : game.thrown < 2 ? 'Arrastra hacia abajo para cargar,\na los lados para apuntar • suelta' : 'Arrastra y suelta para lanzar');
     if (settings.mode === 'local' && game.players.length > 1 && !(isRana() && game.arg)) toast(isRana() ? `Tanda de ${p.name}: 6 argollas` : `Turno de ${p.name}`);
   }
 }
@@ -3264,7 +3265,7 @@ const lupaCur = { u: 0, v: 0 };
 /* ================= Bucle ================= */
 let lastT = performance.now();
 function updateGame(dt, now) {
-  jcUpdate(dt);
+  jcUpdate(dt); boloDragUpdate(dt);
   if (phase === 'aim' && drag) {
     const aim = currentAim(now); drag.aim = aim;
     setGauge(drag.P, lastP[current().name]); showReticle(aim);
@@ -4090,7 +4091,8 @@ function boloLaunch(a, opts) {
   bflight = { sim, mesh, t: 0, ev: 0, owner: game.order[game.idx], timeout: !!(opts && opts.timeout), done: false, hit: false, roll: new THREE.Quaternion() };
   reticle.visible = false; phase = 'flight'; hint('', false); setGauge(a.P, lastP[p.name]);
   game.thrown++;
-  A.whoosh(); buzz(15);
+  A.whoosh(); A.thud(.25 + .35 * a.P); buzz([30 + Math.round(40 * a.P), 20, 20]);   // la bola pesa: sale con un golpe
+  if (!reduceMotion) shake = Math.max(shake, .004 + .006 * a.P);
 }
 function boloEvents(f, sim, t) {
   while (f.ev < sim.events.length && sim.events[f.ev].t <= t) {
@@ -4099,7 +4101,7 @@ function boloEvents(f, sim, t) {
     else if (e.kind === 'suelo') { A.floor(); dirt(e.p, V(0, 1, 0), 6); }
     else if (e.kind === 'toque') A.wood();
     else if (e.kind === 'tabla') { A.wood(); A.thud(.4); }
-    else if (e.kind === 'cae') { A.thud(.7); dirt(e.p.clone().setY(.02), V(0, 1, 0), 16); }
+    else if (e.kind === 'cae') { A.thud(1); dirt(e.p.clone().setY(.02), V(0, 1, 0), 22); buzz([45, 25, 20]); if (!reduceMotion) shake = Math.max(shake, .012); }   // cae pesada en la tierra
   }
 }
 // Mueve la bola por el camino y la hace rodar según lo que avanzó
@@ -4217,6 +4219,21 @@ function boloEndReplay() {
 function boloWobble(hold, t, P) {
   const [a, b, k, ky] = BOLO.TREM, u = clamp((P - a) / (b - a), 0, 1), near = u * u * (3 - 2 * u), w = wobble(hold, t), m = .35 + near * (1 + k);
   return { L: w.x * m * BOLO.KX, P: w.y * m * ky / BOLO.SPAN, amp: w.amp * m };
+}
+/* ---------- La bola pesa ----------
+   El mismo gesto del tejo (arrastrar hacia abajo y soltar), pero lanzar lejos pide estirar mucho más el brazo:
+   la fuerza completa está a DRAG de la pantalla (en el tejo, a 0,42), así que para llegar a los palos hay que
+   arrastrar casi media pantalla, desde donde se ponga el dedo casi hasta abajo. El brazo va un poquito detrás
+   del dedo (LAG, se nota en el brazo y en la barra) para que se sienta el peso. */
+const BOLO_HEAVY = { DRAG: .78, LAG: 12 };
+function boloDragMove(d, e) {
+  const dx = e.clientX - d.x0, dy = e.clientY - d.y0;
+  d.L = clamp(dx / (innerWidth * .5) * AIM.L, -AIM.L, AIM.L);
+  d.Pt = clamp(dy / ((innerHeight || 1) * BOLO_HEAVY.DRAG), 0, 1);
+}
+function boloDragUpdate(dt) {
+  const d = drag; if (!d || d.Pt === undefined || !isBolo() || phase !== 'aim' || !dt) return;
+  d.P += (d.Pt - d.P) * (1 - Math.exp(-(d.Pt > d.P ? BOLO_HEAVY.LAG : BOLO_HEAVY.LAG * 2) * dt));
 }
 function boloAimInfo(aim) {
   const p = current(), s = boloSimulate(aim, handOf(p), game.thrown, false);
@@ -5216,7 +5233,7 @@ function netTurn(p) {
   const mine = p.pid === NET.pid;
   phase = mine ? 'aim' : 'wait';
   NET.turnAt = performance.now(); NET.turnN = game.thrown;
-  if (mine) { helpHint(jcOn() ? 'Te toca · ' + jcHint() : 'Te toca: arrastra hacia abajo y suelta'); toast('Te toca'); buzz(25); }
+  if (mine) { helpHint(jcOn() ? 'Te toca · ' + jcHint() : isBolo() ? 'Te toca: arrastra bien largo hacia abajo y suelta' : 'Te toca: arrastra hacia abajo y suelta'); toast('Te toca'); buzz(25); }
   else hint(`Esperando el tiro de ${p.name}…`, true);
   if (NET.sala) { NET.sala.presence({ s: makeSnap() }).catch(() => { }); if (amHost()) hostCheckThrow(presentPids(NET.sala.peers())); }
   tryConsume();
@@ -5558,6 +5575,7 @@ function feed(p, text) {
 }
 function bumpChip(i) { if (game && game.teams && game.players[i]) i = game.players[i].team; const c = $('board').children[i]; if (!c) return; c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
 function setGauge(P, last) {
+  const g = $('gauge'); if (g.classList.contains('heavy') !== isBolo()) g.classList.toggle('heavy', isBolo());   // en el bolo la barra se pone roja arriba
   $('gaugeFill').style.height = (clamp(P, 0, 1) * 100) + '%';
   const l = $('gaugeLast'); if (last === undefined) l.style.display = 'none'; else { l.style.display = 'block'; l.style.bottom = (last * 100) + '%'; }
 }
@@ -5832,11 +5850,13 @@ function bindInput() {
     if (phase === 'result' || phase === 'roundEnd') { if (performance.now() - resultAt > 700) skipWait(); return; }
     if (phase !== 'aim' || drag || armBusy()) return;
     drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, t0: performance.now(), L: 0, P: 0 };
+    if (isBolo()) drag.Pt = 0;   // la bola pesa: ver boloDragMove
     try { cv.setPointerCapture(e.pointerId); } catch (er) { }
     helpHint('Suelta para lanzar · arrastra arriba del todo para cancelar');
   });
   cv.addEventListener('pointermove', e => {
     if (!drag || e.pointerId !== drag.id) return;
+    if (drag.Pt !== undefined) return boloDragMove(drag, e);
     const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
     drag.L = clamp(dx / (innerWidth * .5) * AIM.L, -AIM.L, AIM.L);
     drag.P = clamp(dy / (innerHeight * .42), 0, 1);
@@ -5987,7 +6007,7 @@ async function boot(data) {
 /* ================= Joy-Con (Chrome o Edge en computador, por WebHID) =================
    La palanca apunta; se mantiene ZR (o R), se echa el brazo como en la cancha y al soltar sale el tejo.
    La fuerza sale de qué tan rápido gira el Joy-Con al final del lance. Vibra con los golpes del juego. */
-const JC_POW = { lo: 120, hi: 820 };   // °/s del lance: lo = sin fuerza, hi = fuerza completa
+const JC_POW = { lo: 120, hi: 820, hiBolo: 1050 };   // °/s del lance: lo = sin fuerza, hi = fuerza completa (la bola pesa: pide más brazo)
 const JC_WIN = .35;                    // s: el lance que cuenta es el de este último pedacito antes de soltar
 const JC_DPS = .07;                    // °/s por unidad del giroscopio
 const JC_KIND = { 0x2006: 'L', 0x2007: 'R', 0x2009: 'Pro' };
@@ -5997,7 +6017,7 @@ const JC = { list: [], n: 0, last: null };
 function jcCan() { return 'hid' in navigator && !window.claude && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
 function jcOn() { return JC.list.length > 0; }
 function jcHint() { return 'Joy-Con: la palanca apunta · mantén ZR, echa el brazo y suelta'; }
-function jcPow(w) { return clamp((w - JC_POW.lo) / (JC_POW.hi - JC_POW.lo), 0, 1); }
+function jcPow(w) { return clamp((w - JC_POW.lo) / ((isBolo() ? JC_POW.hiBolo : JC_POW.hi) - JC_POW.lo), 0, 1); }
 
 /* ---------- Enviar ---------- */
 // cada Joy-Con lleva su propia fila de envíos: Windows se queja si se le mandan dos reportes a la vez

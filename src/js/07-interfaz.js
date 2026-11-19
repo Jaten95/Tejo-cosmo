@@ -50,6 +50,7 @@ function feed(p, text) {
 }
 function bumpChip(i) { if (game && game.teams && game.players[i]) i = game.players[i].team; const c = $('board').children[i]; if (!c) return; c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
 function setGauge(P, last) {
+  const g = $('gauge'); if (g.classList.contains('heavy') !== isBolo()) g.classList.toggle('heavy', isBolo());   // en el bolo la barra se pone roja arriba
   $('gaugeFill').style.height = (clamp(P, 0, 1) * 100) + '%';
   const l = $('gaugeLast'); if (last === undefined) l.style.display = 'none'; else { l.style.display = 'block'; l.style.bottom = (last * 100) + '%'; }
 }
@@ -324,11 +325,13 @@ function bindInput() {
     if (phase === 'result' || phase === 'roundEnd') { if (performance.now() - resultAt > 700) skipWait(); return; }
     if (phase !== 'aim' || drag || armBusy()) return;
     drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, t0: performance.now(), L: 0, P: 0 };
+    if (isBolo()) drag.Pt = 0;   // la bola pesa: ver boloDragMove
     try { cv.setPointerCapture(e.pointerId); } catch (er) { }
     helpHint('Suelta para lanzar · arrastra arriba del todo para cancelar');
   });
   cv.addEventListener('pointermove', e => {
     if (!drag || e.pointerId !== drag.id) return;
+    if (drag.Pt !== undefined) return boloDragMove(drag, e);
     const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
     drag.L = clamp(dx / (innerWidth * .5) * AIM.L, -AIM.L, AIM.L);
     drag.P = clamp(dy / (innerHeight * .42), 0, 1);
